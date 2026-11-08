@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-10T10:21:43.635Z",
+  "generatedAt": "2026-11-08T04:01:40.000Z",
   "title": "Design System: srcz",
   "extensions": {
     "colorMeta": {
@@ -381,6 +381,201 @@
           "oklch(84% 0.16414 258.18)",
           "oklch(95% 0.16414 258.18)"
         ]
+      },
+      "site-muted": {
+        "role": "neutral",
+        "displayName": "Landing Muted Slate",
+        "canonical": "light-dark(#5b616c, #a2a8b4)",
+        "tonalRamp": [
+          "oklch(15% 0.00939 262.68)",
+          "oklch(26% 0.01217 262.68)",
+          "oklch(38% 0.01495 262.68)",
+          "oklch(49% 0.01773 262.68)",
+          "oklch(61% 0.01773 262.68)",
+          "oklch(72% 0.01495 262.68)",
+          "oklch(84% 0.01217 262.68)",
+          "oklch(95% 0.00939 262.68)"
+        ]
+      },
+      "site-docs-muted": {
+        "role": "neutral",
+        "displayName": "Docs Muted Slate",
+        "canonical": "light-dark(#5b616c, #a2a8b4)",
+        "tonalRamp": [
+          "oklch(15% 0.01147 264.36)",
+          "oklch(26% 0.01487 264.36)",
+          "oklch(38% 0.01826 264.36)",
+          "oklch(49% 0.02166 264.36)",
+          "oklch(61% 0.02166 264.36)",
+          "oklch(72% 0.01826 264.36)",
+          "oklch(84% 0.01487 264.36)",
+          "oklch(95% 0.01147 264.36)"
+        ]
+      },
+      "site-rail": {
+        "role": "neutral",
+        "displayName": "Blue Rail",
+        "canonical": "light-dark(#b7c6ea, #3f5373)",
+        "tonalRamp": [
+          "oklch(15% 0.02617 267.39)",
+          "oklch(26% 0.03392 267.39)",
+          "oklch(38% 0.04167 267.39)",
+          "oklch(49% 0.04943 267.39)",
+          "oklch(61% 0.04943 267.39)",
+          "oklch(72% 0.04167 267.39)",
+          "oklch(84% 0.03392 267.39)",
+          "oklch(95% 0.02617 267.39)"
+        ]
+      },
+      "site-hatch": {
+        "role": "neutral",
+        "displayName": "Gutter Hatch",
+        "canonical": "light-dark(#dfe2e8, #323741)",
+        "tonalRamp": [
+          "oklch(15% 0.00430 264.52)",
+          "oklch(26% 0.00558 264.52)",
+          "oklch(38% 0.00685 264.52)",
+          "oklch(49% 0.00813 264.52)",
+          "oklch(61% 0.00813 264.52)",
+          "oklch(72% 0.00685 264.52)",
+          "oklch(84% 0.00558 264.52)",
+          "oklch(95% 0.00430 264.52)"
+        ]
+      },
+      "site-dot": {
+        "role": "neutral",
+        "displayName": "Stage Dot",
+        "canonical": "light-dark(#cdd2da, #3d434e)",
+        "tonalRamp": [
+          "oklch(15% 0.00605 259.82)",
+          "oklch(26% 0.00784 259.82)",
+          "oklch(38% 0.00964 259.82)",
+          "oklch(49% 0.01143 259.82)",
+          "oklch(61% 0.01143 259.82)",
+          "oklch(72% 0.00964 259.82)",
+          "oklch(84% 0.00784 259.82)",
+          "oklch(95% 0.00605 259.82)"
+        ]
+      },
+      "site-tint-blue": {
+        "role": "secondary",
+        "displayName": "Step Tint Blue",
+        "canonical": "light-dark(#b7c6ea, #3f5373)",
+        "tonalRamp": [
+          "oklch(15% 0.02617 267.39)",
+          "oklch(26% 0.03392 267.39)",
+          "oklch(38% 0.04167 267.39)",
+          "oklch(49% 0.04943 267.39)",
+          "oklch(61% 0.04943 267.39)",
+          "oklch(72% 0.04167 267.39)",
+          "oklch(84% 0.03392 267.39)",
+          "oklch(95% 0.02617 267.39)"
+        ]
+      },
+      "site-tint-green": {
+        "role": "secondary",
+        "displayName": "Step Tint Green",
+        "canonical": "light-dark(#a9d3b7, #3d5a47)",
+        "tonalRamp": [
+          "oklch(15% 0.02895 155.72)",
+          "oklch(26% 0.03753 155.72)",
+          "oklch(38% 0.04611 155.72)",
+          "oklch(49% 0.05469 155.72)",
+          "oklch(61% 0.05469 155.72)",
+          "oklch(72% 0.04611 155.72)",
+          "oklch(84% 0.03753 155.72)",
+          "oklch(95% 0.02895 155.72)"
+        ]
+      },
+      "site-tint-coral": {
+        "role": "tertiary",
+        "displayName": "Step Tint Coral",
+        "canonical": "light-dark(#efc3b6, #6a4339)",
+        "tonalRamp": [
+          "oklch(15% 0.02636 37.07)",
+          "oklch(26% 0.03417 37.07)",
+          "oklch(38% 0.04199 37.07)",
+          "oklch(49% 0.04980 37.07)",
+          "oklch(61% 0.04980 37.07)",
+          "oklch(72% 0.04199 37.07)",
+          "oklch(84% 0.03417 37.07)",
+          "oklch(95% 0.02636 37.07)"
+        ]
+      },
+      "site-wash-blue": {
+        "role": "secondary",
+        "displayName": "Wash Blue",
+        "canonical": "light-dark(#eef2fb, #2c3445)",
+        "tonalRamp": [
+          "oklch(15% 0.00628 266.70)",
+          "oklch(26% 0.00814 266.70)",
+          "oklch(38% 0.01000 266.70)",
+          "oklch(49% 0.01187 266.70)",
+          "oklch(61% 0.01187 266.70)",
+          "oklch(72% 0.01000 266.70)",
+          "oklch(84% 0.00814 266.70)",
+          "oklch(95% 0.00628 266.70)"
+        ]
+      },
+      "site-wash-green": {
+        "role": "secondary",
+        "displayName": "Wash Green",
+        "canonical": "light-dark(#eef7f1, #2c3a31)",
+        "tonalRamp": [
+          "oklch(15% 0.00607 157.00)",
+          "oklch(26% 0.00787 157.00)",
+          "oklch(38% 0.00967 157.00)",
+          "oklch(49% 0.01147 157.00)",
+          "oklch(61% 0.01147 157.00)",
+          "oklch(72% 0.00967 157.00)",
+          "oklch(84% 0.00787 157.00)",
+          "oklch(95% 0.00607 157.00)"
+        ]
+      },
+      "site-wash-coral": {
+        "role": "tertiary",
+        "displayName": "Wash Coral",
+        "canonical": "light-dark(#fcf1ee, #3d302d)",
+        "tonalRamp": [
+          "oklch(15% 0.00617 35.73)",
+          "oklch(26% 0.00800 35.73)",
+          "oklch(38% 0.00983 35.73)",
+          "oklch(49% 0.01166 35.73)",
+          "oklch(61% 0.01166 35.73)",
+          "oklch(72% 0.00983 35.73)",
+          "oklch(84% 0.00800 35.73)",
+          "oklch(95% 0.00617 35.73)"
+        ]
+      },
+      "site-mark": {
+        "role": "tertiary",
+        "displayName": "Logo Coral",
+        "canonical": "light-dark(#f2502e, #ff6b4a)",
+        "tonalRamp": [
+          "oklch(15% 0.10013 33.52)",
+          "oklch(26% 0.12980 33.52)",
+          "oklch(38% 0.15946 33.52)",
+          "oklch(49% 0.18913 33.52)",
+          "oklch(61% 0.18913 33.52)",
+          "oklch(72% 0.15946 33.52)",
+          "oklch(84% 0.12980 33.52)",
+          "oklch(95% 0.10013 33.52)"
+        ]
+      },
+      "site-mark-ink": {
+        "role": "neutral",
+        "displayName": "Logo Ink",
+        "canonical": "light-dark(#2b2d33, #ffffff)",
+        "tonalRamp": [
+          "oklch(15% 0.00550 271.02)",
+          "oklch(26% 0.00713 271.02)",
+          "oklch(38% 0.00876 271.02)",
+          "oklch(49% 0.01039 271.02)",
+          "oklch(61% 0.01039 271.02)",
+          "oklch(72% 0.00876 271.02)",
+          "oklch(84% 0.00713 271.02)",
+          "oklch(95% 0.00550 271.02)"
+        ]
       }
     },
     "typographyMeta": {
@@ -427,6 +622,42 @@
       "code": {
         "displayName": "code",
         "purpose": "Preview code; block line-height 1.6."
+      },
+      "site-display": {
+        "displayName": "Site display",
+        "purpose": "The landing h1 only (step 01); system sans, balanced."
+      },
+      "site-heading": {
+        "displayName": "Site heading",
+        "purpose": "Each later landing step h2."
+      },
+      "site-lede": {
+        "displayName": "Site lede",
+        "purpose": "Step narration, text-2, 34rem max."
+      },
+      "site-body": {
+        "displayName": "Site body",
+        "purpose": "Landing base size; buttons at 550."
+      },
+      "site-chrome": {
+        "displayName": "Site chrome",
+        "purpose": "Mono step bar, step label, step list, chips, tabs, bands, terminals, pane code."
+      },
+      "site-status": {
+        "displayName": "Site status",
+        "purpose": "Mono kbd, pane status bars, install Copy action."
+      },
+      "site-label": {
+        "displayName": "Site label",
+        "purpose": "Uppercase mono chrome names (step bar, step list, pane heads, note titles); never a headline eyebrow."
+      },
+      "site-docs-section": {
+        "displayName": "Docs section label",
+        "purpose": "Vocs sidebar section labels in --sz-muted."
+      },
+      "site-docs-nav": {
+        "displayName": "Docs nav",
+        "purpose": "Vocs sidebar items; outline uses 0.75rem."
       }
     },
     "shadows": [
@@ -456,12 +687,34 @@
         "name": "theme-menu",
         "value": "100ms",
         "purpose": "Theme-menu state transitions; reduced motion applies."
+      },
+      {
+        "name": "site-stage-fade",
+        "value": "160ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Landing stage pane swap; reduced motion swaps without the fade."
+      },
+      {
+        "name": "site-button",
+        "value": "120ms",
+        "purpose": "Landing button background and border color."
       }
     ],
     "breakpoints": [
       {
         "name": "mobile",
         "value": "48rem"
+      },
+      {
+        "name": "site-narrow",
+        "value": "56.1875rem"
+      },
+      {
+        "name": "site-short",
+        "value": "47.5rem (max-height, at min-width 56.25rem)"
+      },
+      {
+        "name": "site-docs-wide",
+        "value": "1376px"
       }
     ]
   },
@@ -545,6 +798,52 @@
       "description": "Neutral prose block; language becomes copy affordance on hover/focus.",
       "html": "<div class=\"ds-code-block\"><pre class=\"ds-code-pre\"><code class=\"ds-code-text\">go run . ./docs</code></pre><button class=\"ds-code-copy\" type=\"button\" aria-label=\"Copy code\"><span class=\"ds-code-language\">go</span><svg class=\"ds-code-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></div>",
       "css": ".ds-code-block{position:relative}.ds-code-pre{margin:12px 0;overflow:auto;padding:16px;border:1px solid var(--color-border, #e5e5e5);border-radius:0;background:var(--color-surface-secondary, #f3f3f3);color:var(--color-text-primary, #333333);line-height:1.6}.ds-code-text{font-family:var(--font-mono,ui-monospace,Consolas,monospace);font-size:13.5px}.ds-code-copy{position:absolute;top:4px;right:4px;display:flex;align-items:center;justify-content:center;height:24px;padding:0 8px;border:1px solid var(--color-border, #e5e5e5);border-radius:0;color:var(--color-text-secondary, #515866);background:var(--color-surface-raised, #ffffff);font:12px var(--font-mono,ui-monospace,Consolas,monospace);cursor:pointer}.ds-code-icon{display:none;width:12px;height:12px}.ds-code-block:hover .ds-code-language,.ds-code-copy:focus-visible .ds-code-language{display:none}.ds-code-block:hover .ds-code-icon,.ds-code-copy:focus-visible .ds-code-icon{display:block}.ds-code-copy:hover{background:var(--color-surface-secondary, #f3f3f3);color:var(--color-text-primary, #333333)}.ds-code-copy:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}"
+    },
+    {
+      "name": "Site primary button",
+      "kind": "button",
+      "refersTo": "site-button-primary",
+      "description": "Landing Get started; 32px, 44px under 900px.",
+      "html": "<a class=\"ds-site-button-primary\" href=\"#\">Get started</a>",
+      "css": ".ds-site-button-primary{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-accent,#325dc8);border-radius:0;background:var(--l-accent,#325dc8);color:var(--l-on-accent,#ffffff);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:background-color 120ms,border-color 120ms}.ds-site-button-primary:hover{background:var(--l-accent-hover,#2348ac);border-color:var(--l-accent-hover,#2348ac)}.ds-site-button-primary:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}@media(prefers-reduced-motion:reduce){.ds-site-button-primary{transition:none}}"
+    },
+    {
+      "name": "Site outline button",
+      "kind": "button",
+      "refersTo": "site-button-outline",
+      "description": "Landing Read the docs.",
+      "html": "<a class=\"ds-site-button\" href=\"#\">Read the docs</a>",
+      "css": ".ds-site-button{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-border,#c9ccd1);border-radius:0;background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:border-color 120ms}.ds-site-button:hover{border-color:var(--l-muted,#5b616c)}.ds-site-button:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
+    },
+    {
+      "name": "Site step bar",
+      "kind": "nav",
+      "refersTo": "site-chip",
+      "description": "Sticky 36px walkthrough bar: label, count, tinted pips, Prev and Next chips.",
+      "html": "<nav class=\"ds-site-stepbar\" aria-label=\"Walkthrough steps\"><span class=\"ds-site-label\">Walkthrough</span><span class=\"ds-site-dim\">2 / 6</span><span class=\"ds-site-pips\"><a class=\"ds-site-pip\" data-state=\"done\" style=\"--tint:#b7c6ea\" href=\"#\" aria-label=\"Step 1\"></a><a class=\"ds-site-pip\" data-state=\"current\" href=\"#\" aria-current=\"step\" aria-label=\"Step 2\"></a><a class=\"ds-site-pip\" href=\"#\" aria-label=\"Step 3\"></a></span><span class=\"ds-site-dim\">Browse any file</span><span class=\"ds-site-actions\"><a class=\"ds-site-chip\" href=\"#\">Prev</a><a class=\"ds-site-chip ds-site-chip-accent\" href=\"#\">Next</a></span></nav>",
+      "css": ".ds-site-stepbar{display:flex;align-items:center;gap:.75rem;height:2.25rem;padding:0 1rem;background:var(--l-chrome,#e4e5e8);border-bottom:1px solid var(--l-border,#c9ccd1);font-family:ui-monospace,\"SF Mono\",\"JetBrains Mono\",Menlo,Consolas,monospace;font-size:.75rem;color:var(--l-text,#24272c);white-space:nowrap}.ds-site-label{font-size:.65625rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--l-muted,#5b616c)}.ds-site-dim{color:var(--l-muted,#5b616c)}.ds-site-pips{display:flex;gap:.1875rem}.ds-site-pip{display:block;width:2.125rem;padding:.5rem 0}.ds-site-pip::before{content:\"\";display:block;height:.25rem;background:var(--l-border,#c9ccd1)}.ds-site-pip[data-state=done]::before{background:var(--tint)}.ds-site-pip[data-state=current]::before{background:var(--l-accent,#325dc8)}.ds-site-pip:hover::before{background:var(--l-accent-hover,#2348ac)}.ds-site-actions{display:flex;gap:.375rem;margin-left:auto}.ds-site-chip{display:inline-flex;align-items:center;height:1.5rem;padding:0 .5rem;border:1px solid var(--l-border,#c9ccd1);border-radius:0;background:var(--l-surface,#ffffff);color:var(--l-text-2,#4b515b);text-decoration:none}.ds-site-chip:hover{color:var(--l-text,#24272c);border-color:var(--l-muted,#5b616c)}.ds-site-chip-accent{border-color:var(--l-accent,#325dc8);color:var(--l-accent,#325dc8)}.ds-site-chip-accent:hover{color:var(--l-accent-hover,#2348ac);border-color:var(--l-accent-hover,#2348ac)}.ds-site-pip:focus-visible,.ds-site-chip:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
+    },
+    {
+      "name": "Site install command",
+      "kind": "custom",
+      "refersTo": "site-install-tab",
+      "description": "Install tabs over a copyable command; selected tab lifts with a 2px accent top edge.",
+      "html": "<div class=\"ds-site-install\"><div class=\"ds-site-install-tabs\" role=\"tablist\"><button class=\"ds-site-install-tab\" role=\"tab\" aria-selected=\"true\">macOS / Linux</button><button class=\"ds-site-install-tab\" role=\"tab\" aria-selected=\"false\">Go</button></div><div class=\"ds-site-install-command\"><code><span class=\"ds-site-install-prompt\">$</span>curl -fsSL https://example.invalid/install.sh | sh</code><button class=\"ds-site-install-copy\" type=\"button\">Copy</button></div></div>",
+      "css": ".ds-site-install{max-width:34rem;border:1px solid var(--l-border,#c9ccd1);background:var(--l-surface-2,#eceef0);font-family:ui-monospace,\"SF Mono\",\"JetBrains Mono\",Menlo,Consolas,monospace}.ds-site-install-tabs{display:flex;border-bottom:1px solid var(--l-border,#c9ccd1)}.ds-site-install-tab{height:1.75rem;padding:0 .625rem;border:0;border-right:1px solid var(--l-border,#c9ccd1);border-radius:0;background:transparent;color:var(--l-muted,#5b616c);font:inherit;font-size:.75rem;cursor:pointer}.ds-site-install-tab:hover{color:var(--l-text,#24272c)}.ds-site-install-tab[aria-selected=true]{background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);box-shadow:inset 0 2px 0 var(--l-accent,#325dc8)}.ds-site-install-command{display:flex;background:var(--l-surface,#ffffff)}.ds-site-install-command code{flex:1;min-width:0;padding:.5625rem .75rem;overflow-x:auto;white-space:nowrap;font-size:.78125rem}.ds-site-install-prompt{margin-right:.5rem;color:var(--l-accent,#325dc8);user-select:none}.ds-site-install-copy{padding:0 .75rem;border:0;border-left:1px solid var(--l-border,#c9ccd1);border-radius:0;background:transparent;color:var(--l-text-2,#4b515b);font:inherit;font-size:.6875rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}.ds-site-install-copy:hover{color:var(--l-text,#24272c);background:var(--l-surface-2,#eceef0)}.ds-site-install-tab:focus-visible,.ds-site-install-copy:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
+    },
+    {
+      "name": "Docs callouts",
+      "kind": "card",
+      "description": "Vocs callouts: full 1px tinted border and wash per kind, no side stripe.",
+      "html": "<div class=\"ds-docs-callout\">Note: the daemon exits after 30 idle minutes.</div><div class=\"ds-docs-callout\" data-kind=\"tip\">Tip: pass a path to open it directly.</div><div class=\"ds-docs-callout\" data-kind=\"warning\">Warning: remote serving needs a token.</div>",
+      "css": ".ds-docs-callout{margin:0 0 .5rem;padding:.75rem 1rem;border:1px solid var(--sz-tint-blue,#b7c6ea);border-radius:0;background:var(--sz-wash-blue,#eef2fb);color:var(--sz-text-2,#4b515b);font-size:.875rem}.ds-docs-callout[data-kind=tip]{border-color:var(--sz-tint-green,#a9d3b7);background:var(--sz-wash-green,#eef7f1)}.ds-docs-callout[data-kind=warning]{border-color:var(--sz-tint-coral,#efc3b6);background:var(--sz-wash-coral,#fcf1ee)}"
+    },
+    {
+      "name": "Site walkthrough note",
+      "kind": "custom",
+      "description": "Inline step note inside a demo pane, after its lines.",
+      "html": "<div class=\"ds-site-note\"><div class=\"ds-site-note-title\"><span class=\"ds-site-pin\">4</span>Step 4 of 7</div>The session now expires after <code>idle</code> minutes.</div>",
+      "css": ".ds-site-note{padding:.5rem .625rem;border:1px solid var(--l-accent,#325dc8);border-radius:0;background:var(--l-note,#eef2fb);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.78125rem;line-height:1.5;color:var(--l-text-2,#4b515b)}.ds-site-note code{font-family:ui-monospace,\"SF Mono\",\"JetBrains Mono\",Menlo,Consolas,monospace;color:var(--l-accent,#325dc8)}.ds-site-note-title{display:flex;align-items:center;gap:.5rem;margin-bottom:.1875rem;font-family:ui-monospace,\"SF Mono\",\"JetBrains Mono\",Menlo,Consolas,monospace;font-size:.65625rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--l-muted,#5b616c)}.ds-site-pin{display:inline-grid;place-items:center;width:1rem;height:1rem;background:var(--l-accent,#325dc8);color:var(--l-on-accent,#ffffff);font-size:.625rem;letter-spacing:0}"
     }
   ],
   "narrative": {
@@ -554,13 +853,32 @@
       "Compact editor navigation.",
       "Square corners and panes on hairlines; slate Source Zero surfaces.",
       "Left-aligned proportional prose and monospace code.",
-      "Shared semantic roles across named editor themes."
+      "Shared semantic roles across named editor themes.",
+      "Site: a framed 75rem column on 1px blue-tinted rails over a diagonal hatch.",
+      "Site: one mild tint per feature, repeated wherever the step appears.",
+      "Site: HTML-built app panes at app density, captioned \"synthetic demo\"; no screenshots, no SVG animation.",
+      "Site: square corners, 1px borders, mono chrome labels, system type."
     ],
     "rules": [
       {
         "name": "The Functional Accent Rule",
         "body": "Use accent for state and interaction; keep routine prose headings and large surfaces neutral.",
         "section": "colors"
+      },
+      {
+        "name": "The Tint Follows the Step Rule",
+        "body": "A feature's tint marks it everywhere at once: its pip in the step bar, its row edge in the step list, its section's top edge, and its pane's framing (coral remote terminal, green lean ledger). Tints are borders and edges, never fills or text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Coral Reserve Rule",
+        "body": "Coral belongs to the logo mark and to remote (plus docs warnings and dangers). No other feature takes it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Four-Sided Border Rule",
+        "body": "In the docs chrome a tinted element is framed on all four sides by a 1px border: code blocks take `tint-blue` on `surface`; callouts take their kind's tint with its wash (note and info blue, tip and success green, warning and danger coral). No side stripes on callouts, code, or content.",
+        "section": "shapes"
       }
     ],
     "dos": [
@@ -569,7 +887,14 @@
       "Do keep file/path search separate from content search.",
       "Do preserve keyboard focus, accessible labels, modal behavior, and reduced motion.",
       "Do keep fonts, icons, and runtime assets local to the embedded Go distribution.",
-      "Do review shadcn-generated code against this system and strict TypeScript: no `any`, non-null assertions, or type assertions."
+      "Do review shadcn-generated code against this system and strict TypeScript: no `any`, non-null assertions, or type assertions.",
+      "Do scope landing styles under `.landing` with `--l-*` tokens, and docs styles in `_root.css` with `--sz-*` tokens over Vocs' `data-v-*` hooks.",
+      "Do write every site color as `light-dark(light, dark)` so both Vocs themes follow its toggle.",
+      "Do give each step one tint and repeat it in its pip, step-list edge, section edge, and pane framing.",
+      "Do build demo panes in HTML and CSS from the slate tokens at app density, captioned \"synthetic demo\"; state facts, not benchmarks.",
+      "Do frame docs code and callouts with a full 1px tinted border.",
+      "Do keep landing type on the system sans and mono stacks.",
+      "Do grow touch controls to 44px under 900px and keep the reduced-motion pane swap."
     ],
     "donts": [
       "Don't add a top app header or logo; keep workspace identity above the explorer and app identity in the footer.",
@@ -577,7 +902,14 @@
       "Don't center preview prose or substitute generic heading/body tokens for the preview scale.",
       "Don't introduce decorative gradients, pill containers, heavy shadows, or cards around document sections.",
       "Don't rely on color alone for selection, focus, errors, or status.",
-      "Don't require a CDN, frontend sidecar, or system JavaScript runtime in production; build and embed assets, never edit `apps/srcz/internal/web/dist/` directly."
+      "Don't require a CDN, frontend sidecar, or system JavaScript runtime in production; build and embed assets, never edit `apps/srcz/internal/web/dist/` directly.",
+      "Don't round a corner on the site; `_root.css` keeps every Vocs radius at 0.",
+      "Don't give docs callouts, code blocks, or content a side stripe; the tint goes on all four sides.",
+      "Don't use coral beyond the logo mark, remote, and docs warnings.",
+      "Don't fill surfaces or set text in a tint; tints are borders and edges.",
+      "Don't replace panes with screenshots or SVG animation, or put RAM figures in them.",
+      "Don't hijack scroll or bind global keys on the landing; steps are anchors.",
+      "Don't set the uppercase label style above a headline as an eyebrow; it names chrome, and the step label states position (\"01 / overview\")."
     ]
   }
 }

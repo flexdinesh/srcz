@@ -32,6 +32,19 @@ colors:
   syntax-string: "#0a3069"
   syntax-number: "#0550ae"
   syntax-operator: "#0550ae"
+  site-muted: "#5b616c"
+  site-docs-muted: "#5b616c"
+  site-rail: "#b7c6ea"
+  site-hatch: "#dfe2e8"
+  site-dot: "#cdd2da"
+  site-tint-blue: "#b7c6ea"
+  site-tint-green: "#a9d3b7"
+  site-tint-coral: "#efc3b6"
+  site-wash-blue: "#eef2fb"
+  site-wash-green: "#eef7f1"
+  site-wash-coral: "#fcf1ee"
+  site-mark: "#f2502e"
+  site-mark-ink: "#2b2d33"
 typography:
   headline:
     fontFamily: "\"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif"
@@ -86,6 +99,48 @@ typography:
     fontFamily: "ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
     fontSize: "0.8125rem"
     lineHeight: "1.25rem"
+  site-display:
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontSize: "clamp(2rem, 3.2vw, 2.75rem)"
+    fontWeight: 650
+    lineHeight: 1.05
+    letterSpacing: "-0.035em"
+  site-heading:
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontSize: "clamp(1.625rem, 2.4vw, 2rem)"
+    fontWeight: 650
+    lineHeight: 1.1
+    letterSpacing: "-0.03em"
+  site-lede:
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.55
+  site-body:
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  site-chrome:
+    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.75rem"
+  site-status:
+    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.6875rem"
+  site-label:
+    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.65625rem"
+    fontWeight: 600
+    letterSpacing: "0.1em"
+  site-docs-section:
+    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.6875rem"
+    fontWeight: 600
+    letterSpacing: "0.1em"
+  site-docs-nav:
+    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontSize: "0.8125rem"
+    fontWeight: 400
 rounded:
   none: "0"
 spacing:
@@ -185,6 +240,40 @@ components:
     rounded: "{rounded.none}"
     padding: "0.5rem 0.75rem"
     typography: "{typography.code}"
+  site-button-primary:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.on-accent}"
+    rounded: "{rounded.none}"
+    height: "2rem"
+    padding: "0 0.875rem"
+    typography: "{typography.site-body}"
+  site-button-outline:
+    backgroundColor: "{colors.surface-raised}"
+    textColor: "{colors.text-primary}"
+    rounded: "{rounded.none}"
+    height: "2rem"
+    padding: "0 0.875rem"
+    typography: "{typography.site-body}"
+  site-chip:
+    backgroundColor: "{colors.surface-raised}"
+    textColor: "{colors.text-secondary}"
+    rounded: "{rounded.none}"
+    height: "1.5rem"
+    padding: "0 0.5rem"
+    typography: "{typography.site-chrome}"
+  site-chip-accent:
+    backgroundColor: "{colors.surface-raised}"
+    textColor: "{colors.accent}"
+    rounded: "{rounded.none}"
+    height: "1.5rem"
+    padding: "0 0.5rem"
+    typography: "{typography.site-chrome}"
+  site-install-tab:
+    textColor: "{colors.site-muted}"
+    rounded: "{rounded.none}"
+    height: "1.75rem"
+    padding: "0 0.625rem"
+    typography: "{typography.site-chrome}"
 ---
 # Design System: srcz
 
@@ -689,3 +778,116 @@ One prose system across documents. Tables: 14px, neutral headers, horizontal ove
 - Don't introduce decorative gradients, pill containers, heavy shadows, or cards around document sections.
 - Don't rely on color alone for selection, focus, errors, or status.
 - Don't require a CDN, frontend sidecar, or system JavaScript runtime in production; build and embed assets, never edit `apps/srcz/internal/web/dist/` directly.
+
+## Site: landing and docs chrome
+
+The marketing landing (`/`, `apps/site/src/landing/`) and the Vocs docs chrome (`apps/site/src/pages/_root.css`) carry the same sharp slate world onto the web (decisions 0102, 0105). The landing is itself a six-step walkthrough of Source Zero: narration on the left, a sticky stage on the right showing the app pane each step talks about. Nothing here changes the app sections above; the site has no runtime theme set, only Vocs' light and dark.
+
+**Key Characteristics:**
+
+- A framed 75rem column on 1px blue-tinted rails over a diagonal hatch.
+- One mild tint per feature, repeated wherever the step appears.
+- HTML-built app panes at app density, captioned "synthetic demo"; no screenshots, no SVG animation.
+- Square corners, 1px borders, mono chrome labels, system type.
+
+### Colors
+
+Every site color is `light-dark(light, dark)` so Vocs' `color-scheme` toggle drives both themes; landing tokens are `--l-*` scoped to `.landing`, docs tokens `--sz-*` on `:root`. Frontmatter `site-*` keys hold the light values of the site-only tokens.
+
+Shared neutrals restate the app's Source Zero values:
+
+| Role | `--l-*` / `--sz-*` | Light | Dark |
+| --- | --- | --- | --- |
+| Page | `bg` | `#fafafa` | `#272b32` |
+| Raised surface (panes, chips, code) | `surface` | `#ffffff` | `#2e323b` |
+| Recessed (sidebar, side panels, install frame) | `surface-2` | `#eceef0` | `#343944` |
+| Chrome bands (step bar, tabs, footer) | `--l-chrome` | `#e4e5e8` | `#2e323b` |
+| Border | `border` | `#c9ccd1` | `#3e444f` |
+| Text / secondary | `--l-text`, `text-2` | `#24272c` / `#4b515b` | `#dce0e5` / `#b0b6c2` |
+| Muted (landing) / line numbers | `--l-muted`, `--l-line-number` | `#5b616c` | `#a2a8b4` / `#9aa0ab` |
+| Muted (docs) | `--sz-muted` | `#5b616c` | `#a2a8b4` |
+| Accent / hover / subtle / on-accent | `accent*`, `--l-on-accent` | `#325dc8` / `#2348ac` / `#dbe5fa` / `#ffffff` | `#74ade8` / `#a8cdf5` / `#2f4563` / `#1d2026` |
+
+Frame and feature tones, site-only:
+
+| Role | Token | Light | Dark |
+| --- | --- | --- | --- |
+| Rail (column edges) | `rail` | `#b7c6ea` | `#3f5373` |
+| Hatch (gutter lines) | `hatch` | `#dfe2e8` | `#323741` |
+| Dot grid (stage) | `--l-dot` | `#cdd2da` | `#3d434e` |
+| Tint blue (overview, browse, walkthroughs; code frames, note callouts) | `tint-blue` | `#b7c6ea` | `#3f5373` |
+| Tint green (diffs, lean; tip and success) | `tint-green` | `#a9d3b7` | `#3d5a47` |
+| Tint coral (remote; warning and danger) | `tint-coral` | `#efc3b6` | `#6a4339` |
+| Wash blue / green / coral (callout fills; `--l-note` = wash blue) | `--sz-wash-*` | `#eef2fb` / `#eef7f1` / `#fcf1ee` | `#2c3445` / `#2c3a31` / `#3d302d` |
+| Logo rails / Z | `--l-mark`, `--l-mark-ink` | `#f2502e` / `#2b2d33` | `#ff6b4a` / `#ffffff` |
+
+Pane replicas carry their own diff and syntax tones (`--l-add*`, `--l-del*`, `--l-keyword`, `--l-string`, `--l-function`, `--l-number`) so the demo reads as the app without importing its theme. The docs also remap Vocs' `gray1`–`gray14` ramp to slate (`#1d2026` to `#fafafa`) and set Vocs' `accentColor` to the accent pair.
+
+**The Tint Follows the Step Rule.** A feature's tint marks it everywhere at once: its pip in the step bar, its row edge in the step list, its section's top edge, and its pane's framing (coral remote terminal, green lean ledger). Tints are borders and edges, never fills or text.
+
+**The Coral Reserve Rule.** Coral belongs to the logo mark and to remote (plus docs warnings and dangers). No other feature takes it.
+
+### Typography
+
+**Display and body:** the system sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI"`). **Chrome:** the system mono stack (`ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas`). The landing bundles no fonts and never loads Inter; docs prose keeps Vocs' self-hosted Geist, and `_root.css` sets only the navigation in mono.
+
+- **Display** (650, `clamp(2rem, 3.2vw, 2.75rem)`, 1.05, -0.035em, balanced): the one h1, step 01.
+- **Heading** (650, `clamp(1.625rem, 2.4vw, 2rem)`, 1.1, -0.03em, balanced): each later step's h2.
+- **Lede** (400, 0.9375rem, 1.55, `text-2`, 34rem max): step narration.
+- **Body** (0.8125rem, 1.5): the landing base, buttons at 550.
+- **Chrome** (mono 0.75rem): step bar, step label (accent, "01 / overview"), step list, chips, tabs, bands, terminals, pane code (22px rows).
+- **Status** (mono 0.6875rem): kbd, pane status bars, the install Copy action (uppercase, 0.08em).
+- **Label** (mono 600, 0.65625rem, 0.1em, uppercase, muted): chrome names only: the step bar's "Walkthrough", the step list's "Steps", pane side heads and note titles. Pane captions use the same size at 0.08em, weight 400.
+- **Docs:** sidebar section labels mono 600, 0.6875rem, 0.1em, uppercase, `--sz-muted`; sidebar items mono 0.8125rem 400; the outline mono 0.75rem.
+
+### Layout
+
+- **Frame:** `.landing-frame` is 75rem max, centered, on `bg` between 1px `rail` borders; outside it the page is the 135° hatch (1px line every 7px). Docs: hatch on the surface past the content column, rails on the left gutter's and the content's edges, the right gutter framed at 1376px and up.
+- **Bands:** nav 44px (`--l-nav`), sticky step bar 36px (`--l-bar`, 48px on phones) on `chrome` with a 1px bottom border; `scroll-padding-top` matches the bar.
+- **Walkthrough grid:** a 29.375rem narration column (1px `rail` on its right) beside a fluid stage. Each step is at least one viewport tall (less the bar), padded 40px 32px with room at the foot for the step list, which rides sticky at the column's bottom (26px rows). On desktops under 760px tall the list returns to the column's end.
+- **Stage:** a 1px dot every 12px on `bg`; its inner box sticks under the step bar, `100vh - bar - nav` tall, 24px 28px inset. Panes size to their content up to that height, so the window sits on the grid. The active pane fades in over 160ms `cubic-bezier(0.16, 1, 0.3, 1)`; reduced motion swaps with no fade. An `IntersectionObserver` picks the step; pips and Prev/Next are anchors, so nothing hijacks scroll and no global keys are bound.
+- **Panes:** app density at the 13px base: 30px tab strip and bands, 22px rows and status bar, 12px mono code, 200px side panel (160px in the remote window).
+- **Controls:** primary and outline buttons 32px; install tabs and the theme toggle 28px; step bar chips 24px.
+- **Under 900px (`max-width: 56.1875rem`):** rails, stage, and step list hide; each step stacks its narration (24px 16px) over its own pane on the dot grid (26rem max, side panels and secondary status hidden). Buttons, install tabs, and the theme toggle grow to 44px; step bar chips become 40px icon squares; pips narrow to 20px.
+
+### Elevation & Depth
+
+Flat. The landing and docs chrome use no drop shadows. Inset box-shadows draw edges only: the 2px tint top edge of a step, the 2px tint leading edge of a step-list row, the 2px accent top edge of the selected install tab, the 2px green top edge of the lean ledger's first row, and the app's 1px inset accent selection ring. Depth is the three surfaces (`bg`, `surface`, `surface-2`) plus the dot grid behind panes.
+
+### Shapes
+
+Every corner is square. `_root.css` zeroes Vocs' radii with one `border-radius: 0 !important` over every element and pseudo-element. Borders are 1px; edges that mark a step or state are 2px. Focus draws a 2px accent outline offset 1px.
+
+**The Four-Sided Border Rule.** In the docs chrome a tinted element is framed on all four sides by a 1px border: code blocks take `tint-blue` on `surface`; callouts take their kind's tint with its wash (note and info blue, tip and success green, warning and danger coral). No side stripes on callouts, code, or content.
+
+### Components
+
+- **Step bar:** "Walkthrough" label, "Source Zero", `n / 6`, pips (34px wide, 4px bar: `border` ahead, the step's tint once done, `accent` when current, `accent-hover` on hover), the current title in muted, then Prev (chip) and Next (accent chip); an unavailable end is a 50% chip with `aria-disabled`.
+- **Buttons:** primary on `accent` with `on-accent` text, hover `accent-hover`; outline on `surface` with a 1px `border`, hover border `muted`; 120ms color transitions.
+- **Install tabs:** a `surface-2` frame with a 1px border; tabs separated by 1px rules; the selected tab lifts onto `surface` with a 2px accent top edge; the command row shows an accent `$`, the command in 12.5px mono, and an uppercase Copy action behind a 1px rule.
+- **Terminal:** `surface`, 1px border in the step's tint, mono 12px, accent `$`.
+- **Pane:** a caption row (label left, "synthetic demo" right), then a `surface` window with a 1px border: chrome tab strip (active tab joins the surface), `surface-2` bands, code rows, side panel, and chrome status bar, mirroring the app.
+- **Walkthrough note:** inline after its lines, as in the app: 1px accent border on `--l-note`, a mono label title with a 16px accent step pin, 12.5px `text-2` prose.
+- **Docs sidebar:** on `surface-2` with unmasked curtains; the active item takes `accent-subtle`, a 1px inset accent ring, and `accent-hover` text, as the app's selected rows do. The outline indicator is `accent`. Inline code is padded 4px on `surface-2` with a 1px border.
+
+### Do's and Don'ts
+
+#### Do:
+
+- **Do** scope landing styles under `.landing` with `--l-*` tokens, and docs styles in `_root.css` with `--sz-*` tokens over Vocs' `data-v-*` hooks.
+- **Do** write every site color as `light-dark(light, dark)` so both Vocs themes follow its toggle.
+- **Do** give each step one tint and repeat it in its pip, step-list edge, section edge, and pane framing.
+- **Do** build demo panes in HTML and CSS from the slate tokens at app density, captioned "synthetic demo"; state facts, not benchmarks.
+- **Do** frame docs code and callouts with a full 1px tinted border.
+- **Do** keep landing type on the system sans and mono stacks.
+- **Do** grow touch controls to 44px under 900px and keep the reduced-motion pane swap.
+
+#### Don't:
+
+- **Don't** round a corner on the site; `_root.css` keeps every Vocs radius at 0.
+- **Don't** give docs callouts, code blocks, or content a side stripe; the tint goes on all four sides.
+- **Don't** use coral beyond the logo mark, remote, and docs warnings.
+- **Don't** fill surfaces or set text in a tint; tints are borders and edges.
+- **Don't** replace panes with screenshots or SVG animation, or put RAM figures in them.
+- **Don't** hijack scroll or bind global keys on the landing; steps are anchors.
+- **Don't** set the uppercase label style above a headline as an eyebrow; it names chrome, and the step label states position ("01 / overview").
