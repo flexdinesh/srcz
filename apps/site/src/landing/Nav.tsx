@@ -10,9 +10,11 @@ export function Nav() {
         <span className="landing-nav-name">Source Zero</span>
       </a>
       <nav aria-label="Primary" className="landing-nav-links">
-        <a href="#features">Features</a>
         <a href={links.docs}>Docs</a>
         <a href={links.github}>GitHub</a>
+        <a className="landing-nav-releases" href={links.releases}>
+          Releases
+        </a>
         <ThemeToggle />
       </nav>
     </header>

@@ -1,7 +1,13 @@
 export const links = {
   docs: '/docs',
   getStarted: '/docs/getting-started',
+  browsing: '/docs/browsing',
+  sourceControl: '/docs/browsing#source-control',
+  walkthroughs: '/docs/walkthroughs',
+  remote: '/docs/remote',
+  desktop: '/docs/desktop',
   github: 'https://github.com/flexdinesh/srcz',
+  agentSkill: 'https://github.com/flexdinesh/srcz/blob/main/skills/srcz-walkthrough/SKILL.md',
   releases: 'https://github.com/flexdinesh/srcz/releases',
   license: 'https://github.com/flexdinesh/srcz/blob/main/LICENSE',
 }

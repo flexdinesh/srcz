@@ -1,5 +1,7 @@
 /*
- * The docs site takes the app's sharp slate language (decision 0102). Vocs
+ * The docs site takes the app's sharp slate language (decision 0102) and the
+ * landing's frame (decision 0105): hatched gutters past the content, blue-tinted
+ * rails, mono navigation labels, and tinted code and callout borders. Vocs
  * loads this file on every page, after its own styles. Its ramp runs dark to
  * light: gray2 and gray14 are the page, gray6 and gray12 borders and text.
  */
@@ -19,6 +21,26 @@
   --vocs-color-gray12: #dce0e5;
   --vocs-color-gray13: #eceef0;
   --vocs-color-gray14: #fafafa;
+
+  --sz-bg: light-dark(#fafafa, #272b32);
+  --sz-surface: light-dark(#ffffff, #2e323b);
+  --sz-surface-2: light-dark(#eceef0, #343944);
+  --sz-border: light-dark(#c9ccd1, #3e444f);
+  --sz-text-2: light-dark(#4b515b, #b0b6c2);
+  --sz-muted: light-dark(#5b616c, #a2a8b4);
+  --sz-accent: light-dark(#325dc8, #74ade8);
+  --sz-accent-hover: light-dark(#2348ac, #a8cdf5);
+  --sz-accent-subtle: light-dark(#dbe5fa, #2f4563);
+  --sz-rail: light-dark(#b7c6ea, #3f5373);
+  --sz-hatch: light-dark(#dfe2e8, #323741);
+  --sz-tint-blue: light-dark(#b7c6ea, #3f5373);
+  --sz-tint-green: light-dark(#a9d3b7, #3d5a47);
+  --sz-tint-coral: light-dark(#efc3b6, #6a4339);
+  --sz-wash-blue: light-dark(#eef2fb, #2c3445);
+  --sz-wash-green: light-dark(#eef7f1, #2c3a31);
+  --sz-wash-coral: light-dark(#fcf1ee, #3d302d);
+  --sz-mark: light-dark(#f2502e, #ff6b4a);
+  --sz-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 }
 
 /* Vocs rounds through utility classes in many components, so one rule covers them. */
@@ -26,4 +48,117 @@
 ::before,
 ::after {
   border-radius: 0 !important;
+}
+
+/* Frame: the surface is hatched; the content column sits on it between rails. */
+
+html [data-v-gutter-left],
+html [data-v-gutter-top] {
+  background: var(--sz-bg);
+}
+
+html [data-v-gutter-left] {
+  border-right: 1px solid var(--sz-rail);
+}
+
+html [data-v-sidebar-container] {
+  background: var(--sz-surface-2);
+}
+
+html [data-v-sidebar-curtain],
+html [data-v-sidebar-footer-curtain] {
+  background: var(--sz-surface-2);
+  mask: none;
+}
+
+html [data-v-surface-bg] {
+  border-color: var(--sz-border);
+  border-left: 0;
+  background:
+    repeating-linear-gradient(135deg, var(--sz-hatch) 0 1px, transparent 1px 7px),
+    var(--sz-bg);
+}
+
+html article[data-v-content] {
+  min-height: calc(100vh - 3.5rem);
+  background: var(--sz-bg);
+  border-right: 1px solid var(--sz-rail);
+}
+
+@media (min-width: 1376px) {
+  html [data-v-gutter-right] {
+    height: calc(100vh - 3.5rem);
+    background: var(--sz-bg);
+    border-left: 1px solid var(--sz-border);
+    border-right: 1px solid var(--sz-rail);
+  }
+}
+
+/* Navigation: mono labels, compact rows, the app's selection. */
+
+html [data-v-sidebar-section] > :first-child {
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+}
+
+html [data-v-sidebar-item] {
+  font-family: var(--sz-mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+html [data-v-sidebar-item][data-active='true'] {
+  background: var(--sz-accent-subtle);
+  box-shadow: inset 0 0 0 1px var(--sz-accent);
+  color: var(--sz-accent-hover) !important;
+}
+
+html [data-v-outline-nav] {
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+}
+
+html [data-v-outline-indicator] {
+  background: var(--sz-accent);
+}
+
+/* Code: blue-tinted frames; inline code on the recessed surface. */
+
+html article[data-v-content] pre {
+  border: 1px solid var(--sz-tint-blue);
+  background: var(--sz-surface) !important;
+}
+
+html article[data-v-content] :not(pre) > code {
+  padding: 0 0.25rem;
+  border: 1px solid var(--sz-border);
+  background: var(--sz-surface-2);
+}
+
+/* Callouts: a tinted wash and border per kind, the brand coral for warnings. */
+
+html [data-v-callout] {
+  border: 1px solid var(--sz-tint-blue);
+  background: var(--sz-wash-blue);
+}
+
+html [data-v-callout][data-v-context='tip'],
+html [data-v-callout][data-v-context='success'] {
+  border-color: var(--sz-tint-green);
+  background: var(--sz-wash-green);
+}
+
+html [data-v-callout][data-v-context='warning'],
+html [data-v-callout][data-v-context='danger'] {
+  border-color: var(--sz-tint-coral);
+  background: var(--sz-wash-coral);
+}
+
+html [data-v-callout] p,
+html [data-v-callout] li {
+  color: var(--sz-text-2);
 }
