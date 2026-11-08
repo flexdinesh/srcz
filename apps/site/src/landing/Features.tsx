@@ -1,13 +1,9 @@
-'use client'
-
 import type { ReactNode } from 'react'
+import { type FeatureId, features } from './features'
 import { ArrowRight } from './icons'
 import { InstallTabs } from './InstallTabs'
 import { links } from './links'
-import { StepPane } from './panes'
-import { StepBar, StepList } from './StepBar'
-import { type StepId, stepAnchor, stepNumber, steps } from './steps'
-import { useActiveStep } from './use-active-step'
+import { FeaturePane } from './panes'
 
 function DocLink({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -31,7 +27,7 @@ function Actions() {
   )
 }
 
-function Narration({ id }: { id: StepId }) {
+function FeatureCopy({ id }: { id: FeatureId }) {
   switch (id) {
     case 'overview':
       return (
@@ -123,47 +119,21 @@ function Narration({ id }: { id: StepId }) {
   }
 }
 
-export function Walkthrough() {
-  const active = useActiveStep(steps.length)
-
+// Every row sets its copy beside its pane; the hero row's h1 needs no label.
+export function Features() {
   return (
     <>
-      <StepBar active={active} />
-      <div className="landing-walk">
-        <div className="landing-narration">
-          {steps.map((step, index) => (
-            <section
-              key={step.id}
-              id={stepAnchor(step.id)}
-              className="landing-step"
-              data-step-index={index}
-              data-tint={step.tint}
-            >
-              <div className="landing-step-copy">
-                <p className="landing-step-label">
-                  {stepNumber(index)} / {step.label}
-                </p>
-                <Narration id={step.id} />
-              </div>
-              <div className="landing-step-pane">
-                <StepPane id={step.id} />
-              </div>
-            </section>
-          ))}
-          <StepList active={active} />
-        </div>
-        <div className="landing-stage">
-          <div className="landing-stage-sticky">
-            <div className="landing-stage-inner">
-              {steps.map((step, index) => (
-                <div key={step.id} className="landing-stage-slot" data-active={index === active}>
-                  <StepPane id={step.id} />
-                </div>
-              ))}
-            </div>
+      {features.map((feature) => (
+        <section key={feature.id} id={feature.id} className="landing-feature" data-tint={feature.tint}>
+          <div className="landing-feature-copy">
+            {feature.id === 'overview' ? null : <p className="landing-feature-label">{feature.label}</p>}
+            <FeatureCopy id={feature.id} />
           </div>
-        </div>
-      </div>
+          <div className="landing-feature-visual">
+            <FeaturePane id={feature.id} />
+          </div>
+        </section>
+      ))}
     </>
   )
 }
