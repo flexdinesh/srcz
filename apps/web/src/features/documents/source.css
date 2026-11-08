@@ -64,8 +64,10 @@
   background: var(--color-accent-subtle);
 }
 
+/* Line ranges keep the accent tint (decision 0109), so their numbers keep the
+   accent ink that holds 4.5:1 on it. */
 .source-document-line.selected .source-document-line-number {
-  color: var(--color-selected-text);
+  color: var(--color-accent-hover);
   font-weight: 600;
 }
 

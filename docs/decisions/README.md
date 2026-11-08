@@ -38,7 +38,7 @@ rewriting history; update `Status` on the old record.
 | [0030](0030-branch-and-range-diffs.md) | Branch and commit-range diffs | UI superseded by 0035; head branches by 0040 |
 | [0031](0031-hide-git-entries.md) | Hide .git entries | Accepted |
 | [0032](0032-browser-tests-before-push.md) | Browser tests run before push, not in CI | Accepted; check commands superseded by 0038 |
-| [0033](0033-design-tokens-and-ui-primitives.md) | Design tokens and UI primitives | Accepted; radius tokens removed by 0102 |
+| [0033](0033-design-tokens-and-ui-primitives.md) | Design tokens and UI primitives | Accepted; radius tokens removed by 0102; selection fill revised by 0109 |
 | [0034](0034-diff-anchor-reveal-and-hunk-navigation.md) | Diff anchor reveal and hunk navigation | Accepted; extended to review tabs by 0035 |
 | [0035](0035-compare-list-and-review-tab.md) | Compare list and review tab | Accepted; list and Files pane superseded by 0040; kept mounted by 0048 |
 | [0036](0036-omarchy-themes.md) | Omarchy themes and the Color Theme quick pick | Accepted; built-in labels superseded by 0039 |
@@ -107,7 +107,9 @@ rewriting history; update `Status` on the old record.
 | [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted |
 | [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
-| [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted |
+| [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108 |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
 | [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105 |
 | [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |
+| [0108](0108-wider-mark-and-macos-squircle-icon.md) | Wider mark and macOS squircle icon | Accepted; revises 0104 |
+| [0109](0109-neutral-selection-fill.md) | Neutral selection fill | Accepted; revises 0033 |

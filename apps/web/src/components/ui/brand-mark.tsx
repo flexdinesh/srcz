@@ -3,13 +3,13 @@ import { cn } from "cn"
 const GRIDS = {
   small: {
     viewBox: "0 0 16 16",
-    z: "M3 1H13V4L8 12H13V15H3V12L8 4H3z",
-    rails: "M3 5H5V7.8L3 11zM13 11H11V8.2L13 5z",
+    z: "M2 1H14V4L8 12H14V15H2V12L8 4H2z",
+    rails: "M2 5H4V8.45L2 11.12zM14 11H12V7.55L14 4.88z",
   },
   display: {
     viewBox: "0 0 32 32",
-    z: "M6 2H26V8.5L15 23.5H26V30H6V23.5L17 8.5H6z",
-    rails: "M6 9.5H10V17.07L6 22.4zM26 22.5H22V14.93L26 9.6z",
+    z: "M4 2H28V8.5L14 23.5H28V30H4V23.5L18 8.5H4z",
+    rails: "M4 9.5H8V18.12L4 22.4zM28 22.5H24V13.88L28 9.6z",
   },
 }
 

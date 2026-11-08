@@ -3,8 +3,8 @@
 export function Mark() {
   return (
     <svg className="landing-mark" viewBox="0 0 32 32" aria-hidden="true">
-      <path className="landing-mark-z" d="M6 2H26V8.5L15 23.5H26V30H6V23.5L17 8.5H6z" />
-      <path className="landing-mark-rails" d="M6 9.5H10V17.07L6 22.4zM26 22.5H22V14.93L26 9.6z" />
+      <path className="landing-mark-z" d="M4 2H28V8.5L14 23.5H28V30H4V23.5L18 8.5H4z" />
+      <path className="landing-mark-rails" d="M4 9.5H8V18.12L4 22.4zM28 22.5H24V13.88L28 9.6z" />
     </svg>
   )
 }
