@@ -68,11 +68,12 @@
   --color-chrome-hover: var(--color-hover);
 
   /* State roles. Hover and pressed layers are translucent ink, so they read on
-     any surface. Selected rows and pressed toggles share the accent tint. */
+     any surface. Selected rows and pressed toggles share the active layer;
+     the accent marks them (decision 0109). */
   --color-hover: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   --color-active: color-mix(in srgb, var(--color-text-primary) 12%, transparent);
-  --color-selected: var(--color-accent-subtle);
-  --color-selected-text: var(--color-accent-hover);
+  --color-selected: color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+  --color-selected-text: var(--color-text-primary);
   /* The selection tint is subtle, so selected, active, and pressed states also
      draw this mark, which holds 3:1 (WCAG 1.4.11) on every surface. */
   --color-selected-border: var(--color-accent);
