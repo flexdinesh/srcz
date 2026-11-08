@@ -128,12 +128,14 @@ html [data-v-outline-indicator] {
 
 /* Code: blue-tinted frames; inline code on the recessed surface. */
 
-html article[data-v-content] pre {
+/* The landing (decision 0106) styles its own code and terminals. */
+
+html article[data-v-content] pre:not(.landing pre) {
   border: 1px solid var(--sz-tint-blue);
   background: var(--sz-surface) !important;
 }
 
-html article[data-v-content] :not(pre) > code {
+html article[data-v-content] :not(pre) > code:not(.landing code) {
   padding: 0 0.25rem;
   border: 1px solid var(--sz-border);
   background: var(--sz-surface-2);

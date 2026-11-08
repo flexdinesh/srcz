@@ -1,9 +1,9 @@
-// The stage's panes: compact HTML replicas of the app in its slate language.
+// The feature rows' panes: compact HTML replicas of the app in its slate language.
 // Every file, branch, and note in them is synthetic demo content.
 
 import type { ReactNode } from 'react'
 import { Box, BoxCheck, ChevronDown } from './icons'
-import type { StepId } from './steps'
+import type { FeatureId } from './features'
 
 type Tab = { name: string; meta?: string; active?: boolean }
 
@@ -435,7 +435,7 @@ function LeanPane() {
   )
 }
 
-export function StepPane({ id }: { id: StepId }) {
+export function FeaturePane({ id }: { id: FeatureId }) {
   switch (id) {
     case 'overview':
       return <ReviewPane />

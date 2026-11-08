@@ -108,4 +108,5 @@ rewriting history; update `Status` on the old record.
 | [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted |
-| [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted |
+| [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
+| [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105 |

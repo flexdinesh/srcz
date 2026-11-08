@@ -625,15 +625,15 @@
       },
       "site-display": {
         "displayName": "Site display",
-        "purpose": "The landing h1 only (step 01); system sans, balanced."
+        "purpose": "The landing h1 only (hero row); system sans, balanced."
       },
       "site-heading": {
         "displayName": "Site heading",
-        "purpose": "Each later landing step h2."
+        "purpose": "Each landing feature row h2."
       },
       "site-lede": {
         "displayName": "Site lede",
-        "purpose": "Step narration, text-2, 34rem max."
+        "purpose": "Feature row copy, text-2, 34rem max."
       },
       "site-body": {
         "displayName": "Site body",
@@ -641,7 +641,7 @@
       },
       "site-chrome": {
         "displayName": "Site chrome",
-        "purpose": "Mono step bar, step label, step list, chips, tabs, bands, terminals, pane code."
+        "purpose": "Mono feature label, chips, tabs, bands, terminals, pane code."
       },
       "site-status": {
         "displayName": "Site status",
@@ -649,7 +649,7 @@
       },
       "site-label": {
         "displayName": "Site label",
-        "purpose": "Uppercase mono chrome names (step bar, step list, pane heads, note titles); never a headline eyebrow."
+        "purpose": "Uppercase mono chrome names (pane heads, note titles); never a headline eyebrow."
       },
       "site-docs-section": {
         "displayName": "Docs section label",
@@ -816,12 +816,11 @@
       "css": ".ds-site-button{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-border,#c9ccd1);border-radius:0;background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:border-color 120ms}.ds-site-button:hover{border-color:var(--l-muted,#5b616c)}.ds-site-button:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
     },
     {
-      "name": "Site step bar",
-      "kind": "nav",
-      "refersTo": "site-chip",
-      "description": "Sticky 36px walkthrough bar: label, count, tinted pips, Prev and Next chips.",
-      "html": "<nav class=\"ds-site-stepbar\" aria-label=\"Walkthrough steps\"><span class=\"ds-site-label\">Walkthrough</span><span class=\"ds-site-dim\">2 / 6</span><span class=\"ds-site-pips\"><a class=\"ds-site-pip\" data-state=\"done\" style=\"--tint:#b7c6ea\" href=\"#\" aria-label=\"Step 1\"></a><a class=\"ds-site-pip\" data-state=\"current\" href=\"#\" aria-current=\"step\" aria-label=\"Step 2\"></a><a class=\"ds-site-pip\" href=\"#\" aria-label=\"Step 3\"></a></span><span class=\"ds-site-dim\">Browse any file</span><span class=\"ds-site-actions\"><a class=\"ds-site-chip\" href=\"#\">Prev</a><a class=\"ds-site-chip ds-site-chip-accent\" href=\"#\">Next</a></span></nav>",
-      "css": ".ds-site-stepbar{display:flex;align-items:center;gap:.75rem;height:2.25rem;padding:0 1rem;background:var(--l-chrome,#e4e5e8);border-bottom:1px solid var(--l-border,#c9ccd1);font-family:ui-monospace,\"SF Mono\",\"JetBrains Mono\",Menlo,Consolas,monospace;font-size:.75rem;color:var(--l-text,#24272c);white-space:nowrap}.ds-site-label{font-size:.65625rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--l-muted,#5b616c)}.ds-site-dim{color:var(--l-muted,#5b616c)}.ds-site-pips{display:flex;gap:.1875rem}.ds-site-pip{display:block;width:2.125rem;padding:.5rem 0}.ds-site-pip::before{content:\"\";display:block;height:.25rem;background:var(--l-border,#c9ccd1)}.ds-site-pip[data-state=done]::before{background:var(--tint)}.ds-site-pip[data-state=current]::before{background:var(--l-accent,#325dc8)}.ds-site-pip:hover::before{background:var(--l-accent-hover,#2348ac)}.ds-site-actions{display:flex;gap:.375rem;margin-left:auto}.ds-site-chip{display:inline-flex;align-items:center;height:1.5rem;padding:0 .5rem;border:1px solid var(--l-border,#c9ccd1);border-radius:0;background:var(--l-surface,#ffffff);color:var(--l-text-2,#4b515b);text-decoration:none}.ds-site-chip:hover{color:var(--l-text,#24272c);border-color:var(--l-muted,#5b616c)}.ds-site-chip-accent{border-color:var(--l-accent,#325dc8);color:var(--l-accent,#325dc8)}.ds-site-chip-accent:hover{color:var(--l-accent-hover,#2348ac);border-color:var(--l-accent-hover,#2348ac)}.ds-site-pip:focus-visible,.ds-site-chip:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
+      "name": "Site feature row",
+      "kind": "custom",
+      "description": "Landing row: lowercase mono feature label, heading, lede in a 29.375rem column on a rail, beside the pane on a dot grid; 2px tint top edge.",
+      "html": "<section class=\"ds-site-row\" style=\"--tint:#a9d3b7\"><div class=\"ds-site-row-copy\"><p class=\"ds-site-row-label\">diffs</p><h2>Review like a pull request.</h2><p class=\"ds-site-row-lede\">Uncommitted work, commits, branches, and ranges in one stacked diff.</p></div><div class=\"ds-site-row-visual\"><div class=\"ds-site-row-pane\">pane</div></div></section>",
+      "css": ".ds-site-row{display:grid;grid-template-columns:minmax(0,18rem) minmax(0,1fr);border-top:1px solid var(--l-border,#c9ccd1);box-shadow:inset 0 2px 0 var(--tint);background:var(--l-bg,#fafafa);color:var(--l-text,#24272c);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem}.ds-site-row-copy{display:flex;flex-direction:column;justify-content:center;gap:.75rem;padding:1.5rem;border-right:1px solid var(--l-rail,#b7c6ea)}.ds-site-row-copy h2{margin:0;font-size:1.625rem;font-weight:650;letter-spacing:-.03em;line-height:1.1}.ds-site-row-label{margin:0;font-family:ui-monospace,\"SF Mono\",\"JetBrains Mono\",Menlo,Consolas,monospace;font-size:.75rem;color:var(--l-accent,#325dc8)}.ds-site-row-lede{margin:0;font-size:.9375rem;line-height:1.55;color:var(--l-text-2,#4b515b)}.ds-site-row-visual{display:flex;align-items:center;padding:1.75rem;background-image:radial-gradient(var(--l-dot,#cdd2da) 1px,transparent 1.2px);background-size:.75rem .75rem}.ds-site-row-pane{flex:1;height:6rem;border:1px solid var(--l-border,#c9ccd1);background:var(--l-surface,#ffffff)}"
     },
     {
       "name": "Site install command",
@@ -855,7 +854,7 @@
       "Left-aligned proportional prose and monospace code.",
       "Shared semantic roles across named editor themes.",
       "Site: a framed 75rem column on 1px blue-tinted rails over a diagonal hatch.",
-      "Site: one mild tint per feature, repeated wherever the step appears.",
+      "Site: one mild tint per feature, on its row's top edge and its pane's framing.",
       "Site: HTML-built app panes at app density, captioned \"synthetic demo\"; no screenshots, no SVG animation.",
       "Site: square corners, 1px borders, mono chrome labels, system type."
     ],
@@ -866,8 +865,8 @@
         "section": "colors"
       },
       {
-        "name": "The Tint Follows the Step Rule",
-        "body": "A feature's tint marks it everywhere at once: its pip in the step bar, its row edge in the step list, its section's top edge, and its pane's framing (coral remote terminal, green lean ledger). Tints are borders and edges, never fills or text.",
+        "name": "The Tint Follows the Feature Rule",
+        "body": "A feature's tint marks it everywhere at once: its row's top edge, its copy's terminal, and its pane's framing (coral remote terminal, green lean ledger). Tints are borders and edges, never fills or text.",
         "section": "colors"
       },
       {
@@ -890,11 +889,11 @@
       "Do review shadcn-generated code against this system and strict TypeScript: no `any`, non-null assertions, or type assertions.",
       "Do scope landing styles under `.landing` with `--l-*` tokens, and docs styles in `_root.css` with `--sz-*` tokens over Vocs' `data-v-*` hooks.",
       "Do write every site color as `light-dark(light, dark)` so both Vocs themes follow its toggle.",
-      "Do give each step one tint and repeat it in its pip, step-list edge, section edge, and pane framing.",
+      "Do give each feature one tint and repeat it on its row's top edge, its terminal, and its pane framing.",
       "Do build demo panes in HTML and CSS from the slate tokens at app density, captioned \"synthetic demo\"; state facts, not benchmarks.",
       "Do frame docs code and callouts with a full 1px tinted border.",
       "Do keep landing type on the system sans and mono stacks.",
-      "Do grow touch controls to 44px under 900px and keep the reduced-motion pane swap."
+      "Do grow touch controls to 44px under 900px."
     ],
     "donts": [
       "Don't add a top app header or logo; keep workspace identity above the explorer and app identity in the footer.",
@@ -908,8 +907,9 @@
       "Don't use coral beyond the logo mark, remote, and docs warnings.",
       "Don't fill surfaces or set text in a tint; tints are borders and edges.",
       "Don't replace panes with screenshots or SVG animation, or put RAM figures in them.",
-      "Don't hijack scroll or bind global keys on the landing; steps are anchors.",
-      "Don't set the uppercase label style above a headline as an eyebrow; it names chrome, and the step label states position (\"01 / overview\")."
+      "Don't hijack scroll, bind global keys, or present the landing as a walkthrough or a numbered sequence; rows are plain sections (decision 0106).",
+      "Don't set the uppercase label style above a headline as an eyebrow; it names chrome. A feature row's label is the lowercase mono feature name.",
+      "Don't let docs `pre` or inline `code` rules reach the landing; `_root.css` excludes `.landing`."
     ]
   }
 }

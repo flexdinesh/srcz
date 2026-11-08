@@ -1,5 +1,5 @@
 /*
- * Landing styles (decision 0105). Everything is scoped under .landing so Vocs'
+ * Landing styles (decisions 0105, 0106). Everything is scoped under .landing so Vocs'
  * docs styles stay untouched. Colors use light-dark(): Vocs sets color-scheme
  * on <html> together with data-vocs-theme, so both themes follow its toggle.
  * The page is the app's sharp slate world (decision 0102) at app density:
@@ -19,10 +19,6 @@ article:has(> .landing) {
   html:has(.landing) {
     scroll-behavior: smooth;
   }
-}
-
-html:has(.landing) {
-  scroll-padding-top: var(--l-bar, 2.25rem);
 }
 
 .landing {
@@ -62,7 +58,6 @@ html:has(.landing) {
   --l-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --l-max: 75rem;
   --l-nav: 2.75rem;
-  --l-bar: 2.25rem;
 
   min-height: 100vh;
   background:
@@ -259,139 +254,58 @@ html:has(.landing) {
   display: none;
 }
 
-/* Step bar */
+/*
+ * Feature rows: copy on the left beside the feature's pane on a dot-grid
+ * canvas. Rows after the hero take a 2px top edge in their feature's tint.
+ */
 
-.landing-stepbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  height: var(--l-bar);
-  padding: 0 1rem;
-  background: var(--l-chrome);
-  border-bottom: 1px solid var(--l-border);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.landing-pips {
-  display: flex;
-  gap: 0.1875rem;
-}
-
-.landing-pip {
-  display: block;
-  width: 2.125rem;
-  padding: 0.5rem 0;
-}
-
-.landing-pip::before {
-  content: '';
-  display: block;
-  height: 0.25rem;
-  background: var(--l-border);
-}
-
-.landing-pip[data-tint='blue'] { --tint: var(--l-tint-blue); }
-.landing-pip[data-tint='green'] { --tint: var(--l-tint-green); }
-.landing-pip[data-tint='coral'] { --tint: var(--l-tint-coral); }
-
-.landing-pip[data-state='done']::before {
-  background: var(--tint);
-}
-
-.landing-pip[data-state='current']::before {
-  background: var(--l-accent);
-}
-
-.landing-pip:hover::before {
-  background: var(--l-accent-hover);
-}
-
-.landing-stepbar-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--l-muted);
-}
-
-.landing-stepbar-actions {
-  display: flex;
-  gap: 0.375rem;
-  margin-left: auto;
-}
-
-.landing-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  height: 1.5rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--l-border);
-  background: var(--l-surface);
-  color: var(--l-text-2);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-}
-
-a.landing-chip:hover {
-  color: var(--l-text);
-  border-color: var(--l-muted);
-}
-
-.landing-chip-accent {
-  border-color: var(--l-accent);
-  color: var(--l-accent);
-}
-
-a.landing-chip-accent:hover {
-  color: var(--l-accent-hover);
-  border-color: var(--l-accent-hover);
-}
-
-.landing-chip[aria-disabled='true'] {
-  opacity: 0.5;
-}
-
-/* Walkthrough: narration column beside a sticky stage. */
-
-.landing-walk {
+.landing-feature {
   display: grid;
   grid-template-columns: 29.375rem minmax(0, 1fr);
 }
 
-.landing-narration {
-  position: relative;
-  min-width: 0;
-  border-right: 1px solid var(--l-rail);
-}
-
-.landing-step {
-  min-height: calc(100vh - var(--l-bar));
-  padding: 2.5rem 2rem 13.5rem;
-}
-
-.landing-step + .landing-step {
+.landing-feature + .landing-feature {
   border-top: 1px solid var(--l-border);
   box-shadow: inset 0 2px 0 var(--tint);
 }
 
-.landing-step[data-tint='blue'] { --tint: var(--l-tint-blue); }
-.landing-step[data-tint='green'] { --tint: var(--l-tint-green); }
-.landing-step[data-tint='coral'] { --tint: var(--l-tint-coral); }
+.landing-feature[data-tint='blue'] { --tint: var(--l-tint-blue); }
+.landing-feature[data-tint='green'] { --tint: var(--l-tint-green); }
+.landing-feature[data-tint='coral'] { --tint: var(--l-tint-coral); }
 
-.landing-step-copy {
+.landing-feature-copy {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1.125rem;
+  min-width: 0;
+  padding: 3rem 2rem;
+  border-right: 1px solid var(--l-rail);
 }
 
-.landing-step-label {
+.landing-feature:first-child .landing-feature-copy {
+  padding-block: 4rem;
+}
+
+.landing-feature-label {
   font-family: var(--l-mono);
   font-size: 0.75rem;
   color: var(--l-accent);
+}
+
+.landing-feature-visual {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 1.75rem;
+  background-image: radial-gradient(var(--l-dot) 1px, transparent 1.2px);
+  background-size: 0.75rem 0.75rem;
+}
+
+.landing-feature-visual > .pane {
+  flex: 1;
+  min-width: 0;
+  max-height: 34rem;
 }
 
 .landing-lede {
@@ -448,99 +362,6 @@ a.landing-chip-accent:hover {
 
 .landing .landing-link:hover {
   color: var(--l-accent-hover);
-}
-
-.landing-step-pane {
-  display: none;
-}
-
-/* The step list rides the bottom of the narration column. */
-
-.landing-steplist {
-  position: sticky;
-  bottom: 0;
-  margin-top: -12rem;
-  padding: 0.75rem 2rem 1.5rem;
-  background: var(--l-bg);
-}
-
-.landing-steplist .landing-label {
-  margin-bottom: 0.375rem;
-}
-
-.landing-steplist ol {
-  border-top: 1px solid var(--l-border);
-}
-
-.landing-steplist a {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  height: 1.625rem;
-  padding-left: 0.625rem;
-  border-bottom: 1px solid var(--l-border);
-  box-shadow: inset 2px 0 0 var(--tint);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  color: var(--l-text-2);
-}
-
-.landing-steplist a[data-tint='blue'] { --tint: var(--l-tint-blue); }
-.landing-steplist a[data-tint='green'] { --tint: var(--l-tint-green); }
-.landing-steplist a[data-tint='coral'] { --tint: var(--l-tint-coral); }
-
-.landing-steplist a:hover {
-  color: var(--l-text);
-}
-
-.landing-steplist a[aria-current='step'] {
-  background: var(--l-surface);
-  color: var(--l-text);
-}
-
-/*
- * Stage: a dot-grid canvas holding the active step's pane. It fits below the
- * nav at the top of the page and stays pinned under the step bar after.
- */
-
-.landing-stage {
-  background-color: var(--l-bg);
-  background-image: radial-gradient(var(--l-dot) 1px, transparent 1.2px);
-  background-size: 0.75rem 0.75rem;
-}
-
-.landing-stage-sticky {
-  position: sticky;
-  top: var(--l-bar);
-  height: calc(100vh - var(--l-bar) - var(--l-nav));
-  padding: 1.5rem 1.75rem;
-}
-
-.landing-stage-inner {
-  position: relative;
-  height: 100%;
-}
-
-.landing-stage-slot {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    visibility 0s linear 160ms;
-}
-
-.landing-stage-slot[data-active='true'] {
-  opacity: 1;
-  visibility: visible;
-  transition-delay: 0s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-stage-slot {
-    transition: none;
-  }
 }
 
 /* Install tabs and actions */
@@ -1153,120 +974,72 @@ a.landing-chip-accent:hover {
   color: var(--l-muted);
 }
 
-/* Short desktop viewports: the step list returns to the end of the column. */
-
-@media (min-width: 56.25rem) and (max-height: 47.5rem) {
-  .landing-step {
-    padding-bottom: 2.5rem;
-  }
-
-  .landing-steplist {
-    position: static;
-    margin-top: 0;
-  }
-}
-
-/* Narrow screens: no stage; each step stacks its narration over its own pane. */
+/* Narrow screens: each row stacks its copy over its pane. */
 
 @media (max-width: 56.1875rem) {
-  .landing {
-    --l-bar: 3rem;
-  }
-
   .landing-frame {
     border-inline: 0;
   }
 
-  .landing-walk {
-    display: block;
-  }
-
-  .landing-narration {
-    border-right: 0;
-  }
-
-  .landing-stage,
-  .landing-steplist,
-  .landing-stepbar-kind,
-  .landing-stepbar-name,
-  .landing-stepbar-title,
-  .landing-stepbar-word,
   .landing-nav-releases {
     display: none;
   }
 
-  .landing-stepbar {
-    padding: 0 0.75rem;
+  .landing-feature {
+    display: block;
   }
 
-  .landing-pip {
-    width: 1.25rem;
-    padding: 1rem 0;
-  }
-
-  .landing-chip {
-    width: 2.5rem;
-    height: 2.5rem;
-    justify-content: center;
-    padding: 0;
-  }
-
-  .landing-step {
-    min-height: 0;
-    padding: 0;
-  }
-
-  .landing-step-copy {
+  .landing-feature-copy {
     padding: 1.5rem 1rem;
+    border-right: 0;
   }
 
-  .landing-step-pane {
+  .landing-feature:first-child .landing-feature-copy {
+    padding-block: 2rem 1.5rem;
+  }
+
+  .landing-feature-visual {
     display: block;
     padding: 0.75rem 1rem 1.5rem;
     border-top: 1px solid var(--l-border);
-    background-image: radial-gradient(var(--l-dot) 1px, transparent 1.2px);
-    background-size: 0.75rem 0.75rem;
   }
 
-  .landing-step-pane .pane-app {
+  .landing-feature-visual .pane-app {
     max-height: 26rem;
   }
 
-  .landing-step-pane .pane-tabs {
+  .landing-feature-visual .pane-tabs {
     overflow-x: auto;
     scrollbar-width: none;
   }
 
-  .landing-step-pane .pane-viewed-label,
-  .landing-step-pane .pane-status-end {
+  .landing-feature-visual .pane-viewed-label,
+  .landing-feature-visual .pane-status-end,
+  .landing-feature-visual .pane-side {
     display: none;
   }
 
-  .landing-step-pane .pane-split {
+  .landing-feature-visual .pane-split {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .landing-step-pane .pane-side {
-    display: none;
-  }
-
-  .landing-step-pane .pane-facts {
+  .landing-feature-visual .pane-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .landing-step-pane .pane-fact:nth-child(-n + 3) {
+  .landing-feature-visual .pane-fact:nth-child(-n + 3) {
     box-shadow: none;
   }
 
-  .landing-step-pane .pane-fact:nth-child(3n) {
+  .landing-feature-visual .pane-fact:nth-child(3n) {
     border-right: 1px solid var(--l-border);
   }
 
-  .landing-step-pane .pane-fact:nth-child(2n) {
+  .landing-feature-visual .pane-fact:nth-child(2n) {
     border-right: 0;
   }
 
-  .landing-step-pane .pane-fact:nth-child(-n + 2) {
+  .landing-feature-visual .pane-fact:nth-child(-n + 2) {
     box-shadow: inset 0 2px 0 var(--l-tint-green);
   }
 
@@ -1285,3 +1058,4 @@ a.landing-chip-accent:hover {
     height: 2.75rem;
   }
 }
+

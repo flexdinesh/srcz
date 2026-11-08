@@ -1,7 +1,7 @@
 import './landing.css'
+import { Features } from './Features'
 import { Footer } from './Footer'
 import { Nav } from './Nav'
-import { Walkthrough } from './Walkthrough'
 
 export function Landing() {
   return (
@@ -12,7 +12,7 @@ export function Landing() {
       <div className="landing-frame">
         <Nav />
         <div id="landing-main">
-          <Walkthrough />
+          <Features />
         </div>
         <Footer />
       </div>
