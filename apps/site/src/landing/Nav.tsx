@@ -12,9 +12,6 @@ export function Nav() {
       <nav aria-label="Primary" className="landing-nav-links">
         <a href={links.docs}>Docs</a>
         <a href={links.github}>GitHub</a>
-        <a className="landing-nav-releases" href={links.releases}>
-          Releases
-        </a>
         <ThemeToggle />
       </nav>
     </header>

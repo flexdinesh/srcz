@@ -29,5 +29,5 @@ export default defineConfig({
       ],
     },
   ],
-  socials: [{ icon: 'github', link: 'https://github.com/flexdinesh/srcz' }],
+  topNav: [{ text: 'GitHub', link: 'https://github.com/flexdinesh/srcz' }],
 })

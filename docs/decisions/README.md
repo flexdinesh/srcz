@@ -110,3 +110,4 @@ rewriting history; update `Status` on the old record.
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
 | [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105 |
+| [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |

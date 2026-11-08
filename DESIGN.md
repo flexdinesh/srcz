@@ -34,6 +34,9 @@ colors:
   syntax-operator: "#0550ae"
   site-muted: "#5b616c"
   site-docs-muted: "#5b616c"
+  site-docs-bg: "#ffffff"
+  site-docs-side: "#f6f7f9"
+  site-docs-chrome: "#f2f3f5"
   site-rail: "#b7c6ea"
   site-hatch: "#dfe2e8"
   site-dot: "#cdd2da"
@@ -781,7 +784,7 @@ One prose system across documents. Tables: 14px, neutral headers, horizontal ove
 
 ## Site: landing and docs chrome
 
-The marketing landing (`/`, `apps/site/src/landing/`) and the Vocs docs chrome (`apps/site/src/pages/_root.css`) carry the same sharp slate world onto the web (decisions 0102, 0105, 0106). The landing is a column of feature rows: the hero, then browse, diffs, walkthroughs, remote, and lean, each with its copy on the left beside its own app pane on the right. Nothing here changes the app sections above; the site has no runtime theme set, only Vocs' light and dark.
+The marketing landing (`/`, `apps/site/src/landing/`) and the Vocs docs chrome (`apps/site/src/pages/_root.css`) carry the same sharp slate world onto the web (decisions 0102, 0105, 0106, 0107). The landing is a column of feature rows: the hero, then browse, diffs, walkthroughs, remote, and lean, each with its copy on the left beside its own app pane on the right. Nothing here changes the app sections above; the site has no runtime theme set, only Vocs' light and dark.
 
 **Key Characteristics:**
 
@@ -798,7 +801,10 @@ Shared neutrals restate the app's Source Zero values:
 
 | Role | `--l-*` / `--sz-*` | Light | Dark |
 | --- | --- | --- | --- |
-| Page | `bg` | `#fafafa` | `#272b32` |
+| Page (landing) | `--l-bg` | `#fafafa` | `#272b32` |
+| Page (docs) | `--sz-bg` | `#ffffff` | `#272b32` |
+| Docs sidebar, code block band | `--sz-side` | `#f6f7f9` | `#2b2f37` |
+| Docs footer band | `--sz-chrome` | `#f2f3f5` | `#2e323b` |
 | Raised surface (panes, chips, code) | `surface` | `#ffffff` | `#2e323b` |
 | Recessed (sidebar, side panels, install frame) | `surface-2` | `#eceef0` | `#343944` |
 | Chrome bands (tabs, footer) | `--l-chrome` | `#e4e5e8` | `#2e323b` |
@@ -821,7 +827,7 @@ Frame and feature tones, site-only:
 | Wash blue / green / coral (callout fills; `--l-note` = wash blue) | `--sz-wash-*` | `#eef2fb` / `#eef7f1` / `#fcf1ee` | `#2c3445` / `#2c3a31` / `#3d302d` |
 | Logo rails / Z | `--l-mark`, `--l-mark-ink` | `#f2502e` / `#2b2d33` | `#ff6b4a` / `#ffffff` |
 
-Pane replicas carry their own diff and syntax tones (`--l-add*`, `--l-del*`, `--l-keyword`, `--l-string`, `--l-function`, `--l-number`) so the demo reads as the app without importing its theme. The docs also remap Vocs' `gray1`–`gray14` ramp to slate (`#1d2026` to `#fafafa`) and set Vocs' `accentColor` to the accent pair.
+Pane replicas carry their own diff and syntax tones (`--l-add*`, `--l-del*`, `--l-keyword`, `--l-string`, `--l-function`, `--l-number`) so the demo reads as the app without importing its theme. The docs also remap Vocs' `gray1`–`gray14` ramp to slate (`#1d2026` to `#ffffff`) and set Vocs' `accentColor` to the accent pair.
 
 **The Tint Follows the Feature Rule.** A feature's tint marks it everywhere at once: its row's top edge, its copy's terminal, and its pane's framing (coral remote terminal, green lean ledger). Tints are borders and edges, never fills or text.
 
@@ -838,17 +844,17 @@ Pane replicas carry their own diff and syntax tones (`--l-add*`, `--l-del*`, `--
 - **Chrome** (mono 0.75rem): the feature label (accent, lowercase name: "browse"), chips, tabs, bands, terminals, pane code (22px rows).
 - **Status** (mono 0.6875rem): kbd, pane status bars, the install Copy action (uppercase, 0.08em).
 - **Label** (mono 600, 0.65625rem, 0.1em, uppercase, muted): chrome names only: pane side heads and note titles. Pane captions use the same size at 0.08em, weight 400.
-- **Docs:** sidebar section labels mono 600, 0.6875rem, 0.1em, uppercase, `--sz-muted`; sidebar items mono 0.8125rem 400; the outline mono 0.75rem.
+- **Docs:** sidebar section labels mono 600, 0.6875rem, 0.1em, uppercase, `--sz-muted`; sidebar items mono 0.8125rem 400; the outline label as a section label, its rows mono 0.75rem on 22px; code blocks mono 0.8125rem at 1.6, their band labels and Copy as section labels.
 
 ### Layout
 
 - **Frame:** `.landing-frame` is 75rem max, centered, on `bg` between 1px `rail` borders; outside it the page is the 135° hatch (1px line every 7px). Docs: hatch on the surface past the content column, rails on the left gutter's and the content's edges, the right gutter framed at 1376px and up.
-- **Bands:** nav 44px (`--l-nav`) with a 1px bottom border; it scrolls with the page.
+- **Bands:** nav 44px (`--l-nav`) with a 1px bottom border; it scrolls with the page. The docs header is the same 44px (`--vocs-spacing-topNav`) on one hairline across the logo cell and the content, fixed as Vocs places it; the docs footer band ends each page's content column.
 - **Feature rows:** each row is a 29.375rem copy column (1px `rail` on its right) beside a fluid visual cell. Copy is padded 48px 32px (64px block in the hero) and centred vertically; rows size to their content, with no sticky parts and no scroll observer. Rows are anchors by feature id (`#browse`).
 - **Visual cell:** a 1px dot every 12px on `bg`, 28px inset; its pane is centred vertically and sizes to its content up to 34rem, so the window sits on the grid.
 - **Panes:** app density at the 13px base: 30px tab strip and bands, 22px rows and status bar, 12px mono code, 200px side panel (160px in the remote window).
 - **Controls:** primary and outline buttons 32px; install tabs and the theme toggle 28px.
-- **Under 900px (`max-width: 56.1875rem`):** rails and the nav's Releases link hide; each row stacks its copy (24px 16px) over its pane on the dot grid (26rem max, side panels and secondary status hidden). Buttons, install tabs, and the theme toggle grow to 44px.
+- **Under 900px (`max-width: 56.1875rem`):** rails hide; each row stacks its copy (24px 16px) over its pane on the dot grid (26rem max, side panels and secondary status hidden). Buttons, install tabs, and the theme toggle grow to 44px.
 
 ### Elevation & Depth
 
@@ -858,7 +864,7 @@ Flat. The landing and docs chrome use no drop shadows. Inset box-shadows draw ed
 
 Every corner is square. `_root.css` zeroes Vocs' radii with one `border-radius: 0 !important` over every element and pseudo-element. Borders are 1px; edges that mark a feature or state are 2px. Focus draws a 2px accent outline offset 1px.
 
-**The Four-Sided Border Rule.** In the docs chrome a tinted element is framed on all four sides by a 1px border: code blocks take `tint-blue` on `surface`; callouts take their kind's tint with its wash (note and info blue, tip and success green, warning and danger coral). No side stripes on callouts, code, or content.
+**The Four-Sided Border Rule.** In the docs chrome a tinted element is framed on all four sides by a 1px border: code blocks take `border` on `bg`; callouts take their kind's tint with its wash (note and info blue, tip and success green, warning and danger coral). No side stripes on callouts, code, or content.
 
 ### Components
 
@@ -868,7 +874,11 @@ Every corner is square. `_root.css` zeroes Vocs' radii with one `border-radius: 
 - **Terminal:** `surface`, 1px border in the feature's tint, mono 12px, accent `$`.
 - **Pane:** a caption row (label left, "synthetic demo" right), then a `surface` window with a 1px border: chrome tab strip (active tab joins the surface), `surface-2` bands, code rows, side panel, and chrome status bar, mirroring the app.
 - **Walkthrough note:** inline after its lines, as in the app: 1px accent border on `--l-note`, a mono label title with a 16px accent step pin, 12.5px `text-2` prose.
-- **Docs sidebar:** on `surface-2` with unmasked curtains; the active item takes `accent-subtle`, a 1px inset accent ring, and `accent-hover` text, as the app's selected rows do. The outline indicator is `accent`. Inline code is padded 4px on `surface-2` with a 1px border.
+- **Docs header:** the wordmark (its mark 20px) over the sidebar column, a 28px square mono search box aligned with the content, then GitHub in mono `text-2` and Vocs' light, dark, and system radios as three 28px square cells on one hairline, the checked cell on `accent-subtle` with `accent-hover` icon. No sidebar footer.
+- **Docs sidebar:** on `--sz-side` with unmasked curtains; the active item takes `accent-subtle`, a 1px inset accent ring, and `accent-hover` text, as the app's selected rows do. Inline code is padded 4px on `surface-2` with a 1px border.
+- **Docs outline:** text only: a muted mono label, 22px mono rows, 16px per level, no track or indicator. Only the current section turns `accent`; its active ancestors keep the row color.
+- **Docs code block:** a pane with a 1px `border` on `bg`: a 28px `--sz-side` band with the label ("shell" or "code") and an uppercase Copy cell behind a 1px rule (Copied after a click), then the code. Band and Copy sit on the non-scrolling container, so they stay put while long lines scroll.
+- **Docs footer:** the landing's footer band on `--sz-chrome` under a hairline: wordmark and MIT License, then GitHub and License.
 
 ### Do's and Don'ts
 
