@@ -981,10 +981,6 @@ article:has(> .landing) {
     border-inline: 0;
   }
 
-  .landing-nav-releases {
-    display: none;
-  }
-
   .landing-feature {
     display: block;
   }

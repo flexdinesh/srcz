@@ -8,7 +8,6 @@ export const links = {
   desktop: '/docs/desktop',
   github: 'https://github.com/flexdinesh/srcz',
   agentSkill: 'https://github.com/flexdinesh/srcz/blob/main/skills/srcz-walkthrough/SKILL.md',
-  releases: 'https://github.com/flexdinesh/srcz/releases',
   license: 'https://github.com/flexdinesh/srcz/blob/main/LICENSE',
 }
 

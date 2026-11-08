@@ -1,9 +1,11 @@
 /*
- * The docs site takes the app's sharp slate language (decision 0102) and the
- * landing's frame (decision 0105): hatched gutters past the content, blue-tinted
- * rails, mono navigation labels, and tinted code and callout borders. Vocs
- * loads this file on every page, after its own styles. Its ramp runs dark to
- * light: gray2 and gray14 are the page, gray6 and gray12 borders and text.
+ * The docs site takes the app's sharp slate language (decision 0102), the
+ * landing's frame (decision 0105), and the landing's nav and footer (decision
+ * 0107): a 44px header on one hairline, hatched gutters past the content,
+ * blue-tinted rails, mono navigation labels, code blocks as small app panes, and
+ * a text-only outline. Vocs loads this file on every page, after its own
+ * styles. Its ramp runs dark to light: gray2 and gray14 are the page, gray6 and
+ * gray12 borders and text.
  */
 
 :root {
@@ -20,12 +22,16 @@
   --vocs-color-gray11: #c9ccd1;
   --vocs-color-gray12: #dce0e5;
   --vocs-color-gray13: #eceef0;
-  --vocs-color-gray14: #fafafa;
+  --vocs-color-gray14: #ffffff;
+  --vocs-spacing-topNav: 2.75rem;
 
-  --sz-bg: light-dark(#fafafa, #272b32);
+  --sz-bg: light-dark(#ffffff, #272b32);
+  --sz-side: light-dark(#f6f7f9, #2b2f37);
+  --sz-chrome: light-dark(#f2f3f5, #2e323b);
   --sz-surface: light-dark(#ffffff, #2e323b);
   --sz-surface-2: light-dark(#eceef0, #343944);
   --sz-border: light-dark(#c9ccd1, #3e444f);
+  --sz-text: light-dark(#24272c, #dce0e5);
   --sz-text-2: light-dark(#4b515b, #b0b6c2);
   --sz-muted: light-dark(#5b616c, #a2a8b4);
   --sz-accent: light-dark(#325dc8, #74ade8);
@@ -40,6 +46,7 @@
   --sz-wash-green: light-dark(#eef7f1, #2c3a31);
   --sz-wash-coral: light-dark(#fcf1ee, #3d302d);
   --sz-mark: light-dark(#f2502e, #ff6b4a);
+  --sz-mark-ink: light-dark(#2b2d33, #ffffff);
   --sz-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 }
 
@@ -48,6 +55,14 @@
 ::before,
 ::after {
   border-radius: 0 !important;
+}
+
+::selection {
+  background: var(--sz-accent-subtle);
+}
+
+html body {
+  background: var(--sz-bg);
 }
 
 /* Frame: the surface is hatched; the content column sits on it between rails. */
@@ -61,13 +76,9 @@ html [data-v-gutter-left] {
   border-right: 1px solid var(--sz-rail);
 }
 
-html [data-v-sidebar-container] {
-  background: var(--sz-surface-2);
-}
-
-html [data-v-sidebar-curtain],
-html [data-v-sidebar-footer-curtain] {
-  background: var(--sz-surface-2);
+html [data-v-sidebar-container],
+html [data-v-sidebar-curtain] {
+  background: var(--sz-side);
   mask: none;
 }
 
@@ -80,18 +91,132 @@ html [data-v-surface-bg] {
 }
 
 html article[data-v-content] {
-  min-height: calc(100vh - 3.5rem);
+  min-height: calc(100vh - var(--vocs-spacing-topNav));
   background: var(--sz-bg);
   border-right: 1px solid var(--sz-rail);
 }
 
 @media (min-width: 1376px) {
   html [data-v-gutter-right] {
-    height: calc(100vh - 3.5rem);
+    height: calc(100vh - var(--vocs-spacing-topNav));
     background: var(--sz-bg);
     border-left: 1px solid var(--sz-border);
     border-right: 1px solid var(--sz-rail);
   }
+}
+
+/* Header: the landing's nav, one bar on one hairline across logo and content. */
+
+html [data-v-gutter-logo],
+html [data-v-gutter-top] {
+  height: var(--vocs-spacing-topNav);
+  background: var(--sz-bg);
+  border-bottom: 1px solid var(--sz-border);
+}
+
+html [data-v-gutter-logo] {
+  border-right: 1px solid var(--sz-rail);
+}
+
+html [data-v-gutter-logo] > [data-v-logo] {
+  padding-block: 0;
+}
+
+/* The mark is 20px tall, as on the landing; the outlined wordmark scales with it. */
+html [data-v-logo-image] {
+  height: 1.4375rem;
+  max-height: 1.4375rem;
+}
+
+html [data-v-gutter-top] {
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  html [data-v-gutter-top] {
+    padding-inline: 3rem 1rem;
+  }
+}
+
+html [data-v-gutter-top-left] {
+  height: auto;
+  padding-block: 0;
+  align-items: center;
+}
+
+html [data-v-gutter-top-left] > div:has(> button) {
+  height: 1.75rem;
+}
+
+html [data-v-gutter-top-left] button[aria-haspopup='dialog'] {
+  border: 1px solid var(--sz-border);
+  background: var(--sz-surface);
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  color: var(--sz-muted);
+}
+
+html [data-v-gutter-top-left] button[aria-haspopup='dialog'] > div:last-child > * {
+  border: 1px solid var(--sz-border);
+  background: var(--sz-surface-2);
+  font-family: var(--sz-mono);
+}
+
+html [data-v-gutter-top-right] {
+  align-items: center;
+  gap: 1.25rem;
+  height: 100%;
+}
+
+html [data-v-gutter-top-right] nav a {
+  padding: 0;
+  border: 0;
+  font-family: var(--sz-mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--sz-text-2);
+}
+
+html [data-v-gutter-top-right] nav a:hover {
+  color: var(--sz-text);
+}
+
+html [data-v-gutter-top-right] nav a svg {
+  display: none;
+}
+
+/* Theme: Vocs' light, dark, and system radios as square cells on one hairline. */
+html [data-v-gutter-top-right] [role='radiogroup'] {
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--sz-border);
+  background: transparent;
+}
+
+html [data-v-gutter-top-right] [role='radio'] {
+  width: 1.75rem;
+  height: 1.625rem;
+  border: 0;
+  color: var(--sz-muted);
+}
+
+html [data-v-gutter-top-right] [role='radio'] + [role='radio'] {
+  border-left: 1px solid var(--sz-border);
+}
+
+html [data-v-gutter-top-right] [role='radio']:hover {
+  color: var(--sz-text);
+}
+
+html [data-v-gutter-top-right] [role='radio'][data-checked] {
+  border-color: var(--sz-border);
+  background: var(--sz-accent-subtle);
+  color: var(--sz-accent-hover);
+}
+
+html [data-v-gutter-top-right] [role='radio'] svg {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 /* Navigation: mono labels, compact rows, the app's selection. */
@@ -117,22 +242,144 @@ html [data-v-sidebar-item][data-active='true'] {
   color: var(--sz-accent-hover) !important;
 }
 
+/*
+ * Outline: text only. A muted mono label over 22px mono rows; no track or
+ * indicator. Only the current section turns accent: Vocs also marks its
+ * ancestors active, and those keep the row color. Vocs indents rows 12px plus
+ * 16px per level; shifting the list left keeps the 16px steps from the edge.
+ */
+
 html [data-v-outline-nav] {
+  gap: 0.5rem;
+}
+
+html [data-v-outline-nav] > :first-child {
+  height: 1.375rem;
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+}
+
+html [data-v-outline-nav] > :first-child svg {
+  display: none;
+}
+
+html [data-v-outline-mobile] button {
   font-family: var(--sz-mono);
   font-size: 0.75rem;
 }
 
-html [data-v-outline-indicator] {
-  background: var(--sz-accent);
+html [data-v-outline-items] {
+  margin-left: -0.75rem;
+  border-left: 0 !important;
 }
 
-/* Code: blue-tinted frames; inline code on the recessed surface. */
+html [data-v-outline-indicator] {
+  display: none;
+}
 
-/* The landing (decision 0106) styles its own code and terminals. */
+html [data-v-outline-item] a {
+  padding-block: 0;
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  line-height: 1.375rem;
+  color: var(--sz-text-2);
+}
 
-html article[data-v-content] pre:not(.landing pre) {
-  border: 1px solid var(--sz-tint-blue);
-  background: var(--sz-surface) !important;
+html [data-v-outline-item] a:hover {
+  color: var(--sz-text);
+}
+
+html [data-v-outline-item][data-active='true']:not(:has(~ [data-active='true'])) a {
+  color: var(--sz-accent);
+}
+
+/*
+ * Code: each fence is a small app pane. A 28px band names it and holds Copy;
+ * the band and Copy sit on the container, so they stay put while long lines
+ * scroll. Vocs does not pass a fence's language, so shell fences say "shell"
+ * and the rest "code". The landing (decision 0106) styles its own code.
+ */
+
+html [data-v-code-container] {
+  position: relative;
+  border: 1px solid var(--sz-border);
+  background: var(--sz-bg);
+}
+
+html [data-v-code-container]:not(:has([data-v-code-header]))::before {
+  content: 'code';
+  display: flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 0 0.875rem;
+  border-bottom: 1px solid var(--sz-border);
+  background: var(--sz-side);
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+}
+
+html [data-v-code-container]:has(pre[data-v-shell])::before {
+  content: 'shell';
+}
+
+html article[data-v-content] [data-v-code-container] pre[data-v] {
+  position: static;
+  margin-inline: 0;
+  padding-block: 0.625rem;
+  border: 0;
+  background: var(--sz-bg) !important;
+}
+
+html article[data-v-content] [data-v-code-container] pre[data-v] > code {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+html article[data-v-content] [data-v-code-container] pre[data-v] > code > .line {
+  padding-inline: 0.875rem;
+}
+
+html [data-v-code-container] pre[data-v] > button[data-copied] {
+  top: 0;
+  right: 0;
+  height: 1.75rem;
+  padding: 0 0.75rem;
+  border-left: 1px solid var(--sz-border);
+  opacity: 1;
+  translate: none;
+  background: transparent;
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+}
+
+html [data-v-code-container] pre[data-v] > button[data-copied]:hover,
+html [data-v-code-container] pre[data-v] > button[data-copied]:focus-visible {
+  background: var(--sz-surface-2);
+  color: var(--sz-text);
+}
+
+html [data-v-code-container] pre[data-v] > button[data-copied] svg {
+  display: none;
+}
+
+html [data-v-code-container] pre[data-v] > button[data-copied]::after {
+  content: 'Copy';
+}
+
+html [data-v-code-container] pre[data-v] > button[data-copied='true']::after {
+  content: 'Copied';
 }
 
 html article[data-v-content] :not(pre) > code:not(.landing code) {
@@ -163,4 +410,88 @@ html [data-v-callout][data-v-context='danger'] {
 html [data-v-callout] p,
 html [data-v-callout] li {
   color: var(--sz-text-2);
+}
+
+/* Footer: the landing's band (`_slots.tsx`), ending each page on a hairline. */
+
+html main[data-v-main] {
+  padding-bottom: 0;
+}
+
+html [data-v-footer] {
+  padding: 0;
+  border-right: 1px solid var(--sz-rail);
+}
+
+html [data-layout='blank'] [data-v-footer] {
+  display: none;
+}
+
+.sz-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 3rem;
+  border-top: 1px solid var(--sz-border);
+  background: var(--sz-chrome);
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  color: var(--sz-text);
+}
+
+.sz-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sz-footer-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.sz-footer .landing-mark {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sz-footer .landing-mark-z {
+  fill: var(--sz-mark-ink);
+}
+
+.sz-footer .landing-mark-rails {
+  fill: var(--sz-mark);
+}
+
+.sz-footer-muted {
+  color: var(--sz-muted);
+}
+
+.sz-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  color: var(--sz-text-2);
+}
+
+.sz-footer-links a:hover {
+  color: var(--sz-text);
+}
+
+@media (max-width: 767px) {
+  html [data-v-footer] {
+    border-right: 0;
+  }
+
+  .sz-footer {
+    padding-inline: 1rem;
+  }
 }

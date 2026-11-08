@@ -397,6 +397,21 @@
           "oklch(95% 0.00939 262.68)"
         ]
       },
+      "site-docs-bg": {
+        "role": "neutral",
+        "displayName": "Docs Page",
+        "canonical": "light-dark(#ffffff, #272b32)"
+      },
+      "site-docs-side": {
+        "role": "neutral",
+        "displayName": "Docs Sidebar",
+        "canonical": "light-dark(#f6f7f9, #2b2f37)"
+      },
+      "site-docs-chrome": {
+        "role": "neutral",
+        "displayName": "Docs Footer Band",
+        "canonical": "light-dark(#f2f3f5, #2e323b)"
+      },
       "site-docs-muted": {
         "role": "neutral",
         "displayName": "Docs Muted Slate",
@@ -657,7 +672,7 @@
       },
       "site-docs-nav": {
         "displayName": "Docs nav",
-        "purpose": "Vocs sidebar items; outline uses 0.75rem."
+        "purpose": "Vocs sidebar items; the text-only outline uses 0.75rem on 22px rows."
       }
     },
     "shadows": [
