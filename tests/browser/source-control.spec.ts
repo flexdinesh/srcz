@@ -533,9 +533,12 @@ test("a review tab keeps its scroll, files, and rail behind a document tab, with
   })
   await expect(railFile(page, "app.ts")).toHaveAttribute("aria-selected", "true")
 
+  // The commit review's own diff reads; the opened file's Source reads its
+  // working diff for its change marks (decision 0115).
   const diffReads: string[] = []
   page.on("request", (request) => {
-    if (new URL(request.url()).pathname === "/api/diff") diffReads.push(request.url())
+    const url = new URL(request.url())
+    if (url.pathname === "/api/diff" && url.searchParams.has("commit")) diffReads.push(request.url())
   })
   await reviewFile(page, "src/app.ts").getByRole("button", { name: "Open File" }).click()
   await expect(page.getByRole("tab", { name: "app.ts" })).toHaveAttribute("aria-selected", "true")
