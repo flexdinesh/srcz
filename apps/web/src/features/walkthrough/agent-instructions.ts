@@ -81,3 +81,34 @@ ${example}
 
 Walk me through: `
 }
+
+export interface StepPromptInput {
+  // origin is shareableOrigin's; null leaves the link out.
+  origin: string | null
+  project: string
+  walkthroughId: string
+  walkthroughTitle: string
+  index: number
+  count: number
+  stepTitle: string
+  // label names what the step opens (stepLabel).
+  label: string
+  // href is the step's route: path, search, and fragment.
+  href: string
+}
+
+// stepPrompt is what a step's Copy for Agent copies (decision 0113): the
+// walkthrough and step being read, what the step points at, and a link to
+// it, ending with "Question: " for the user's follow-up.
+export function stepPrompt({ count, href, index, label, origin, project, stepTitle, walkthroughId, walkthroughTitle }: StepPromptInput): string {
+  return `I'm reading a srcz walkthrough and have a question about one step.
+
+Walkthrough: ${walkthroughTitle} (id ${walkthroughId})
+Project: ${project}
+Step ${index + 1} of ${count}: ${stepTitle}
+Target: ${label}
+${origin === null ? "" : `Link: ${origin}${href}\n`}
+Read the code the step points at before answering. If the answer changes the walkthrough, revise it under the same id.
+
+Question: `
+}

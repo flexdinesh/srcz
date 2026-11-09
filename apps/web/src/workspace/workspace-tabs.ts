@@ -83,6 +83,28 @@ export function includesTab(tabs: readonly WorkspaceTab[], tab: WorkspaceTab): b
   return tabs.some((entry) => sameTab(entry, tab))
 }
 
+// PlacedTabs are the open tabs and the preview tab among them, if any.
+export interface PlacedTabs {
+  tabs: WorkspaceTab[]
+  preview: WorkspaceTab | null
+}
+
+// placeTab opens the routed tab (decision 0113). A walkthrough step opens a
+// document or review as the preview tab, which the next step's tab replaces
+// in place, as VS Code's preview editors are; a tab already open stays as
+// it is. Other tabs join the end and leave the preview tab alone.
+export function placeTab(current: PlacedTabs, active: WorkspaceTab, asPreview: boolean): PlacedTabs {
+  if (includesTab(current.tabs, active)) return current
+  if (!asPreview || (active.kind !== "document" && active.kind !== "review")) {
+    return { ...current, tabs: [...current.tabs, active] }
+  }
+  const { preview } = current
+  if (preview && includesTab(current.tabs, preview)) {
+    return { tabs: current.tabs.map((tab) => sameTab(tab, preview) ? active : tab), preview: active }
+  }
+  return { tabs: [...current.tabs, active], preview: active }
+}
+
 export function fileName(path: string): string {
   return path.split("/").at(-1) || path
 }

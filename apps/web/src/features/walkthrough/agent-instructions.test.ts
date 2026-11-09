@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
-import { agentInstructions } from "./agent-instructions.ts"
+import { agentInstructions, stepPrompt } from "./agent-instructions.ts"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -104,4 +104,19 @@ test("the example quotes awkward project paths as JSON", () => {
   const walkthrough = example(agentInstructions("http://127.0.0.1:7972", project))
   assert.ok(isRecord(walkthrough))
   assert.equal(walkthrough.project, project)
+})
+
+test("a step's prompt names the walkthrough, the step, its target, and a link", () => {
+  const input = {
+    origin: "http://127.0.0.1:8080", project: "/work/app", walkthroughId: "session-refresh", walkthroughTitle: "How sessions refresh",
+    index: 2, count: 7, stepTitle: "Refresh retries once", label: "vs main · auth/refresh.go:12–30", href: "/view?project=%2Fwork%2Fapp&wt=session-refresh&step=3#f=auth/refresh.go",
+  }
+  const prompt = stepPrompt(input)
+  assert.match(prompt, /^Walkthrough: How sessions refresh \(id session-refresh\)$/m)
+  assert.match(prompt, /^Project: \/work\/app$/m)
+  assert.match(prompt, /^Step 3 of 7: Refresh retries once$/m)
+  assert.match(prompt, /^Target: vs main · auth\/refresh\.go:12–30$/m)
+  assert.match(prompt, /^Link: http:\/\/127\.0\.0\.1:8080\/view\?project=%2Fwork%2Fapp&wt=session-refresh&step=3#f=auth\/refresh\.go$/m)
+  assert.ok(prompt.endsWith("Question: "))
+  assert.doesNotMatch(stepPrompt({ ...input, origin: null }), /^Link:/m)
 })

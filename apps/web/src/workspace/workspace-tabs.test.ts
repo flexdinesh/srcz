@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import type { CompareContext } from "../features/source-control/compare.ts"
-import { documentKey, documentTab, includesTab, parseStoredTab, reviewTab, routeAt, sameTab, storedTab, tabKey, tabName, tabSearch, walkthroughTab, welcomeTab } from "./workspace-tabs.ts"
+import { documentKey, documentTab, includesTab, parseStoredTab, placeTab, reviewTab, routeAt, sameTab, storedTab, tabKey, tabName, tabSearch, walkthroughTab, welcomeTab } from "./workspace-tabs.ts"
 
 const hash = "3577ec6a1b2c3d4e5f60718293a4b5c6d7e8f901"
 const other = "4f76e9a1b2c3d4e5f60718293a4b5c6d7e8f9012"
@@ -110,4 +110,29 @@ test("the Welcome tab is one tab that keys, names, stores, and routes", () => {
   assert.equal(parseStoredTab({ welcome: false }), null)
   assert.equal(parseStoredTab({ welcome: "yes" }), null)
   assert.deepEqual(tabSearch("/p", tab), { project: "/p", welcome: 1 })
+})
+
+test("a walkthrough step's tab is the preview tab the next step replaces", () => {
+  const welcome = welcomeTab()
+  const cover = walkthroughTab("tour")
+  const a = documentTab("a.md")
+  const b = documentTab("b.md")
+  const working = reviewTab({ kind: "working" })
+  let placed = placeTab({ tabs: [welcome], preview: null }, cover, true)
+  assert.deepEqual(placed, { tabs: [welcome, cover], preview: null })
+  placed = placeTab(placed, a, true)
+  assert.deepEqual(placed, { tabs: [welcome, cover, a], preview: a })
+  placed = placeTab(placed, working, true)
+  assert.deepEqual(placed, { tabs: [welcome, cover, working], preview: working })
+  // An open tab is left as it is, and stays out of the next replacement.
+  assert.equal(placeTab(placed, cover, true), placed)
+  placed = placeTab({ ...placed, tabs: [...placed.tabs, b] }, b, true)
+  assert.deepEqual(placed.preview, working)
+  // Ordinary tabs join the end and keep the preview tab.
+  const c = documentTab("c.md")
+  placed = placeTab(placed, c, false)
+  assert.deepEqual(placed, { tabs: [welcome, cover, working, b, c], preview: working })
+  // A pinned or closed preview tab is not replaced.
+  assert.deepEqual(placeTab({ tabs: [welcome], preview: a }, b, true), { tabs: [welcome, b], preview: b })
+  assert.deepEqual(placeTab({ tabs: [welcome], preview: null }, a, true), { tabs: [welcome, a], preview: a })
 })

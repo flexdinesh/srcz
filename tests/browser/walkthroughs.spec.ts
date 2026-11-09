@@ -13,6 +13,7 @@ test.skip(() => !existsSync(path.join(gitFixtureRoot, ".git")), "git is not inst
 const title = "How run finds its answer"
 // Tests run in parallel against one server, so each publishes its own title.
 const presentTitle = "Present how run finds its answer"
+const progressTitle = "Progress through run's answer"
 
 function walkthrough(id: string, head: string, name = title) {
   return {
@@ -54,8 +55,14 @@ test("a published walkthrough steps through a note, a file, a snapshot, a diff, 
     await expect(source.locator(".source-document-line.selected")).toHaveCount(3)
     await expect(source.getByRole("region", { name: "Step 2 of 5: run returns the constant" })).toContainText("hands back")
 
+    // Lines outside the step's range step back.
+    await expect(source.locator(".source-document-line.unfocused")).toHaveCount(2)
+    await expect(page.getByRole("tab", { name: "app.ts" })).toHaveAttribute("data-preview", "true")
+
+    // The next step's tab replaces the preview tab in place.
     await page.keyboard.press("ControlOrMeta+ArrowRight")
     await expect(page.getByRole("tab", { name: `README.md @ ${head.slice(0, 7)}` })).toHaveAttribute("aria-selected", "true")
+    await expect(page.getByRole("tab", { name: "app.ts" })).toHaveCount(0)
     await expect(page.getByRole("region", { name: "Step 3 of 5: The README at HEAD" })).toBeVisible()
 
     await page.getByRole("button", { name: "Next Step" }).click()
@@ -66,8 +73,12 @@ test("a published walkthrough steps through a note, a file, a snapshot, a diff, 
 
     await page.keyboard.press("ControlOrMeta+ArrowRight")
     const changed = page.getByRole("region", { name: "Step 5 of 5: Written against older code" })
-    await expect(changed.getByRole("note")).toHaveText(/changed after the step was written/)
-    await expect(changed.getByRole("button", { name: "Next Step" })).toHaveAttribute("aria-disabled", "true")
+    const drift = changed.getByRole("note")
+    await expect(drift).toContainText("changed after the step was written")
+    await expect(drift.getByRole("definition").first()).toHaveText("export const answer = 99")
+    await expect(drift.getByRole("definition").last()).toHaveText("export const answer = 2")
+    await expect(changed.getByRole("button", { name: "Next Step" })).toHaveCount(0)
+    await expect(changed.getByRole("button", { name: "Finish" })).toBeVisible()
 
     await changed.getByRole("button", { name: "Previous Step" }).click()
     await expect(page).toHaveURL(/step=4/)
@@ -97,7 +108,14 @@ test("present mode hides the chrome until Escape, and phones step from a bar", a
     await expect(page.getByRole("tablist", { name: "Open documents" })).toBeHidden()
     await expect(page.locator(".status-bar")).toBeHidden()
 
+    // The bar carries the step controls; the narration drops its own.
+    await expect(page.getByRole("region", { name: /^Step 2 of 5/ }).getByRole("button", { name: "Next Step" })).toHaveCount(0)
     await bar.getByRole("button", { name: "Next Step" }).click()
+    await expect(bar).toContainText("3 / 5")
+    // Plain arrows step while presenting, as slides do.
+    await page.keyboard.press("ArrowRight")
+    await expect(bar).toContainText("4 / 5")
+    await page.keyboard.press("ArrowLeft")
     await expect(bar).toContainText("3 / 5")
     await page.keyboard.press("Escape")
     await expect(bar).toHaveCount(0)
@@ -116,6 +134,57 @@ test("present mode hides the chrome until Escape, and phones step from a bar", a
     await steps.getByRole("option", { name: /^Step 4 of 5/ }).click()
     await expect(steps).toBeHidden()
     await expect(phoneBar).toContainText("4 / 5")
+  } finally {
+    await request.delete(`${gitApiOrigin}/api/walkthroughs?project=${encodeURIComponent(gitFixtureRoot)}&id=${id}`)
+  }
+})
+
+test("progress: new marks, a pinned preview tab, resume, read checks, and finish", async ({ page, request }) => {
+  const head = execFileSync("git", ["-C", gitFixtureRoot, "rev-parse", "HEAD"], { encoding: "utf8" }).trim()
+  const id = "browser-progress"
+  const published = await request.post(`${gitApiOrigin}/api/walkthroughs`, { data: walkthrough(id, head, progressTitle) })
+  expect(published.status()).toBe(201)
+  const { url }: { url: string } = await published.json()
+
+  try {
+    // A walkthrough not opened yet is marked new in the list.
+    await page.goto(url.replace(/&wt=[^&#]*/, ""))
+    await page.getByRole("button", { name: /^Walkthroughs/ }).click()
+    const list = page.getByRole("listbox", { name: "Walkthroughs" })
+    await expect(list.getByRole("option", { name: new RegExp(`^${progressTitle}, new,`) })).toBeVisible()
+    await list.getByRole("option", { name: new RegExp(`^${progressTitle}`) }).click()
+
+    await page.getByRole("button", { name: "Start walkthrough" }).click()
+    await page.keyboard.press("ControlOrMeta+ArrowRight")
+    await expect(page).toHaveURL(/step=2/)
+
+    // Double-click pins the preview tab, so the next step opens beside it.
+    const appTab = page.getByRole("tab", { name: "app.ts" })
+    await appTab.dblclick()
+    await expect(appTab).not.toHaveAttribute("data-preview")
+    await page.keyboard.press("ControlOrMeta+ArrowRight")
+    await expect(page).toHaveURL(/step=3/)
+    await expect(appTab).toBeVisible()
+
+    // Read steps are checked, and the cover offers to resume.
+    const steps = page.getByRole("listbox", { name: "Steps" })
+    await expect(steps.getByRole("option", { name: /^Step 2 of 5: .*, read$/ })).toBeVisible()
+    await page.goto(url)
+    await page.getByRole("button", { name: "Resume at step 3" }).click()
+    await expect(page).toHaveURL(/step=3/)
+
+    // A step link reveals the walkthrough's steps beside it.
+    await page.getByRole("button", { name: /^Source Control/ }).click()
+    await expect(steps).toBeHidden()
+    await page.goto(`${url}&path=src%2Fapp.ts&step=2#L3-L5`)
+    await expect(steps).toBeVisible()
+
+    // Finishing the last step leads the cover with a completion line.
+    await steps.getByRole("option", { name: /^Step 5 of 5/ }).click()
+    await page.getByRole("region", { name: /^Step 5 of 5/ }).getByRole("button", { name: "Finish" }).click()
+    await expect(page.getByRole("heading", { name: "You finished this walkthrough" })).toBeVisible()
+    await expect(page.getByRole("heading", { level: 1, name: progressTitle })).toBeVisible()
+    await expect(page.locator(".walkthrough-cover-meta")).toContainText("finished")
   } finally {
     await request.delete(`${gitApiOrigin}/api/walkthroughs?project=${encodeURIComponent(gitFixtureRoot)}&id=${id}`)
   }

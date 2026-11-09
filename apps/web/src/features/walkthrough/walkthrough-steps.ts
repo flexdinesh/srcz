@@ -125,6 +125,27 @@ export function lineDrift(expect: string, line: string | undefined): Drift {
   return line.trim().startsWith(expect) ? "unchanged" : "changed"
 }
 
+// StepCheck is what a step's narration says about its code: whether it
+// drifted, and if so the line the step expected and the line there now
+// (decision 0113), or "missing" when the pane lacks the step's target.
+export interface StepCheck {
+  drift: Drift | "missing"
+  expected: string
+  actual: string
+}
+
+export const missingStep: StepCheck = { drift: "missing", expected: "", actual: "" }
+export const uncheckedStep: StepCheck = { drift: "unknown", expected: "", actual: "" }
+
+// stepCheck checks a step's first line against its expected prefix.
+export function stepCheck(expect: string, line: string | undefined): StepCheck {
+  return { drift: lineDrift(expect, line), expected: expect, actual: line?.trim() ?? "" }
+}
+
+// maxProgressSegments is the most steps a progress line marks one by one;
+// longer walkthroughs show a continuous bar.
+export const maxProgressSegments = 24
+
 // StepPosition is a step index, or null for the cover.
 export type StepPosition = number | null
 

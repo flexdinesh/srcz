@@ -25,9 +25,10 @@ export interface SourceNavigation {
 // SourceAnnotation is a full-width zone inserted after a line, or before the
 // first when line is 0, e.g. a walkthrough step's narration. render reads the
 // source's lines by number; views without them pass null and show the zone
-// at their top.
+// at their top. focus dims the lines outside it (decision 0113).
 export interface SourceAnnotation {
   line: number
+  focus?: LineRange | null
   render(lineAt: ((line: number) => string | undefined) | null): ReactNode
 }
 
@@ -184,6 +185,7 @@ export function SourceDocument({ source, language, label, selection, navigation,
 
   // The annotation sits after its line, or at the top past the last line.
   const annotationLine = annotation ? (annotation.line <= lines.length ? annotation.line : 0) : -1
+  const focus = annotation?.focus && annotationLine > 0 ? annotation.focus : null
   const zone = (line: number) => annotationLine === line && annotation
     ? <span className="source-annotation">{annotation.render((number) => lines[number - 1])}</span>
     : null
@@ -225,10 +227,11 @@ export function SourceDocument({ source, language, label, selection, navigation,
         {lines.map((line, index) => {
           const lineNumber = index + 1
           const selected = shown !== null && lineNumber >= shown.start && lineNumber <= shown.end
+          const unfocused = focus ? lineNumber < focus.start || lineNumber > focus.end : false
           return (
             <Fragment key={lineNumber}>
             <span
-              className={`source-document-line${activeLine === lineNumber ? " active" : ""}${selected ? " selected" : ""}`}
+              className={`source-document-line${activeLine === lineNumber ? " active" : ""}${selected ? " selected" : ""}${unfocused ? " unfocused" : ""}`}
               data-line={lineNumber}
               onClick={() => setActiveLine(lineNumber)}
             >

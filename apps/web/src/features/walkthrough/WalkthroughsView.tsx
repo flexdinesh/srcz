@@ -162,16 +162,20 @@ function WalkthroughList({ session, project, onOpened }: ListProps) {
       <div ref={container} className="walkthrough-rows" role="listbox" aria-label="Walkthroughs" onKeyDown={onKeyDown}>
         {entries.map((entry, index) => {
           const age = commitAge(entry.updatedAt, now)
+          const fresh = session.isNewEntry(entry.id, entry.updatedAt)
+          const progress = session.progressFor(entry.id, entry.updatedAt)
+          const state = progress.finished ? "finished" : progress.visited.length > 0 ? `${progress.visited.length.toLocaleString()} read` : ""
           return (
             <ListRow key={entry.id} role="option" aria-selected={false} tabIndex={index === tabIndex ? 0 : -1}
-              className="walkthrough-row" title={`${entry.title}\nUpdated ${commitDate(entry.updatedAt)}`}
-              aria-label={`${entry.title}, ${plural(entry.stepCount, "step")}, updated ${age.long}`}
+              className="walkthrough-row" title={`${entry.title}\nUpdated ${commitDate(entry.updatedAt)}`} data-new={fresh || undefined}
+              aria-label={`${entry.title}${fresh ? ", new" : ""}, ${plural(entry.stepCount, "step")}${state ? `, ${state}` : ""}, updated ${age.long}`}
               onFocus={() => setFocused(index)} onClick={() => open(index)}>
               <RouteIcon className="walkthrough-row-icon" aria-hidden="true" />
               <span className="walkthrough-row-text">
                 <span className="walkthrough-row-title">{entry.title}</span>
-                <span className="walkthrough-row-meta">{plural(entry.stepCount, "step")} · {age.long}</span>
+                <span className="walkthrough-row-meta">{plural(entry.stepCount, "step")}{state ? ` · ${state}` : ""} · {age.long}</span>
               </span>
+              {fresh && <span className="walkthrough-row-new" title="New" aria-hidden="true" />}
             </ListRow>
           )
         })}
@@ -240,6 +244,7 @@ function StepList({ context, onOpened, session, walkthrough }: StepListProps) {
         <h3 className="walkthrough-title">{walkthrough.title}</h3>
         <p className="walkthrough-meta" title={`Updated ${commitDate(walkthrough.updatedAt)}`}>
           {position === null ? plural(walkthrough.steps.length, "step") : `Step ${position + 1} of ${walkthrough.steps.length}`}
+          {session.finished ? " · finished" : visited.size > 0 ? ` · ${visited.size.toLocaleString()} read` : ""}
           {" · "}{commitAge(walkthrough.updatedAt, now).long}
         </p>
         {!confirming && (
@@ -262,14 +267,17 @@ function StepList({ context, onOpened, session, walkthrough }: StepListProps) {
           const selected = routed && index === current
           const label = step ? stepLabel(step, context) : "Overview"
           const title = step ? step.title : "Overview"
+          const read = step !== null && visited.has(index - 1)
           return (
             <ListRow key={index} role="option" aria-selected={selected} selected={selected}
               tabIndex={index === tabIndex ? 0 : -1} className="walkthrough-step"
-              data-visited={(step && visited.has(index - 1)) || undefined}
-              aria-label={step ? `Step ${index} of ${walkthrough.steps.length}: ${title}, ${label}` : "Overview"}
-              title={step ? `${title}\n${label}` : walkthrough.title}
+              data-visited={read || undefined}
+              aria-label={step ? `Step ${index} of ${walkthrough.steps.length}: ${title}, ${label}${read ? ", read" : ""}` : "Overview"}
+              title={step ? `${title}\n${label}${read ? "\nRead" : ""}` : walkthrough.title}
               onFocus={() => setFocused(index)} onClick={() => open(index)}>
-              <span className="walkthrough-step-number" aria-hidden="true">{step ? index : ""}</span>
+              <span className="walkthrough-step-number" aria-hidden="true">
+                {step ? read && !selected ? <CheckIcon className="walkthrough-step-read" /> : index : ""}
+              </span>
               <span className="walkthrough-step-icon" aria-hidden="true">{step ? stepIcon(step) : <BookOpenIcon aria-hidden="true" />}</span>
               <span className="walkthrough-row-text">
                 <span className="walkthrough-row-title">{title}</span>

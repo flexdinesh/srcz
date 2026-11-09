@@ -113,9 +113,25 @@
   text-align: right;
 }
 
-/* Steps already read this session step back from the rest. */
+/* Steps already read step back from the rest; a check replaces their
+   number (decision 0113). */
 .walkthrough-step[data-visited] .walkthrough-row-title {
   color: var(--color-text-secondary);
+}
+
+.walkthrough-step-read {
+  width: var(--icon-xs);
+  height: var(--text-sm--line-height);
+  color: var(--color-success);
+}
+
+/* A walkthrough not opened since it was published carries an accent dot. */
+.walkthrough-row-new {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex: none;
+  align-self: center;
+  background: var(--color-accent);
 }
 
 .walkthrough-step[aria-selected="true"] :is(.walkthrough-row-title, .walkthrough-row-meta, .walkthrough-step-number, .walkthrough-step-icon) {
@@ -218,6 +234,87 @@
   margin-top: var(--space-2);
 }
 
+.narration-notice-text {
+  margin: 0;
+}
+
+/* A drifted step shows the line it expected above the line there now. */
+.narration-drift {
+  display: grid;
+  margin: var(--space-1) 0 0;
+  column-gap: var(--space-3);
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.narration-drift dt {
+  color: inherit;
+  font-weight: 600;
+}
+
+.narration-drift dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.narration-drift code {
+  font-family: var(--font-mono);
+}
+
+/* The progress line: one square mark per step, filled once read, the
+   current one in accent; long walkthroughs get one bar. */
+.step-progress {
+  display: flex;
+  max-width: var(--reading-width);
+  height: 2px;
+  gap: 2px;
+}
+
+.step-progress-mark {
+  min-width: 0;
+  flex: 1;
+  background: var(--color-border);
+}
+
+.step-progress-mark[data-state="visited"] {
+  background: var(--color-text-muted);
+}
+
+.step-progress-mark[data-state="current"] {
+  background: var(--color-accent);
+}
+
+.step-progress[data-kind="bar"] {
+  background: var(--color-border);
+}
+
+.step-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.narration-progress {
+  margin-top: var(--space-2);
+}
+
+/* A step's lines lead in Source; the code around them steps back until
+   pointed at or selected (decision 0113). */
+.source-document-line.unfocused {
+  opacity: 0.5;
+  transition: opacity var(--duration-base) var(--ease-out-expo);
+}
+
+.source-document-line.unfocused:is(:hover, .selected, .active) {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-document-line.unfocused {
+    transition: none;
+  }
+}
+
 .narration-body {
   max-width: var(--reading-width);
   margin-top: var(--space-2);
@@ -266,10 +363,74 @@ main:not(.source-mode, .image-mode) > .annotated-document > .document-annotation
   gap: var(--space-5);
 }
 
-.walkthrough-tab > .narration {
+/* A note step stands alone on the tab as a page of its own (decision
+   0113): the zone bleeds to the pane's edges, its prose at reading size. */
+.walkthrough-note > .narration {
   justify-self: stretch;
   margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
+  padding: var(--space-6);
   border-top: 0;
+}
+
+.walkthrough-note .narration-title {
+  font-size: var(--preview-h2);
+  line-height: 1.25;
+}
+
+.walkthrough-note-overview {
+  color: var(--color-text-muted);
+}
+
+.walkthrough-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Finishing leads the cover with what was read and where to go next. */
+.walkthrough-done {
+  display: grid;
+  max-width: var(--reading-width);
+  align-items: start;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-secondary);
+  column-gap: var(--space-3);
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-self: stretch;
+  row-gap: var(--space-3);
+}
+
+.walkthrough-done-icon {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  color: var(--color-success);
+}
+
+.walkthrough-done-title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--icon-lg);
+}
+
+.walkthrough-done-meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.walkthrough-done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  grid-column: 2;
+}
+
+.walkthrough-outline li[data-visited]::marker {
+  color: var(--color-success);
 }
 
 .walkthrough-cover {
@@ -357,7 +518,7 @@ main:not(.source-mode, .image-mode) > .annotated-document > .document-annotation
   left: 50%;
   display: flex;
   max-width: calc(100% - 2 * var(--space-4));
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-1);
   border: 1px solid var(--color-border-strong);
@@ -366,6 +527,18 @@ main:not(.source-mode, .image-mode) > .annotated-document > .document-annotation
   box-shadow: var(--shadow-overlay);
   font-size: var(--text-label);
   transform: translateX(-50%);
+}
+
+.walkthrough-step-bar-controls {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.walkthrough-step-bar-progress {
+  max-width: none;
+  margin: 0 var(--space-1) var(--space-1);
 }
 
 .walkthrough-step-bar-position {
@@ -393,12 +566,27 @@ main:not(.source-mode, .image-mode) > .annotated-document > .document-annotation
     right: var(--space-3);
     bottom: var(--space-3);
     left: var(--space-3);
-    justify-content: space-between;
     transform: none;
+  }
+
+  .walkthrough-step-bar-controls {
+    justify-content: space-between;
   }
 
   .walkthrough-step-bar-title {
     flex: 1;
     max-width: none;
   }
+}
+
+/* Presenting, the narration reads a step larger, as a slide's text does
+   (decision 0113). Code keeps the Font Size setting, which also sizes the
+   diff rows Pierre measures. */
+.layout[data-presenting] .narration-title {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+}
+
+.layout[data-presenting] .narration-body article {
+  font-size: var(--text-base);
 }

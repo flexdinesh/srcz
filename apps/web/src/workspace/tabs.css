@@ -63,6 +63,12 @@
   white-space: nowrap;
 }
 
+/* The preview tab (decision 0113) is italic, as VS Code's preview editors
+   are, until a double-click or Keep Open pins it. */
+.buffer-tab-target[data-preview] > span {
+  font-style: italic;
+}
+
 .buffer-tab-close {
   margin-right: var(--space-1);
 }
