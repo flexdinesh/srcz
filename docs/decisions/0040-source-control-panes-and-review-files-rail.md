@@ -1,6 +1,6 @@
 # 0040: Source Control panes, branch stacks, and the review Files rail
 
-- Status: Accepted; commit-row branch chips superseded by [0042](0042-expandable-commit-rows.md); deliberate commit diffs superseded by [0112](0112-click-opens-commit-diff.md)
+- Status: Accepted; commit-row branch chips superseded by [0042](0042-expandable-commit-rows.md); deliberate commit diffs superseded by [0112](0112-click-opens-commit-diff.md); flat list order and the Files rail revised by [0117](0117-review-order-viewed-flow-and-view-options.md)
 - Date: 2026-10-25
 - Supersedes: the compare list and Files pane of [0035](0035-compare-list-and-review-tab.md)
 - Extends: [0030](0030-branch-and-range-diffs.md) branch compares with a head branch

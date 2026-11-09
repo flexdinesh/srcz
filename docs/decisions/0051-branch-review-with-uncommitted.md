@@ -1,6 +1,6 @@
 # 0051: Branch review with uncommitted changes
 
-- Status: Accepted
+- Status: Accepted; marks in the other scope revised by [0117](0117-review-order-viewed-flow-and-view-options.md)
 - Date: 2026-10-27
 - Extends: [0030](0030-branch-and-range-diffs.md), [0035](0035-compare-list-and-review-tab.md), and
   [0040](0040-source-control-panes-and-review-files-rail.md)

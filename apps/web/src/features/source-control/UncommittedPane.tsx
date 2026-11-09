@@ -1,14 +1,15 @@
-import { useRef, useState, type KeyboardEvent } from "react"
+import { useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 import { Button } from "../../components/ui/button.tsx"
 import { ListRow } from "../../components/ui/list-row.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
 import { FileIcon } from "../../components/FileIcon.tsx"
-import { statusLetters, statusNames, type CompareFile, type FileList } from "./compare-files.ts"
+import { displayOrder, statusLetters, statusNames, type CompareFile, type FileList } from "./compare-files.ts"
 import type { ChangesView } from "./source-control-layout.ts"
 import { fileParts } from "./source-control-panes.ts"
 import { FilesTree, type CollapseRequest } from "./FilesTree.tsx"
 import { FileStatsText } from "./DiffStatsText.tsx"
+import { pureRename } from "./diff-stats.ts"
 import { statsLabel, type CompareStats } from "./use-compare-stats.ts"
 
 interface UncommittedPaneProps {
@@ -70,8 +71,9 @@ interface FlatFilesProps {
 
 // FlatFiles lists changed files by path, as VS Code's list view does: click
 // or Space opens and keeps focus; Enter and double-click move it to the
-// review.
-function FlatFiles({ activePath, files, stats, onOpen }: FlatFilesProps) {
+// review. Rows follow the review's order, the Files tree's (decision 0117).
+function FlatFiles({ activePath, files: changed, stats, onOpen }: FlatFilesProps) {
+  const files = useMemo(() => displayOrder(changed), [changed])
   const container = useRef<HTMLDivElement>(null)
   const [focused, setFocused] = useState("")
   const tabPath = files.some((file) => file.path === focused) ? focused
@@ -104,7 +106,9 @@ function FlatFiles({ activePath, files, stats, onOpen }: FlatFilesProps) {
       {files.map((file) => {
         const { name, folder } = fileParts(file.path)
         const fileStats = stats?.byPath.get(file.path)
-        const lines = statsLabel(fileStats)
+        // A rename without line changes says so in its status already.
+        const renamed = pureRename(fileStats, file.oldPath)
+        const lines = renamed ? "" : statsLabel(fileStats)
         const selected = file.path === activePath
         return (
           <ListRow key={file.path} data-path={file.path} role="option" aria-selected={selected} selected={selected}
@@ -117,7 +121,7 @@ function FlatFiles({ activePath, files, stats, onOpen }: FlatFilesProps) {
             <FileIcon path={file.path} />
             <span className="changes-row-name">{name}</span>
             <span className="changes-row-folder">{folder}</span>
-            {lines && <span className="changes-row-stats"><FileStatsText stats={fileStats} /></span>}
+            {(lines || renamed) && <span className="changes-row-stats"><FileStatsText stats={fileStats} oldPath={file.oldPath} /></span>}
             <span className="commit-file-status" data-status={file.status} aria-hidden="true">{statusLetters[file.status]}</span>
           </ListRow>
         )

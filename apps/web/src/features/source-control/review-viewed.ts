@@ -1,9 +1,10 @@
 import { isRecord } from "../../api/http.ts"
 
-// Files marked Viewed in review tabs (decision 0035), remembered in this
-// browser under srcz-review-viewed as project -> path -> blob. A mark
-// counts only while the file's blob matches, so changed content unmarks
-// itself. Pure except for readViewed/writeViewed, which never throw.
+// Files marked Viewed in review tabs (decisions 0035, 0117), remembered in
+// this browser under srcz-review-viewed as project -> path -> blob. A mark
+// keeps the blob it was made at: it counts while the file's blob matches,
+// and once the blob changes the file reads as changed since viewed until it
+// is marked again. Pure except for readViewed/writeViewed, which never throw.
 
 export const VIEWED_STORAGE_KEY = "srcz-review-viewed"
 
@@ -30,11 +31,21 @@ export function parseViewed(value: unknown): ViewedMarks {
   return marks
 }
 
+// ViewedState is a file's review progress: never marked (or its blob is not
+// known yet), viewed at its current blob, or marked at an older blob.
+export type ViewedState = "unviewed" | "viewed" | "changed"
+
+// viewedState reads a file's mark against its current blob.
+export function viewedState(marks: ViewedMarks, project: string, path: string, blob: string): ViewedState {
+  if (!blob || !Object.hasOwn(marks, project)) return "unviewed"
+  const files = marks[project]
+  if (files === undefined || !Object.hasOwn(files, path)) return "unviewed"
+  return files[path] === blob ? "viewed" : "changed"
+}
+
 // isViewed reports a file viewed at blob; an unknown blob is never viewed.
 export function isViewed(marks: ViewedMarks, project: string, path: string, blob: string): boolean {
-  if (!blob || !Object.hasOwn(marks, project)) return false
-  const files = marks[project]
-  return files !== undefined && Object.hasOwn(files, path) && files[path] === blob
+  return viewedState(marks, project, path, blob) === "viewed"
 }
 
 // withViewed marks or unmarks a file. The most recent project and file go

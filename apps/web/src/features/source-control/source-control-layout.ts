@@ -35,6 +35,8 @@ export interface SourceControlLayout {
   changesView: ChangesView
   railWidth: number
   railHidden: boolean
+  // railHideViewed leaves viewed files out of the Files rail (decision 0117).
+  railHideViewed: boolean
   // bases maps a project to its chosen base branch; absent uses the default.
   bases: Readonly<Record<string, string>>
 }
@@ -46,6 +48,7 @@ export const defaultLayout: SourceControlLayout = {
   changesView: "list",
   railWidth: defaultRailWidth,
   railHidden: false,
+  railHideViewed: false,
   bases: {},
 }
 
@@ -94,6 +97,7 @@ export function parseLayout(value: unknown): SourceControlLayout {
     changesView: value.changesView === "tree" ? "tree" : "list",
     railWidth: typeof railWidth === "number" && Number.isFinite(railWidth) ? clampRailWidth(railWidth) : defaultRailWidth,
     railHidden: value.railHidden === true,
+    railHideViewed: value.railHideViewed === true,
     bases: parseBases(value.bases),
   }
 }

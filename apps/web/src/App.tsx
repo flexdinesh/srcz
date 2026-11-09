@@ -787,7 +787,7 @@ export function App({ project }: AppProps) {
             diff={shownReview ? <ReviewDocument key={compareKey(shownReview)} project={project} compare={shownReview}
               name={nameTab(reviewTab(shownReview))} data={reviewData} options={diffOptions.options} narrow={diffNarrow}
               scrollRoot={main} selection={fragment} expandRequest={expandRequest} treeFiles={treeFiles}
-              viewed={viewed.isViewed} onViewedChange={viewed.mark} onSelectLines={selectReviewLines}
+              viewedState={viewed.state} onViewedChange={viewed.mark} onSelectLines={selectReviewLines}
               onCurrentFile={setCurrentFile} onStatus={setReviewStatus} onOpenFile={navigateToDocument}
               onAllExpandedChange={setAnyFileExpanded} onRegisterHunkStep={registerHunkStep} annotation={reviewAnnotation}
               scope={scope} marked={markedPaths} /> : undefined}
@@ -825,7 +825,8 @@ export function App({ project }: AppProps) {
           />
           {shownRail && shownReview && !sidebar.mobile && !sourceControlLayout.railHidden && (
             <Activity mode={reviewCompare ? "visible" : "hidden"}>
-              <ReviewFilesRail data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed} itemHeight={treeRowHeight(false, uiScale(settings))}
+              <ReviewFilesRail data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed}
+                hideViewed={sourceControlLayout.railHideViewed} onHideViewedChange={sourceControlLayout.setRailHideViewed} itemHeight={treeRowHeight(false, uiScale(settings))}
                 width={sourceControlLayout.railWidth} onResize={sourceControlLayout.setRailWidth}
                 onResetWidth={() => sourceControlLayout.setRailWidth(defaultRailWidth)}
                 onHide={() => sourceControlLayout.setRailHidden(true)}
@@ -834,7 +835,8 @@ export function App({ project }: AppProps) {
           )}
           </div>
           {reviewRail && reviewCompare && sidebar.mobile && (
-            <ReviewFilesSheet open={filesSheet} data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed} itemHeight={treeRowHeight(true, uiScale(settings))}
+            <ReviewFilesSheet open={filesSheet} data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed}
+              hideViewed={sourceControlLayout.railHideViewed} onHideViewedChange={sourceControlLayout.setRailHideViewed} itemHeight={treeRowHeight(true, uiScale(settings))}
               onClose={() => setFilesSheet(false)}
               onOpen={(path, focusDocument) => openReview(reviewCompare, focusDocument, path)} />
           )}

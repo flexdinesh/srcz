@@ -115,12 +115,20 @@ dot. The review opens on Committed; with nothing uncommitted, + Uncommitted
 stays disabled.
 
 A review opens in one tab: every file's diff stacked under a sticky header,
-loaded as you scroll, with split or unified view, wrap, ignore whitespace,
-word or character inline changes, expand unchanged, and Expand/Collapse All
-Files. Commit, range, and branch reviews list their files in a rail beside
-the diffs; drag its edge to resize it, or hide it with the Files button. Mark
-files Viewed to fold them away; the rail checks them and dims their names. A
-mark clears when the file changes again.
+loaded as you scroll, in the same order as the file list and tree. The
+toolbar switches split or unified view, steps through changes, and expands
+or collapses every file; View options holds wrap, ignore whitespace, word or
+character inline changes, and expand unchanged. A renamed file with no line
+changes reads "renamed". Commit, range, and branch reviews list their files
+in a rail beside the diffs; drag its edge to resize it, or hide it with the
+Files button. Filter the rail by path, or hide the files you have viewed;
+Source Zero remembers Hide viewed.
+
+Mark a file Viewed to fold it away and move on to the next file you have not
+viewed; the rail checks viewed files and dims their names. When a viewed
+file changes, it opens again and reads "Changed since viewed" until you mark
+it again. Outside text fields, `]` and `[` go to the next and previous file,
+and `v` marks the file in view Viewed or unmarks it.
 Uncommitted and branch reviews follow new edits and commits; commit and range
 reviews stay fixed. On phones, tap a commit to show its diff button,
 long-press a commit and tap another to select a range, and use the Files

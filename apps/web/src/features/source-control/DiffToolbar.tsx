@@ -1,10 +1,10 @@
 import { Menu } from "@base-ui/react/menu"
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, Columns2Icon, HighlighterIcon, PanelRightIcon, Rows2Icon, SpaceIcon, UnfoldVerticalIcon, WrapTextIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, Columns2Icon, PanelRightIcon, Rows2Icon, Settings2Icon } from "lucide-react"
 
 import { IconButton } from "../../components/ui/icon-button.tsx"
-import { menuItemClass, menuPopupClass, menuPositionerClass } from "../../components/ui/menu.ts"
+import { menuGroupLabelClass, menuItemClass, menuPopupClass, menuPositionerClass, menuSeparatorClass } from "../../components/ui/menu.ts"
 import { SegmentedControl, SegmentedItem } from "../../components/ui/segmented-control.tsx"
-import { effectiveDiffStyle, inlineChoices, type DiffOptions } from "./diff-options.ts"
+import { diffOptionsModified, effectiveDiffStyle, inlineChoices, type DiffOptions } from "./diff-options.ts"
 
 interface DiffToolbarProps {
   options: DiffOptions
@@ -24,10 +24,20 @@ interface DiffToolbarProps {
 const splitUnavailable = "Split view needs a wider window"
 const noChanges = "No changes to step through"
 
-// DiffToolbar sits in the document mode-toggle slot for a review tab.
+// toggles are the View options menu's on/off options.
+const toggles: ReadonlyArray<{ option: "wrap" | "ignoreWhitespace" | "expandUnchanged"; label: string; title: string }> = [
+  { option: "wrap", label: "Wrap lines", title: "Wrap long lines" },
+  { option: "ignoreWhitespace", label: "Ignore whitespace", title: "Ignore leading and trailing whitespace" },
+  { option: "expandUnchanged", label: "Expand unchanged lines", title: "Show every unchanged line" },
+]
+
+// DiffToolbar sits in the document mode-toggle slot for a review tab:
+// layout, change steps, Collapse All, and Files stay on the bar; Wrap,
+// Ignore whitespace, Expand unchanged, and Inline changes share one View
+// options menu (decision 0117).
 export function DiffToolbar({ anyExpanded, files, hasChanges, narrow, onChange, onExpandAll, onStepHunk, options }: DiffToolbarProps) {
   const style = effectiveDiffStyle(options, narrow)
-  const inline = inlineChoices.find((choice) => choice.value === options.inline) ?? inlineChoices[0]
+  const modified = diffOptionsModified(options)
   return (
     <div className="diff-toolbar">
       <SegmentedControl className="document-mode-toggle diff-layout" aria-label="Diff layout">
@@ -40,46 +50,43 @@ export function DiffToolbar({ anyExpanded, files, hasChanges, narrow, onChange, 
           <Rows2Icon aria-hidden="true" />
         </SegmentedItem>
       </SegmentedControl>
-      <SegmentedControl className="document-mode-toggle" aria-label="Diff options">
-        <SegmentedItem aria-label="Wrap lines" pressed={options.wrap} title="Wrap lines"
-          onClick={() => onChange({ wrap: !options.wrap })}>
-          <WrapTextIcon aria-hidden="true" />
-        </SegmentedItem>
-        <SegmentedItem aria-label="Ignore whitespace" pressed={options.ignoreWhitespace}
-          title="Ignore leading and trailing whitespace" onClick={() => onChange({ ignoreWhitespace: !options.ignoreWhitespace })}>
-          <SpaceIcon aria-hidden="true" />
-        </SegmentedItem>
-        <Menu.Root>
-          <Menu.Trigger className="diff-inline-trigger" aria-label={`Inline changes: ${inline?.label ?? "Word"}`}
-            title={`Inline changes: ${inline?.label ?? "Word"}`} data-active={options.inline !== "none" || undefined}
-            render={<SegmentedItem />}>
-            <HighlighterIcon aria-hidden="true" />
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Positioner className={menuPositionerClass} sideOffset={4} align="end">
-              <Menu.Popup className={menuPopupClass} aria-label="Inline changes">
+      <Menu.Root>
+        <Menu.Trigger className="diff-view-options" data-modified={modified || undefined}
+          render={<IconButton label="View options" title={modified ? "View options (changed)" : "View options"}
+            icon={<Settings2Icon aria-hidden="true" />} />} />
+        <Menu.Portal>
+          <Menu.Positioner className={menuPositionerClass} sideOffset={4} align="end">
+            <Menu.Popup className={menuPopupClass} aria-label="View options">
+              {toggles.map((toggle) => (
+                <Menu.CheckboxItem key={toggle.option} className={menuItemClass} checked={options[toggle.option]}
+                  title={toggle.title} onCheckedChange={(checked) => onChange({ [toggle.option]: checked })}>
+                  <Menu.CheckboxItemIndicator className="diff-option-check" keepMounted>
+                    <CheckIcon aria-hidden="true" />
+                  </Menu.CheckboxItemIndicator>
+                  {toggle.label}
+                </Menu.CheckboxItem>
+              ))}
+              <Menu.Separator className={menuSeparatorClass} />
+              <Menu.Group>
+                <Menu.GroupLabel className={menuGroupLabelClass}>Inline changes</Menu.GroupLabel>
                 <Menu.RadioGroup value={options.inline} onValueChange={(value: unknown) => {
                   const choice = inlineChoices.find((entry) => entry.value === value)
                   if (choice) onChange({ inline: choice.value })
                 }}>
                   {inlineChoices.map((choice) => (
-                    <Menu.RadioItem key={choice.value} className={menuItemClass} value={choice.value} closeOnClick>
-                      <Menu.RadioItemIndicator className="diff-inline-check" keepMounted>
+                    <Menu.RadioItem key={choice.value} className={menuItemClass} value={choice.value}>
+                      <Menu.RadioItemIndicator className="diff-option-check" keepMounted>
                         <CheckIcon aria-hidden="true" />
                       </Menu.RadioItemIndicator>
                       {choice.label}
                     </Menu.RadioItem>
                   ))}
                 </Menu.RadioGroup>
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
-        <SegmentedItem aria-label="Expand unchanged lines" pressed={options.expandUnchanged}
-          title="Expand unchanged lines" onClick={() => onChange({ expandUnchanged: !options.expandUnchanged })}>
-          <UnfoldVerticalIcon aria-hidden="true" />
-        </SegmentedItem>
-      </SegmentedControl>
+              </Menu.Group>
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
       <span className="diff-hunk-steps">
         <IconButton label="Previous change" title="Previous change (Shift+F7)" aria-keyshortcuts="Shift+F7"
           icon={<ChevronUpIcon aria-hidden="true" />} disabledReason={hasChanges ? undefined : noChanges}

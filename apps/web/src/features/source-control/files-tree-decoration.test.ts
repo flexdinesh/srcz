@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import type { FileStats } from "@srcz/contracts"
+import { pureRename } from "./diff-stats.ts"
 import { fileDecoration, viewedCSS } from "./files-tree-decoration.ts"
 
 test("counted stats report additions and deletions, including zero", () => {
@@ -48,4 +50,26 @@ test("viewed CSS quotes hostile paths and excludes selected rows from dimming", 
   assert.ok(css.includes(`${selector}) > [data-item-section="decoration"]::before`))
   assert.ok(css.includes(`${selector}:not([data-item-selected])`))
   assert.ok(!css.includes('odd"name'))
+})
+
+test("a rename without line changes reads renamed, not +0 −0", () => {
+  const stats: FileStats = { path: "start.md", status: "counted", additions: 0, deletions: 0, blob: "b" }
+  const decoration = fileDecoration(stats, "old/start.md")
+  assert.equal(decoration?.text, "renamed")
+  assert.deepEqual(decoration?.parts, [{ text: "renamed", color: "var(--color-text-muted)" }])
+  assert.ok(decoration?.title.includes("Renamed from old/start.md"))
+  assert.ok(!decoration?.title.includes("+0"))
+  // A rename with line changes keeps its stats; so does an unrenamed file.
+  assert.equal(fileDecoration({ ...stats, additions: 2 }, "old/start.md")?.text, "+2 −0")
+  assert.equal(fileDecoration(stats, undefined)?.text, "+0 −0")
+  assert.equal(fileDecoration(stats, "old/start.md", { marked: true })?.text, "● renamed")
+})
+
+test("pureRename needs a rename and counted zero lines", () => {
+  const stats: FileStats = { path: "a.md", status: "counted", additions: 0, deletions: 0, blob: "b" }
+  assert.equal(pureRename(stats, "b.md"), true)
+  assert.equal(pureRename(stats, undefined), false)
+  assert.equal(pureRename({ ...stats, deletions: 1 }, "b.md"), false)
+  assert.equal(pureRename({ path: "a.md", status: "binary", blob: "b" }, "b.md"), false)
+  assert.equal(pureRename(undefined, "b.md"), false)
 })
