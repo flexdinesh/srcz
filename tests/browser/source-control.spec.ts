@@ -549,6 +549,53 @@ test("a review tab keeps its scroll, files, and rail behind a document tab, with
   expect(diffReads).toEqual([])
 })
 
+test("a review leaves scroll anchoring to its diff virtualizer, and documents get it back", async ({ page }) => {
+  await openReview(page, "review=working")
+  await expect(diffLines(page, "change-addition", "src/app.ts").first()).toBeVisible()
+  const anchoring = () => page.locator("main").evaluate((pane) => getComputedStyle(pane).overflowAnchor)
+  await expect.poll(anchoring).toBe("none")
+
+  await reviewFile(page, "src/app.ts").getByRole("button", { name: "Open File" }).click()
+  await expect(page.getByRole("tab", { name: "app.ts" })).toHaveAttribute("aria-selected", "true")
+  await expect.poll(anchoring).toBe("auto")
+
+  await page.goBack()
+  await expect(diffLines(page, "change-addition", "src/app.ts").first()).toBeVisible()
+  await expect.poll(anchoring).toBe("none")
+})
+
+// Two anchoring authorities (the browser's and the virtualizer's) disagree in
+// WebKit: one shifts the pane mid-scroll and the other scrolls it back, which
+// a trackpad's momentum shows as jitter (decision 0111).
+test("scrolling down a review never scrolls the pane back up", async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.addInitScript(() => {
+    const scrollTo = Element.prototype.scrollTo
+    let back = 0
+    Element.prototype.scrollTo = function (this: Element, first?: ScrollToOptions | number, second?: number) {
+      const top = typeof first === "number" ? second : first?.top
+      if (this.tagName === "MAIN" && top !== undefined && top < this.scrollTop - 1) {
+        back += 1
+        document.documentElement.dataset.paneScrolledBack = String(back)
+      }
+      Reflect.apply(scrollTo, this, typeof first === "number" ? [first, second ?? 0] : [first])
+    }
+  })
+  await openReview(page, "review=working")
+  await expect(diffLines(page, "change-addition", "src/app.ts").first()).toBeVisible()
+  const main = page.locator("main")
+  const box = await main.boundingBox()
+  if (!box) throw new Error("the review pane is not laid out")
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  for (let step = 0; step < 80; step += 1) {
+    await page.mouse.wheel(0, 300)
+    await page.waitForTimeout(40)
+  }
+  expect(await page.evaluate(() => document.documentElement.dataset.paneScrolledBack ?? "0")).toBe("0")
+  // The wheel crossed several viewports, through sections that load as they near.
+  expect(await main.evaluate((pane) => pane.scrollTop / pane.clientHeight)).toBeGreaterThan(2)
+})
+
 test("a pinned review file stays the file in view behind a document tab", async ({ page }) => {
   await openSourceControl(page)
   const current = branchRow(page, "feature")
