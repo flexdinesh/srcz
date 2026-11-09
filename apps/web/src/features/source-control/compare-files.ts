@@ -15,6 +15,12 @@ export type CompareDetails =
 // untracked files.
 export type CompareFile = ChangedFile
 
+// statusLetters and statusNames label a file's change in every file list.
+export const statusLetters: Record<CompareFile["status"], string> = { modified: "M", added: "A", untracked: "U", deleted: "D", renamed: "R" }
+export const statusNames: Record<CompareFile["status"], string> = {
+  modified: "Modified", added: "Added", untracked: "Untracked", deleted: "Deleted", renamed: "Renamed",
+}
+
 // FileList is one compare's file list as Source Control knows it.
 export type FileList =
   | { kind: "loading" }

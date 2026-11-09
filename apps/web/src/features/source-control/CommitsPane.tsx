@@ -7,11 +7,13 @@ import { IconButton } from "../../components/ui/icon-button.tsx"
 import { ListButton, ListRow } from "../../components/ui/list-row.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
 import { Chevron } from "../../components/ui/section-toggle.tsx"
+import { FileIcon } from "../../components/FileIcon.tsx"
 import type { Commit } from "@srcz/contracts"
 import { shortHash } from "../../lib/commit-hash.ts"
 import { useClipboardCopy } from "../../lib/clipboard.ts"
 import { commitAge, commitDate, selectedHashes, selectionCompare, type Compare } from "./compare.ts"
-import { rowDiff, type RefChip } from "./source-control-panes.ts"
+import { statusLetters, type FileList } from "./compare-files.ts"
+import { detailsFiles, diffGlyph, fileParts, moreFilesLabel, type RefChip } from "./source-control-panes.ts"
 import type { Commits } from "./use-commits.ts"
 
 // Long-pressing a commit on a phone starts a range; the next tap ends it.
@@ -27,17 +29,19 @@ interface CommitsPaneProps {
   allOnly: boolean
   mobile: boolean
   onSelect(compare: Compare): void
-  // onOpen opens a compare's review; focusDocument moves focus to it.
-  onOpen(compare: Compare, focusDocument: boolean): void
+  // onOpen opens a compare's review, at path when given; focusDocument moves
+  // focus to it.
+  onOpen(compare: Compare, focusDocument: boolean, path?: string): void
   onShowAll(): void
 }
 
-// CommitsPane lists the range's commits (decision 0040). Click selects one;
-// Shift-click or Shift+Arrow extends a contiguous run; Escape narrows it.
-// Diffs open deliberately: a row's Diff action (pinned to the selection's
-// newest commit, else shown on hover and focus), Enter, or double-click.
+// CommitsPane lists the range's commits (decisions 0040, 0112). Click selects
+// a commit and opens its diff, keeping focus; Shift-click extends a
+// contiguous run and opens the range's diff. Arrows, Home/End, and Space
+// only select; Enter opens the selection's diff and focuses it; Escape
+// narrows a range.
 export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen, onSelect, onShowAll }: CommitsPaneProps) {
-  const { error, loadMore, loadingMore, moreError, refresh, result } = commits
+  const { error, files, loadFiles, loadMore, loadingMore, moreError, refresh, result } = commits
   const list = useMemo(() => result?.commits ?? [], [result])
   const selected = useMemo(() => selectedHashes(list, selection), [list, selection])
   const container = useRef<HTMLDivElement>(null)
@@ -64,8 +68,9 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
   }
 
   // setDetails opens or closes a commit's details, dropping commits no longer
-  // listed.
+  // listed. Opening reads the commit's files, shared with its review.
   function setDetails(hash: string, open: boolean) {
+    if (open) loadFiles(hash)
     setExpanded((current) => {
       const next = new Set([...current].filter((key) => key !== hash && list.some((commit) => commit.hash === key)))
       if (open) next.add(hash)
@@ -73,16 +78,19 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
     })
   }
 
-  function select(hash: string, extend: boolean) {
+  // select selects a commit, or extends the range to it, and returns what it
+  // selected.
+  function select(hash: string, extend: boolean): Compare | null {
     const compare = selectionCompare(list, extend && anchor ? anchor : hash, hash)
     if (!extend) setAnchor(hash)
     if (compare) onSelect(compare)
+    return compare
   }
 
-  // open reviews what a row's Diff action opens.
+  // open reviews what a row's diff glyph stands for.
   function open(hash: string, focusDocument: boolean) {
-    const diff = rowDiff(hash, selection, selected)
-    onOpen(diff ? diff.compare : { kind: "commit", hash }, focusDocument)
+    const glyph = diffGlyph(hash, selection, selected)
+    onOpen(glyph ? glyph.compare : { kind: "commit", hash }, focusDocument)
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -149,13 +157,17 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
     press.current = null
     if (pressed?.fired) return
     if (mobile && pending) {
-      // The second tap ends a long-press range.
+      // The second tap ends a long-press range and opens it.
       const compare = selectionCompare(list, pending, hash)
       setPending("")
-      if (compare) onSelect(compare)
+      if (compare) {
+        onSelect(compare)
+        onOpen(compare, false)
+      }
       return
     }
-    select(hash, event.shiftKey && !mobile)
+    const compare = select(hash, event.shiftKey && !mobile)
+    if (compare) onOpen(compare, false)
   }
 
   return (
@@ -172,12 +184,12 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
             selected={selected.includes(commit.hash)} inRange={selection?.kind === "range" && selected.includes(commit.hash)}
             pending={pending === commit.hash} focusable={commit.hash === tabKey} chips={chips.get(commit.hash) ?? []}
             expanded={expanded.has(commit.hash)} onExpandedChange={(open) => setDetails(commit.hash, open)}
-            diff={rowDiff(commit.hash, selection, selected)}
+            files={files.get(commit.hash)} onRetryFiles={() => loadFiles(commit.hash, true)}
+            glyph={diffGlyph(commit.hash, selection, selected)}
             onFocus={() => setFocusedKey(commit.hash)}
             onPointerDown={(event) => onPointerDown(event, commit.hash)} onPointerEnd={endPress}
             onClick={(event) => onClick(event, commit.hash)}
-            onDoubleClick={() => open(commit.hash, true)}
-            onOpen={(compare) => onOpen(compare, true)} />)}
+            onOpenFile={(path) => onOpen({ kind: "commit", hash: commit.hash }, false, path)} />)}
         </div>
         {(result?.more || moreError) && (
           <div className="commit-more">
@@ -214,35 +226,37 @@ interface CommitRowProps {
   pending: boolean
   focusable: boolean
   chips: readonly RefChip[]
-  diff: ReturnType<typeof rowDiff>
+  glyph: ReturnType<typeof diffGlyph>
   expanded: boolean
+  // files is the commit's file list, once its details asked for it.
+  files: FileList | undefined
   onExpandedChange(expanded: boolean): void
+  onRetryFiles(): void
   onFocus(): void
   onPointerDown(event: PointerEvent<HTMLDivElement>): void
   onPointerEnd(): void
   onClick(event: { shiftKey: boolean }): void
-  onDoubleClick(): void
-  onOpen(compare: Compare): void
+  onOpenFile(path: string): void
 }
 
 // CommitRow is one commit; its chevron (or Right and Left) shows details
-// under it: message body, author, date, hash, and the branches it tips.
+// under it: message body, author, date, hash, the branches it tips, and its
+// files.
 function CommitRow({
-  chips, commit, diff, expanded, focusable, inRange, now, pending, selected, onClick, onDoubleClick, onExpandedChange, onFocus, onOpen,
-  onPointerDown, onPointerEnd,
+  chips, commit, expanded, files, focusable, glyph, inRange, now, pending, selected, onClick, onExpandedChange, onFocus, onOpenFile,
+  onPointerDown, onPointerEnd, onRetryFiles,
 }: CommitRowProps) {
   const age = commitAge(commit.authorTime, now)
-  const diffLabel = diff?.compare.kind === "range" ? "Open changes in the selected commits" : "Open changes"
   const detailsId = useId()
   return (<>
     <ListRow data-row-key={commit.hash} role="option" tabIndex={focusable ? 0 : -1} aria-selected={selected} selected={selected}
       className="compare-row compare-row-commit" data-range={inRange || undefined} data-pending={pending || undefined}
-      data-diff-pinned={diff?.pinned || undefined} data-expanded={expanded || undefined}
+      data-diff-pinned={glyph?.pinned || undefined} data-expanded={expanded || undefined}
       aria-describedby={expanded ? detailsId : undefined}
       aria-label={`${commit.subject}, ${commit.author.name}, ${age.long}${chips.length ? `, ${chips.map((chip) => chip.name).join(", ")}` : ""}`}
       title={`${commit.subject}\n${commit.author.name} · ${commitDate(commit.authorTime)} · ${shortHash(commit.hash)}`}
       onFocus={onFocus} onPointerDown={onPointerDown} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} onPointerLeave={onPointerEnd}
-      onClick={onClick} onDoubleClick={onDoubleClick}>
+      onClick={onClick}>
       {/* The row keeps its own keyboard; Right and Left toggle the same details. */}
       <IconButton size="xs" className="commit-details-toggle" tabIndex={-1} aria-expanded={expanded}
         label={expanded ? "Hide commit details" : "Show commit details"} icon={<Chevron />}
@@ -250,20 +264,11 @@ function CommitRow({
           event.stopPropagation()
           onExpandedChange(!expanded)
         }}
-        onPointerDown={(event) => event.stopPropagation()}
-        onDoubleClick={(event) => event.stopPropagation()} />
+        onPointerDown={(event) => event.stopPropagation()} />
       <span className="compare-row-label">{commit.subject || "(no message)"}</span>
       <span className="compare-row-age">{age.short}</span>
-      {diff && (
-        // The row keeps its own keyboard; Enter opens the same diff.
-        <IconButton size="xs" className="row-action" tabIndex={-1} label={diffLabel} icon={<FileDiffIcon aria-hidden="true" />}
-          onClick={(event) => {
-            event.stopPropagation()
-            onOpen(diff.compare)
-          }}
-          onPointerDown={(event) => event.stopPropagation()}
-          onDoubleClick={(event) => event.stopPropagation()} />
-      )}
+      {/* The glyph only signals that a click opens the diff; clicks reach the row. */}
+      {glyph && <FileDiffIcon className="commit-diff-glyph" aria-hidden="true" />}
     </ListRow>
     {/* A listbox holds options only, so the row names these details through
         aria-describedby and they stay out of the accessibility tree. */}
@@ -282,7 +287,55 @@ function CommitRow({
             {chips.map((chip) => <span key={chip.name} className="ref-chip" data-current={chip.current || undefined}>{chip.name}</span>)}
           </p>
         )}
+        <CommitFiles files={files} onRetry={onRetryFiles} onOpen={onOpenFile} />
       </div>
     )}
   </>)
+}
+
+interface CommitFilesProps {
+  files: FileList | undefined
+  onRetry(): void
+  // onOpen opens the commit's review at path, or at its start for "".
+  onOpen(path: string): void
+}
+
+// CommitFiles lists a commit's first files in review order; the row after
+// them opens the review. Pointer-only, as the details are: Enter opens the
+// review, whose Files rail lists every file.
+function CommitFiles({ files, onOpen, onRetry }: CommitFilesProps) {
+  if (!files || files.kind === "loading") return <p className="commit-details-line">Reading files…</p>
+  if (files.kind === "error") {
+    return (
+      <p className="commit-details-line commit-details-files-error">
+        <span>Couldn't read files: {files.message}</span>
+        <Button variant="outline" size="sm" tabIndex={-1} onClick={onRetry}>Retry</Button>
+      </p>
+    )
+  }
+  if (files.files.length === 0) return <p className="commit-details-line">No files changed.</p>
+  const capped = detailsFiles(files.files, files.truncated)
+  const more = moreFilesLabel(capped)
+  return (
+    <div className="commit-details-files">
+      {capped.shown.map((file) => {
+        const { name, folder } = fileParts(file.path)
+        return (
+          <ListRow key={file.path} className="changes-row commit-details-file" data-status={file.status}
+            title={file.oldPath ? `${file.path}\nRenamed from ${file.oldPath}` : file.path}
+            onClick={() => onOpen(file.path)}>
+            <FileIcon path={file.path} />
+            <span className="changes-row-name">{name}</span>
+            <span className="changes-row-folder">{folder}</span>
+            <span className="commit-file-status" data-status={file.status}>{statusLetters[file.status]}</span>
+          </ListRow>
+        )
+      })}
+      {more && (
+        <ListRow className="changes-row commit-details-file commit-details-more" onClick={() => onOpen("")}>
+          <span className="changes-row-folder">{more}</span>
+        </ListRow>
+      )}
+    </div>
+  )
 }

@@ -97,10 +97,12 @@ Drag between open panes to resize them. The base defaults to `origin/HEAD`,
 remembers it per project. Source Zero reads git data directly; `git` need not be
 installed.
 
-Diffs open only when you ask. Hover a commit and click its diff button, or
-press Enter. Shift-click or Shift+Arrow across commits, then use the diff
-button on the newest one to review their combined changes; Escape narrows
-back to one commit, and Cmd/Ctrl+C copies a commit's hash. On a branch, one
+Click a commit to open its diff. Shift-click another to review the combined
+changes of every commit between them. Arrow keys move through commits without
+opening them; press Enter to open the selection. Expand a commit with its
+chevron to see its message, author, and changed files; click a file to open
+the diff at it. Escape narrows a range back to one commit, and Cmd/Ctrl+C
+copies a commit's hash. On a branch, one
 button reviews just that branch's own commits against the branch below it,
 the other everything since the base.
 

@@ -1,6 +1,6 @@
 # 0042: Expandable commit rows
 
-- Status: Accepted
+- Status: Accepted; click and request-free details superseded by [0112](0112-click-opens-commit-diff.md)
 - Date: 2026-10-26
 - Supersedes: [0040](0040-source-control-panes-and-review-files-rail.md)'s branch-name chips on commit rows
 

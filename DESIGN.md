@@ -579,26 +579,37 @@ date, the short hash chip with a 20px Copy action for the full hash, and,
 for stack layer tips, a 12px git-branch icon and branch-name chips (12px
 monospace, 1px `border`; HEAD's branch in `accent`). Details are
 12px muted lines; items wrap whole and truncate when wider than the pane.
+Last come the commit's files (decision 0112), read on expand: Uncommitted's
+flat rows (Pierre icon, name in `text-primary` at body size, muted 12px
+folder, status letter; no line counts) bleeding to the pane's edges, in
+review order. The first 20 show; a trailing row reads “5 more files” in
+secondary (primary on hover). States: “Reading files…”, “No files changed.”,
+and “Couldn't read files: <reason>” with a small outline Retry. Clicking a
+file opens the commit's review at it; the more row opens the review.
 Several commits can show details; the choice is not persisted. The details
-stay out of the accessibility tree; the row names them through
-`aria-describedby`. A 20px Diff action (file-diff icon, “Open changes”) replaces
-the age on hover and keyboard focus and stays on the selection; on a range it
-sits on the newest selected commit only (“Open changes in the selected
-commits”) and opens the combined diff.
+stay out of the accessibility tree, so their files and Copy are
+pointer-only; the row names them through `aria-describedby`. A 14px
+file-diff glyph (secondary; selection ink when selected) replaces the age on
+hover and keyboard focus and stays on the selection; on a range it sits on
+the newest selected commit only. It is not a control: it says a click opens
+the diff.
 
-Click selects; Shift-click or Shift+Arrow extends a contiguous range of
-commits from the anchor; arrows, Home/End move and select; Space selects;
-Enter or double-click opens the review tab; Escape narrows a range to its
-anchor; Ctrl/Cmd+C on a commit copies its full hash. Pages hold 50 commits; a
+Click selects a commit and opens its review tab, keeping focus in the list;
+Shift-click extends a contiguous range from the anchor and opens the
+combined diff; Shift+Arrow extends without opening; arrows, Home/End move
+and select; Space selects; Enter opens the selection's review and focuses
+it; Escape narrows a range to its anchor; Ctrl/Cmd+C on a commit copies its
+full hash. Pages hold 50 commits; a
 Load more row ends the list and scrolls with it, as in VS Code: a 22px
 `ListButton` with a chevrons-down icon and a secondary label (primary on
 hover), reading Loading… while it reads (`aria-disabled`, so focus stays) and
 Retry with a refresh icon under the error after a failure. States: “No
 commits ahead of main.” or “No base branch found to compare with.” with an outline “Show all history”, “No commits yet.”, and
 “Couldn't read git history: <reason>.” as an alert, with Retry when nothing is
-listed. Phones: tapping a row selects it and shows its Diff action (28px);
-long-pressing a commit marks it with a dashed accent outline and “Tap another
-commit to compare a range.” Opening a diff closes the drawer.
+listed. Phones: tapping a row opens its diff; long-pressing a commit marks
+it with a dashed accent outline and “Tap another commit to compare a
+range.”, and that tap opens the range's diff. Opening a diff closes the
+drawer.
 
 Branches' header adds a muted “base main” and the base picker. A
 `role="listbox"` named “Branches” lists the stack top to bottom: layers above

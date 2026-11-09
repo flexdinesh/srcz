@@ -45,9 +45,9 @@ rewriting history; update `Status` on the old record.
 | [0037](0037-dark-default-theme.md) | Dark is the default theme | Accepted; labels superseded by 0039 |
 | [0038](0038-mise-dev-tooling-and-env-ports.md) | mise owns dev tooling, tasks, and env-configured dev ports | Accepted |
 | [0039](0039-srcz-theme-labels.md) | Source Zero Light, Source Zero Dark, and Auto theme labels | Accepted |
-| [0040](0040-source-control-panes-and-review-files-rail.md) | Source Control panes, branch stacks, and the review Files rail | Accepted; commit-row branch chips superseded by 0042 |
+| [0040](0040-source-control-panes-and-review-files-rail.md) | Source Control panes, branch stacks, and the review Files rail | Accepted; commit-row branch chips superseded by 0042; deliberate commit diffs by 0112 |
 | [0041](0041-white-canvas-srcz-light.md) | White canvas for Source Zero Light | Superseded by 0102; white document surface amended by 0043 |
-| [0042](0042-expandable-commit-rows.md) | Expandable commit rows | Accepted |
+| [0042](0042-expandable-commit-rows.md) | Expandable commit rows | Accepted; click and request-free details superseded by 0112 |
 | [0043](0043-grey-document-surface-srcz-light.md) | Grey document surface for Source Zero Light | Accepted; Source Zero Light values amended by 0044; grey document surface superseded by 0046 |
 | [0044](0044-srcz-light-state-contrast.md) | Source Zero Light state and boundary contrast | Accepted; field border and tint-only states amended by 0045; Source Zero Light values amended by 0046, superseded by 0102 |
 | [0045](0045-selection-marks-and-field-edges.md) | Selection marks and 3:1 field edges | Accepted; activity rail bar removed by 0046 |
@@ -115,3 +115,4 @@ rewriting history; update `Status` on the old record.
 | [0109](0109-neutral-selection-fill.md) | Neutral selection fill | Accepted; revises 0033 |
 | [0110](0110-compose-validation-runner.md) | Docker Compose validation runner | Accepted; supersedes Dagger execution in 0058, 0059, 0096 |
 | [0111](0111-review-pane-single-scroll-anchor.md) | One scroll anchor for the review pane | Accepted; extends 0035 |
+| [0112](0112-click-opens-commit-diff.md) | Click opens a commit's diff | Accepted; supersedes parts of 0040, 0042 |

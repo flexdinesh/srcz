@@ -372,12 +372,9 @@ test("phones stack the panes, open diffs from a tapped commit, and force Unified
   const commits = drawer.getByRole("listbox", { name: "Commits" })
   await expect(commits).not.toHaveAttribute("aria-multiselectable", "true")
 
-  // A tap selects a commit and shows its diff button; the diff closes the drawer.
+  // A tap selects a commit and opens its diff, closing the drawer.
   const commit = commits.getByRole("option", { name: new RegExp(`^${featureSubject}, `) })
   await commit.click()
-  await expect(commit).toHaveAttribute("aria-selected", "true")
-  await expect(page.getByRole("tab")).toHaveText(["Welcome"])
-  await commit.getByRole("button", { name: "Open changes" }).click()
   await expect(drawer).toBeHidden()
   await expect(commitTab(page, featureSubject)).toHaveAttribute("aria-selected", "true")
   // Phones keep the rail in a sheet the toolbar opens.
@@ -448,7 +445,7 @@ test("status failures keep the view usable and recover on Retry", async ({ page 
   await expect(page.locator(".activity-badge")).toHaveText(String(gitFixtureChanges))
 })
 
-test("clicking a commit selects it; its diff opens the commit's review with a Files rail", async ({ page }) => {
+test("clicking a commit opens the commit's review with a Files rail, keeping focus in the list", async ({ page }) => {
   await openSourceControl(page)
   await expect(pane(page, "Commits").getByText("2 ahead of main")).toBeVisible()
   await expect(pane(page, "Commits").getByRole("button", { name: "Branch", exact: true })).toHaveAttribute("aria-pressed", "true")
@@ -456,19 +453,22 @@ test("clicking a commit selects it; its diff opens the commit's review with a Fi
 
   const commit = commitRow(page, featureSubject)
   const lower = commitRow(page, lowerSubject)
+  const glyph = (row: typeof commit) => row.locator(".commit-diff-glyph")
   await page.mouse.move(0, 0)
-  await expect(commit.getByRole("button", { name: "Open changes" })).toHaveCount(0)
-  // A click selects without opening anything.
+  // Rows carry no Diff button; a glyph shows on hover that a click opens the diff.
+  await expect(commitsList(page).getByRole("button", { name: /^Open changes/ })).toHaveCount(0)
+  await expect(glyph(commit)).toBeHidden()
+  await commit.hover()
+  await expect(glyph(commit)).toBeVisible()
+  await expect(commit.locator(".compare-row-age")).toBeHidden()
+  // A click selects the commit and opens its diff; focus stays on the row.
   await commit.click()
   await expect(commit).toHaveAttribute("aria-selected", "true")
   await expect(lower).toHaveAttribute("aria-selected", "false")
-  await expect(page.getByRole("tab")).toHaveText(["Welcome"])
-  await expect(page).not.toHaveURL(/[?&]commit=/)
-  // The selection keeps its diff button; other rows show theirs on hover.
+  await expect(commit).toBeFocused()
+  // The selection keeps its glyph.
   await lower.hover()
-  await expect(lower.getByRole("button", { name: "Open changes" })).toBeVisible()
-  await expect(commit.getByRole("button", { name: "Open changes" })).toBeVisible()
-  await commit.getByRole("button", { name: "Open changes" }).click()
+  await expect(glyph(commit)).toBeVisible()
 
   const tab = commitTab(page, featureSubject)
   await expect(tab).toHaveAttribute("aria-selected", "true")
@@ -514,7 +514,7 @@ test("clicking a commit selects it; its diff opens the commit's review with a Fi
 test("a review tab keeps its scroll, files, and rail behind a document tab, without rereading diffs", async ({ page }) => {
   await openSourceControl(page)
   await pane(page, "Commits").getByRole("button", { name: "All", exact: true }).click()
-  await commitRow(page, "Initial").dblclick()
+  await commitRow(page, "Initial").click()
   await fileToggle(page, "assets/logo.bin").click()
   await expect(fileToggle(page, "assets/logo.bin")).toHaveAttribute("aria-expanded", "false")
   await railFile(page, "app.ts").click()
@@ -766,26 +766,25 @@ test("the base picker changes the stack's base and is remembered", async ({ page
   await expect(choices.getByRole("option", { name: "release" })).toHaveAttribute("aria-selected", "true")
 })
 
-test("Shift-selecting commits opens their range from the newest commit's diff", async ({ page }) => {
+test("Shift-clicking commits opens their range's diff", async ({ page }) => {
   await openSourceControl(page)
   await pane(page, "Commits").getByRole("button", { name: "All", exact: true }).click()
   const feature = commitRow(page, featureSubject)
   const lower = commitRow(page, lowerSubject)
   const initial = commitRow(page, "Initial")
+  const glyph = (row: typeof feature) => row.locator(".commit-diff-glyph")
   await expect(initial).toBeVisible()
   await expect(commitsList(page)).toHaveAttribute("aria-multiselectable", "true")
 
   await feature.click()
+  await expect(commitTab(page, featureSubject)).toHaveAttribute("aria-selected", "true")
   await initial.click({ modifiers: ["Shift"] })
   for (const row of [feature, lower, initial]) await expect(row).toHaveAttribute("aria-selected", "true")
-  await expect(page.getByRole("tab")).toHaveText(["Welcome"])
-  // Only the newest selected commit offers the range's diff.
+  // Only the newest selected commit carries the range's glyph.
   await lower.hover()
-  await expect(lower.getByRole("button", { name: /^Open changes/ })).toHaveCount(0)
-  await initial.hover()
-  await expect(initial.getByRole("button", { name: /^Open changes/ })).toHaveCount(0)
-  await expect(feature.getByRole("button", { name: "Open changes in the selected commits" })).toBeVisible()
-  await feature.getByRole("button", { name: "Open changes in the selected commits" }).click()
+  await expect(glyph(lower)).toHaveCount(0)
+  await expect(glyph(initial)).toHaveCount(0)
+  await expect(glyph(feature)).toBeVisible()
 
   const tab = page.getByRole("tab", { name: /^[0-9a-f]{7}\.\.[0-9a-f]{7}$/ })
   await expect(tab).toHaveAttribute("aria-selected", "true")
@@ -805,7 +804,7 @@ test("Shift-selecting commits opens their range from the newest commit's diff", 
   await expect(feature).toHaveAttribute("aria-selected", "true")
   await expect(lower).toHaveAttribute("aria-selected", "false")
   await expect(initial).toHaveAttribute("aria-selected", "false")
-  await expect(feature.getByRole("button", { name: "Open changes" })).toBeVisible()
+  await expect(glyph(feature)).toBeVisible()
   await expect(tab).toBeVisible()
 
   // Shift+Arrow extends from the focused commit; Escape narrows it again.
@@ -828,6 +827,61 @@ test("Shift-selecting commits opens their range from the newest commit's diff", 
   await page.reload()
   await expect(page.getByRole("tab", { name: /^[0-9a-f]{7}\.\.[0-9a-f]{7}$/ })).toHaveAttribute("aria-selected", "true")
   await expect(diffLines(page, "change-addition", "clean.md").filter({ hasText: "Edited on the feature branch." })).toBeVisible()
+})
+
+test("arrows select commits without opening them; Enter opens and focuses the diff", async ({ page }) => {
+  await openSourceControl(page)
+  const feature = commitRow(page, featureSubject)
+  const lower = commitRow(page, lowerSubject)
+  await feature.focus()
+  await page.keyboard.press("ArrowDown")
+  await expect(lower).toBeFocused()
+  await expect(lower).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("tab")).toHaveText(["Welcome"])
+  await expect(page).not.toHaveURL(/[?&]commit=/)
+
+  await page.keyboard.press("Enter")
+  await expect(commitTab(page, lowerSubject)).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("main")).toBeFocused()
+})
+
+test("a commit's details list its files, which open its review at that file", async ({ page }) => {
+  await openSourceControl(page)
+  const commit = commitRow(page, featureSubject)
+  const details = commitsList(page).locator(".commit-details")
+  await commit.getByRole("button", { name: "Show commit details" }).click()
+  // Files list in review order and open nothing until clicked.
+  const files = details.locator(".commit-details-file")
+  await expect(files).toHaveCount(2)
+  await expect(files.nth(0).locator(".changes-row-name")).toHaveText("history.md")
+  await expect(files.nth(0).locator(".changes-row-folder")).toHaveText("docs")
+  await expect(files.nth(1).locator(".changes-row-name")).toHaveText("clean.md")
+  await expect(files.nth(1).locator(".commit-file-status")).toHaveText("M")
+  await expect(page.getByRole("tab")).toHaveText(["Welcome"])
+  await files.filter({ hasText: "clean.md" }).click()
+  await expect(commitTab(page, featureSubject)).toHaveAttribute("aria-selected", "true")
+  await expect(page).toHaveURL(/[?&]commit=[0-9a-f]{40}#f=clean\.md$/)
+  await expect(diffLines(page, "change-addition", "clean.md").filter({ hasText: "Edited on the feature branch." })).toBeVisible()
+})
+
+test("a big commit's details list its first 20 files, then a row that opens the review", async ({ page }) => {
+  await page.route("**/api/commit-files?*", async (route) => {
+    const response = await route.fetch()
+    const body: unknown = await response.json()
+    if (typeof body !== "object" || body === null || !("files" in body)) throw new Error("unexpected commit files response")
+    const files = Array.from({ length: 25 }, (_, index) => ({ path: `many/file-${String(index).padStart(2, "0")}.md`, status: "added" }))
+    await route.fulfill({ response, json: { ...body, files } })
+  })
+  await openSourceControl(page)
+  const commit = commitRow(page, featureSubject)
+  await commit.getByRole("button", { name: "Show commit details" }).click()
+  const details = commitsList(page).locator(".commit-details")
+  await expect(details.locator(".commit-details-file:not(.commit-details-more)")).toHaveCount(20)
+  const more = details.locator(".commit-details-more")
+  await expect(more).toHaveText("5 more files")
+  await more.click()
+  await expect(commitTab(page, featureSubject)).toHaveAttribute("aria-selected", "true")
+  await expect(page).toHaveURL(/[?&]commit=[0-9a-f]{40}$/)
 })
 
 test("commit pagination recovers on Retry", async ({ page }) => {

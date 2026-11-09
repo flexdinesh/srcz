@@ -1,8 +1,9 @@
 import type { StackLayer, StackResponse } from "@srcz/contracts"
 import { branchCompare, type Compare } from "./compare.ts"
+import { displayOrder, type CompareFile } from "./compare-files.ts"
 
-// Pure decisions behind Source Control's panes (decision 0040): when the
-// branch range applies, what each commit and stack row diffs, and how the
+// Pure decisions behind Source Control's panes (decisions 0040, 0112): when
+// the branch range applies, what each commit and stack row diffs, and how the
 // flat change list names files.
 
 // onBaseBranch is whether HEAD is the base branch itself, or a local branch
@@ -11,21 +12,50 @@ export function onBaseBranch(branch: string, base: string): boolean {
   return branch !== "" && base !== "" && (base === branch || base === `origin/${branch}`)
 }
 
-// RowDiff is what a commit row's Diff action opens, and whether it stays
-// shown (on the selection) rather than only on hover or focus.
-export interface RowDiff {
+// DiffGlyph is the diff a commit row's glyph stands for (Enter opens it), and
+// whether the glyph stays shown (on the selection) rather than only on hover
+// or focus.
+export interface DiffGlyph {
   compare: Compare
   pinned: boolean
 }
 
-// rowDiff places Diff on a commit row: a range's newest commit opens the
-// range, its other commits offer none, and any other commit opens itself,
-// pinned when it is the selection. selected lists the selection's hashes.
-export function rowDiff(hash: string, selection: Compare | null, selected: readonly string[]): RowDiff | null {
+// diffGlyph places the diff glyph on a commit row: a range's newest commit
+// stands for the range, its other commits show none, and any other commit
+// stands for itself, pinned when it is the selection. selected lists the
+// selection's hashes.
+export function diffGlyph(hash: string, selection: Compare | null, selected: readonly string[]): DiffGlyph | null {
   if (selection?.kind === "range" && selected.includes(hash)) {
     return hash === selection.to ? { compare: selection, pinned: true } : null
   }
   return { compare: { kind: "commit", hash }, pinned: selection?.kind === "commit" && selection.hash === hash }
+}
+
+// detailsFileLimit is how many files a commit's details list.
+export const detailsFileLimit = 20
+
+// DetailsFiles is what a commit's details list: the first files in review
+// order, and how many more the review holds (more is set when the server
+// truncated the list).
+export interface DetailsFiles {
+  shown: CompareFile[]
+  more: number
+  truncated: boolean
+}
+
+// detailsFiles caps a commit's files for its details, in the order the
+// review shows them.
+export function detailsFiles(files: readonly CompareFile[], truncated: boolean, limit = detailsFileLimit): DetailsFiles {
+  const ordered = displayOrder(files)
+  return { shown: ordered.slice(0, limit), more: Math.max(0, ordered.length - limit), truncated }
+}
+
+// moreFilesLabel names the row after a capped list: "3 more files",
+// "1 more file", or "20+ more files" when the server truncated it.
+export function moreFilesLabel(list: DetailsFiles): string {
+  if (list.more === 0 && !list.truncated) return ""
+  if (list.more === 0) return "More files"
+  return `${list.more.toLocaleString()}${list.truncated ? "+" : ""} more ${list.more === 1 && !list.truncated ? "file" : "files"}`
 }
 
 // RefChip names a local branch at a commit.

@@ -31,7 +31,7 @@ import { useTheme } from "../../settings/ThemeProvider.tsx"
 import { uiScale } from "../../settings/settings.ts"
 import { LineCopyButton } from "../documents/SourceDocument.tsx"
 import { commitDate, type Compare, type CompareName } from "./compare.ts"
-import { displayOrder, type CompareFile } from "./compare-files.ts"
+import { displayOrder, statusLetters, statusNames, type CompareFile } from "./compare-files.ts"
 import { binaryChangeLabel } from "./diff-content.ts"
 import { fileOrder, gapForLine, hunkCursor, hunkInFile, hunkSelection, type HunkCursor } from "./diff-hunks.ts"
 import { diffLineAnchor, diffLineTarget, type DiffLineTarget } from "./diff-line-selection.ts"
@@ -69,11 +69,6 @@ const nearMargin = "1600px 0px"
 
 // revealTop is where a revealed line lands: the pane's top third, as in Source.
 const revealTop = 1 / 3
-
-const statusLetters: Record<CompareFile["status"], string> = { modified: "M", added: "A", untracked: "U", deleted: "D", renamed: "R" }
-const statusNames: Record<CompareFile["status"], string> = {
-  modified: "Modified", added: "Added", untracked: "Untracked", deleted: "Deleted", renamed: "Renamed",
-}
 
 function lineDiffType(inline: InlineChanges): LineDiffTypes {
   return inline === "word" ? "word-alt" : inline
