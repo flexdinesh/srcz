@@ -10,6 +10,7 @@
 @import "./components/ui/icon-button.css" layer(ui);
 @import "./components/ui/toggle-button.css" layer(ui);
 @import "./components/ui/segmented-control.css" layer(ui);
+@import "./components/ui/slider.css" layer(ui);
 @import "./components/ui/text-field.css" layer(ui);
 @import "./components/ui/list-row.css" layer(ui);
 @import "./components/ui/badge.css" layer(ui);
@@ -28,6 +29,7 @@
 @import "./workspace/tabs.css" layer(features);
 @import "./features/documents/documents.css" layer(features);
 @import "./features/source-control/diff.css" layer(features);
+@import "./features/source-control/image-diff.css" layer(features);
 @import "./workspace/status-bar.css" layer(features);
 @import "./settings/settings.css" layer(features);
 @import "./workspace/command-palette.css" layer(features);

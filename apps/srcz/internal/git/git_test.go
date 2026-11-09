@@ -503,7 +503,7 @@ func TestLookupClassifiesOnePath(t *testing.T) {
 func TestHeadBlobReadsCommittedContent(t *testing.T) {
 	f := newFixture(t)
 	f.write("doc.md", "# committed\n")
-	f.commit("doc.md")
+	head := f.commit("doc.md")
 	f.write("doc.md", "# working\n")
 
 	blob, err := f.open().HeadBlob("doc.md")
@@ -512,6 +512,9 @@ func TestHeadBlobReadsCommittedContent(t *testing.T) {
 	}
 	if blob.Size != int64(len("# committed\n")) {
 		t.Fatalf("Size = %d", blob.Size)
+	}
+	if blob.Commit != Hash(head) {
+		t.Fatalf("Commit = %s, want %s", blob.Commit, head)
 	}
 	if got := readBlob(t, blob); got != "# committed\n" {
 		t.Fatalf("content = %q", got)

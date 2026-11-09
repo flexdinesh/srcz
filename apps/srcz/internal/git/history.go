@@ -1239,7 +1239,7 @@ func (r *Repository) CommitBlob(hash Hash, name string) (Blob, error) {
 	if err != nil {
 		return Blob{}, fmt.Errorf("read tree of %s: %w", hash, err)
 	}
-	return r.treeBlob(tree, name)
+	return r.treeBlob(tree, hash, name)
 }
 
 // ParentBlob returns the file name has in a commit's first parent. It
@@ -1254,10 +1254,14 @@ func (r *Repository) ParentBlob(hash Hash, name string) (Blob, error) {
 	if err != nil {
 		return Blob{}, err
 	}
-	return r.treeBlob(tree, name)
+	if tree == nil {
+		return Blob{}, ErrUnavailable
+	}
+	return r.treeBlob(tree, Hash(commit.ParentHashes[0]), name)
 }
 
-func (r *Repository) treeBlob(tree *object.Tree, name string) (Blob, error) {
+// treeBlob returns the file name has in tree, commit's tree.
+func (r *Repository) treeBlob(tree *object.Tree, commit Hash, name string) (Blob, error) {
 	if !validPath(name) {
 		return Blob{}, ErrUnavailable
 	}
@@ -1272,7 +1276,7 @@ func (r *Repository) treeBlob(tree *object.Tree, name string) (Blob, error) {
 	if err != nil {
 		return Blob{}, err
 	}
-	return Blob{Size: size, hash: file.hash, storage: r.storage}, nil
+	return Blob{Size: size, Commit: commit, hash: file.hash, storage: r.storage}, nil
 }
 
 // parentTree returns a commit's first parent's tree, or nil for a root or

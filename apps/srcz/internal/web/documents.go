@@ -4,22 +4,33 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/flexdinesh/srcz/internal/app"
 	"github.com/flexdinesh/srcz/pkg/contract"
 )
 
-// serveImage returns a Markdown image dependency's bytes.
-func (a *App) serveImage(w http.ResponseWriter, projectID, name string) {
-	image, err := a.app.Documents.OpenImage(projectID, name)
+// serveImage returns a Markdown image dependency's bytes or, with at, an
+// image's bytes at a commit (decision 0116). Its failures are plain text.
+func (a *App) serveImage(w http.ResponseWriter, request contract.ImageRequest) {
+	image, err := a.app.Documents.OpenImage(request)
 	if err != nil {
-		http.NotFound(w, nil)
+		var failure *app.Error
+		if !errors.As(err, &failure) || failure.Kind == contract.KindNotFound {
+			http.NotFound(w, nil)
+			return
+		}
+		http.Error(w, failure.Message, contract.HTTPStatus(failure.Kind))
 		return
 	}
-	defer func() { _ = image.File.Close() }()
+	defer func() { _ = image.Content.Close() }()
 	w.Header().Set("Content-Type", image.MediaType)
 	w.Header().Set("Cache-Control", "no-cache")
-	_, _ = io.Copy(w, image.File)
+	if request.At != "" {
+		w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+		w.Header().Set("Content-Length", strconv.FormatInt(image.Size, 10))
+	}
+	_, _ = io.Copy(w, image.Content)
 }
 
 func (a *App) serveSearchDocuments(w http.ResponseWriter, projectID string) {

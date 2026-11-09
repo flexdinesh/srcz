@@ -118,4 +118,5 @@ rewriting history; update `Status` on the old record.
 | [0112](0112-click-opens-commit-diff.md) | Click opens a commit's diff | Accepted; supersedes parts of 0040, 0042 |
 | [0114](0114-commit-search-and-file-history.md) | Commit search and file history | Accepted; extends 0027, 0040, 0112; revises 0081 |
 | [0115](0115-source-change-markers.md) | Change markers in Source | Accepted; extends 0024, 0083 |
+| [0116](0116-image-diffs.md) | Image diffs | Accepted; extends 0004, 0035, 0083 |
 | [0117](0117-review-order-viewed-flow-and-view-options.md) | One review order, a quicker Viewed flow, and View options | Accepted; revises 0035, 0040, 0051 |

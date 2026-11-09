@@ -40,6 +40,7 @@ import { effectiveDiffStyle, type DiffOptions, type InlineChanges } from "./diff
 import { DiffStatsText, FileStatsText } from "./DiffStatsText.tsx"
 import { DIFF_THEME } from "./diff-theme.ts"
 import type { CollapseRequest } from "./FilesTree.tsx"
+import { ImageDiff, ImageDiffProvider } from "./ImageDiff.tsx"
 import { loadReviewDiff, useReviewDiff, type RenderedDiff } from "./review-diffs.ts"
 import { adjacentFile, nextUnviewed, reviewKeyCommand, reviewKeyShortcuts, type ReviewKeyCommand } from "./review-keys.ts"
 import type { ViewedState } from "./review-viewed.ts"
@@ -201,7 +202,9 @@ export function ReviewDocument(props: ReviewDocumentProps) {
   }))
   return (
     <WorkerPoolContextProvider poolOptions={poolOptions} highlighterOptions={highlighterOptions}>
-      <ReviewBody {...props} />
+      <ImageDiffProvider project={props.project}>
+        <ReviewBody {...props} />
+      </ImageDiffProvider>
     </WorkerPoolContextProvider>
   )
 }
@@ -847,7 +850,8 @@ function FileContent({ annotation, compare, diff, file, rendered, lines, narrow,
   }
   const { content, missingLineDiff } = diff
   return <>
-    {content.kind === "binary" && <Notice tone="warning" layout="bar" role="note">{binaryChangeLabel(content.before, content.after)}</Notice>}
+    {content.kind === "binary" && <ImageDiff diff={diff.diff}
+      fallback={<Notice tone="warning" layout="bar" role="note">{binaryChangeLabel(content.before, content.after)}</Notice>} />}
     {content.kind === "tooLarge" && <Notice tone="warning" layout="bar" role="note">Large file ({formatBytes(content.size)}): diff is off.</Notice>}
     {content.kind === "text" && missingLineDiff && <Notice tone="error" layout="bar">Couldn't compute this diff.</Notice>}
     {rendered && rendered.lineDiff.hunks.length === 0 && (

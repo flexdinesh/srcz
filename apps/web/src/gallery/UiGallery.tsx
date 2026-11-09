@@ -15,6 +15,7 @@ import { Notice, StatusMessage } from "../components/ui/notice.tsx"
 import { ProgressBar } from "../components/ui/progress-bar.tsx"
 import { Chevron, SectionToggle } from "../components/ui/section-toggle.tsx"
 import { SegmentedControl, SegmentedItem } from "../components/ui/segmented-control.tsx"
+import { Slider } from "../components/ui/slider.tsx"
 import { Select } from "../components/ui/select.tsx"
 import { TextField } from "../components/ui/text-field.tsx"
 import { ToggleButton } from "../components/ui/toggle-button.tsx"
@@ -49,6 +50,7 @@ export default function UiGallery() {
   const [caseSensitive, setCaseSensitive] = useState(true)
   const [expanded, setExpanded] = useState(true)
   const [busy, setBusy] = useState(true)
+  const [opacity, setOpacity] = useState(50)
   const dialog = useRef<HTMLDialogElement>(null)
 
   return (
@@ -94,6 +96,14 @@ export default function UiGallery() {
               <SegmentedItem disabled>disabled</SegmentedItem>
             </SegmentedControl>
           ))}
+        </Row>
+      </Section>
+
+      <Section title="Slider">
+        <Row>
+          <Slider className="gallery-slider" label="Opacity" value={opacity} onValueChange={setOpacity}
+            valueText={(value) => `${value}%`} />
+          <span>{opacity}%</span>
         </Row>
       </Section>
 

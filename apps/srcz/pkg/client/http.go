@@ -104,8 +104,12 @@ func (c *HTTP) SearchDocuments(ctx context.Context, project string) (contract.Se
 	return response, c.getJSON(ctx, "/api/search-documents", url.Values{"project": {project}}, &response)
 }
 
-func (c *HTTP) Image(ctx context.Context, project, path string) (contract.Image, error) {
-	response, err := c.do(ctx, http.MethodGet, "/api/image", url.Values{"project": {project}, "path": {path}}, nil)
+func (c *HTTP) Image(ctx context.Context, request contract.ImageRequest) (contract.Image, error) {
+	query := url.Values{"project": {request.Project}, "path": {request.Path}}
+	if request.At != "" {
+		query.Set("at", request.At)
+	}
+	response, err := c.do(ctx, http.MethodGet, "/api/image", query, nil)
 	if err != nil {
 		return contract.Image{}, err
 	}

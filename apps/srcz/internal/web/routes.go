@@ -88,7 +88,7 @@ func (a *App) newRoutes() *http.ServeMux {
 	})
 	mux.HandleFunc("GET /api/image", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
-		a.serveImage(w, query.Get("project"), query.Get("path"))
+		a.serveImage(w, contract.ImageRequest{Project: query.Get("project"), Path: query.Get("path"), At: query.Get("at")})
 	})
 
 	// Code navigation.

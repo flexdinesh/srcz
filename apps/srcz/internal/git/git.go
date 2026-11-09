@@ -97,9 +97,11 @@ type Entry struct {
 	Link    string
 }
 
-// Blob is a HEAD file's content, sized before it is read.
+// Blob is a committed file's content, sized before it is read.
 type Blob struct {
 	Size int64
+	// Commit is the commit the blob was read from.
+	Commit Hash
 
 	hash    plumbing.Hash
 	storage *filesystem.Storage
@@ -491,9 +493,15 @@ func (r *Repository) HeadBlob(name string) (Blob, error) {
 	if !validPath(name) {
 		return Blob{}, ErrUnavailable
 	}
-	tree, err := r.headTree()
+	commit, err := r.headCommit()
 	if err != nil {
 		return Blob{}, err
+	}
+	var tree *object.Tree
+	if commit != nil {
+		if tree, err = commit.Tree(); err != nil {
+			return Blob{}, err
+		}
 	}
 	committed, ok, err := treeFile(r.storage, tree, name)
 	if err != nil {
@@ -506,7 +514,7 @@ func (r *Repository) HeadBlob(name string) (Blob, error) {
 	if err != nil {
 		return Blob{}, err
 	}
-	return Blob{Size: size, hash: committed.hash, storage: r.storage}, nil
+	return Blob{Size: size, Commit: Hash(commit.Hash), hash: committed.hash, storage: r.storage}, nil
 }
 
 // validPath reports whether name is a clean, slash-separated relative path
@@ -543,6 +551,15 @@ func normalMode(mode filemode.FileMode) filemode.FileMode {
 
 // headTree returns HEAD's tree, or nil for an unborn branch.
 func (r *Repository) headTree() (*object.Tree, error) {
+	commit, err := r.headCommit()
+	if err != nil || commit == nil {
+		return nil, err
+	}
+	return commit.Tree()
+}
+
+// headCommit returns HEAD's commit, or nil before the first commit.
+func (r *Repository) headCommit() (*object.Commit, error) {
 	ref, err := storer.ResolveReference(r.storage, plumbing.HEAD)
 	if errors.Is(err, plumbing.ErrReferenceNotFound) {
 		return nil, nil
@@ -554,7 +571,7 @@ func (r *Repository) headTree() (*object.Tree, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read HEAD commit: %w", err)
 	}
-	return commit.Tree()
+	return commit, nil
 }
 
 // treeFile finds the file name in tree, a nil tree being empty. Directories

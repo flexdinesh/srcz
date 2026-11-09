@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process"
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
+import { crc32, deflateSync } from "node:zlib"
 
 // gitFixtureRoot is a throwaway repository with one change of every kind,
 // rebuilt before each run. Without git, it is a plain folder and the Source
@@ -35,7 +36,40 @@ function largeText(changed: boolean): string {
   return `${lines.join("\n")}\n`
 }
 
-const committed: Record<string, string> = {
+// png encodes an RGB image whose pixel(x, y) returns its color.
+function png(width: number, height: number, pixel: (x: number, y: number) => [number, number, number]): Buffer {
+  const rows = Buffer.alloc((width * 3 + 1) * height)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) rows.set(pixel(x, y), y * (width * 3 + 1) + 1 + x * 3)
+  }
+  const chunk = (type: string, data: Buffer) => {
+    const length = Buffer.alloc(4)
+    length.writeUInt32BE(data.length)
+    const body = Buffer.concat([Buffer.from(type, "latin1"), data])
+    const check = Buffer.alloc(4)
+    check.writeUInt32BE(crc32(body))
+    return Buffer.concat([length, body, check])
+  }
+  const header = Buffer.alloc(13)
+  header.writeUInt32BE(width, 0)
+  header.writeUInt32BE(height, 4)
+  header.set([8, 2, 0, 0, 0], 8)
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", header), chunk("IDAT", deflateSync(rows)), chunk("IEND", Buffer.alloc(0))])
+}
+
+// The images branch, off main and outside the stack, changes a diagram and
+// adds a badge for image diffs (decision 0116).
+export const imagesBranch = "images"
+export const diagramBefore = { width: 240, height: 160 }
+export const diagramAfter = { width: 320, height: 160 }
+export const badgeSize = { width: 64, height: 64 }
+const slate: [number, number, number] = [228, 229, 232]
+const diagramV1 = png(diagramBefore.width, diagramBefore.height, (x, y) => x > 40 && x < 140 && y > 40 && y < 120 ? [50, 93, 200] : slate)
+const diagramV2 = png(diagramAfter.width, diagramAfter.height, (x, y) =>
+  (x - 220) ** 2 + (y - 80) ** 2 < 50 ** 2 ? [242, 80, 46] : x > 60 && x < 160 && y > 40 && y < 120 ? [50, 93, 200] : slate)
+const badge = png(badgeSize.width, badgeSize.height, (x, y) => (x + y) % 16 < 8 ? [29, 122, 67] : [250, 250, 250])
+
+const committed: Record<string, string | Buffer> = {
   "README.md": "# Fixture\n\nOne\nTwo\nThree\n",
   "src/app.ts": "export const answer = 1\n\nexport function run() {\n  return answer\n}\n",
   "notes/removed.md": "# Removed\n\nThis note goes away.\n",
@@ -44,6 +78,7 @@ const committed: Record<string, string> = {
   "clean.md": "# Clean\n",
   "large.txt": largeText(false),
   ".gitignore": "*.log\n",
+  "assets/diagram.png": diagramV1,
 }
 
 // The feature branch is the middle of a stack on main: lowerBranch below it,
@@ -69,7 +104,7 @@ const featureCommit: Record<string, string> = {
 export const featureSubject = "docs: add history notes"
 const featureMessage = `${featureSubject}\n\nExplain how the fixture's branch history is built.\n\nThe feature branch adds one commit on top of ${lowerBranch}.`
 
-const working: Record<string, string> = {
+const working: Record<string, string | Buffer> = {
   "README.md": "# Fixture\n\nOne\nTwo, changed\nThree\nFour\n",
   "src/app.ts": "export const answer = 2\n\nexport function run() {\n    return answer\n}\n",
   "guides/start.md": committed["guides/intro.md"] ?? "",
@@ -80,7 +115,7 @@ const working: Record<string, string> = {
   "debug.log": "ignored\n",
 }
 
-function write(files: Record<string, string>) {
+function write(files: Record<string, string | Buffer>) {
   for (const [name, content] of Object.entries(files)) {
     const file = path.join(gitFixtureRoot, name)
     mkdirSync(path.dirname(file), { recursive: true })
@@ -102,7 +137,7 @@ function git(...args: string[]): boolean {
 }
 
 // commitOn creates branch at HEAD, switches to it, and commits files.
-function commitOn(branch: string, files: Record<string, string>, message: string) {
+function commitOn(branch: string, files: Record<string, string | Buffer>, message: string) {
   git("switch", "--quiet", "--create", branch)
   write(files)
   git("add", "--all")
@@ -122,6 +157,8 @@ export function createGitFixture() {
   git("commit", "--quiet", "--message", "Initial")
   // A second base for the branch compare's base picker.
   git("branch", "release")
+  commitOn(imagesBranch, { "assets/diagram.png": diagramV2, "assets/badge.png": badge }, "assets: redraw the diagram, add a badge")
+  git("switch", "--quiet", "main")
   // A branch stack, so Commits has a branch range against main and Branches
   // has layers below and above HEAD.
   commitOn(lowerBranch, lowerCommit, lowerSubject)

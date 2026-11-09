@@ -30,8 +30,9 @@ type Client interface {
 	// SearchDocuments returns every searchable file's original text.
 	SearchDocuments(ctx context.Context, project string) (contract.SearchDocumentsResponse, error)
 	// Image reads a project image (a Markdown image dependency, root-confined,
-	// image types only) up to contract.MaxImageBytes.
-	Image(ctx context.Context, project, path string) (contract.Image, error)
+	// or with At the image at a commit; image types only) up to
+	// contract.MaxImageBytes.
+	Image(ctx context.Context, request contract.ImageRequest) (contract.Image, error)
 	// Events follows a project's live updates until ctx ends or the stream
 	// is closed.
 	Events(ctx context.Context, request contract.EventsRequest) (*Stream[contract.Event], error)

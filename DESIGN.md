@@ -392,6 +392,7 @@ Every view composes these from `apps/web/src/components/ui/`; a missing capabili
 - **IconButton**: icon-only, required `label` (also the tooltip). xs 20px (12px glyph) in rows and tabs, sm 24px (16px) in headers, toolbars, and fields, md 28px (16px) in panels, `bar` fills its band (`--bar-size`, 14px glyph) in the status bar, activity bar, and toolbar. `disabledReason` keeps it focusable and explains why. With `aria-pressed`, the pressed state takes the selection tint. Dialogs raise targets to 44px on narrow screens.
 - **ToggleButton**: independent on/off options (match case, Show modified). Pressed uses an accent border with the selection fill and ink.
 - **SegmentedControl**: mutually exclusive modes (Preview/Source, zoom, diff layout, Branch/All). `sm` (view headers): a translucent `--color-hover` track; the pressed item lifts onto `surface` with the control shadow. `md` (document toolbar): square segments fill the 32px strip like tabs, hover takes `--color-chrome-hover`, and the pressed one takes `surface` as the active tab does (decision 0046). Icon-only items are square.
+- **Slider**: one value on a 2px `border-strong` track whose filled part is `accent`, with a square 12px thumb on `surface-raised` (accent border on hover and drag, 1px accent focus ring); the hit area is 24px tall, 44px with an 18px thumb on narrow screens. Base UI's slider: arrows step, Page Up/Down step by ten, Home/End jump to the ends; `label` names it and `valueText` reads its value (decision 0116).
 - **TextField** and **Select**: 28px fields with icon, leading, and trailing slots; the palette variant is borderless, 40px (44px mobile), with an accent underline.
 - **ListRow** / **ListButton**: list density 22px, pick 32px, menu, and drawer. Hover adds the state layer; active and selected rows use the selection fill and ink; disabled (`aria-disabled`) rows take no hover.
 - **SectionToggle** and **Chevron**: 22px disclosure rows; the chevron rotates inside any `aria-expanded="true"` row.
@@ -494,6 +495,8 @@ Unregistered text files open as Source and the footer names the type (“Plain t
 Images open in a fit-by-default viewer: centered, never upscaled, on a subtle surface/surface-secondary checkerboard with a 1px border; zoomed images scroll within the pane. The toggle slot holds [Fit][−][100%][+] (SVG adds [Preview][Source] first; zoom hides in Source). The middle button shows the current zoom and resets to 100%. Steps are ×1.25 within 10%–800%. With the viewer focused, `+`/`-` zoom, `0` fits, `1` shows actual size. Zoom changes are announced politely; the footer shows `1920 × 1080 · 64%` beside the size. Loading shows a neutral placeholder; decode failures read “Can't display this image.” Alt text is the filename.
 
 Other binaries open to the centered empty-state layout: “Binary file”, `name · size`, and “srcz shows text and images only.” No toggle.
+
+In a review, a changed raster image shows its images instead of the binary notice (decision 0116). A small `SegmentedControl` named “Image comparison” leads the file: 2-up (default), Swipe, Onion skin; the choice holds for the review tab. 2-up places Before and After side by side (one column when two 12rem columns do not fit), each captioned with its label in 12px 600, `destructive` and `success`, and a muted tabular `240 × 160 · 770 B`; each sits on the viewer's checkerboard with a 1px `border`, at its own size, scaled down to fit, never up. Swipe and Onion skin stack After over Before on one checkerboard stage sized to the larger of each dimension, both from the top left at one scale. Swipe clips After to the left of a 2px `accent` handle; dragging across the stage moves it. Onion skin sets After's opacity. A Slider between “Before” and “After” labels (20rem at most) drives either, starting at 50%. Added and deleted images show their one side, labelled Added or Deleted, without the control. Loading frames are 16rem × 10rem `surface-recessed` blocks; the stage reads “Loading images…”. An image over 32 MiB, or one that fails to load, shows the binary notice.
 
 Non-image files over 32 MiB use the same layout: “Too large to display”, `name · size`, and “srcz shows text files up to 32 MB.” No toggle; the footer keeps the type label.
 
@@ -758,8 +761,9 @@ next and previous file (no wrap) and `v` toggles Viewed on the file in view;
 the review's root lists them in `aria-keyshortcuts`.
 Diffs load as files near the viewport and keep their height while away.
 
-Slim notices sit inside a file in the large-file bar treatment: renamed,
-“Binary file changed · 12 KB → 14 KB”, “Large file (6.2 MB): diff is off.”,
+Changed raster images show their images (see Images and binary files) and
+fall back to the binary notice. Slim notices sit inside a file in the
+large-file bar treatment: renamed, “Binary file changed · 12 KB → 14 KB”, “Large file (6.2 MB): diff is off.”,
 and “Couldn't compute this diff.”. “Loading diff…”, an unchanged file's
 message, and fetch failures with Retry use the 12px status text. Opening a
 file from Uncommitted or the Files rail scrolls its header to the top and holds it there

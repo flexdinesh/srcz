@@ -249,7 +249,9 @@ func TestDataAPIParityAcrossTransports(t *testing.T) {
 		{"no project", "", "assets/dot.png", "", contract.KindNotFound},
 	}
 	for _, image := range images {
-		got := f.same(t, "Image "+image.name, func(c client.Client) outcome { return result(c.Image(ctx, image.project, image.path)) })
+		got := f.same(t, "Image "+image.name, func(c client.Client) outcome {
+			return result(c.Image(ctx, contract.ImageRequest{Project: image.project, Path: image.path}))
+		})
 		read, ok := got.Value.(contract.Image)
 		if kindOf(got.Err) != image.kind || !ok || read.MediaType != image.mediaType || (image.kind == "") != (len(read.Content) > 0) {
 			t.Errorf("Image %s = %+v, want %q, kind %q", image.name, got, image.mediaType, image.kind)
