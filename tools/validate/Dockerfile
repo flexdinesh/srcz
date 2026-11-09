@@ -115,23 +115,25 @@ COPY --from=ctx-toolchain . /src/
 RUN MISE_JOBS=1 mise install go node pnpm
 
 # Frozen workspace install. Packages are copied out of the shared store so the
-# layer owns them.
+# layer owns them. The store mounts at pnpm's default path: node_modules records
+# it, and a different runtime store makes pnpm recreate node_modules offline.
 FROM toolchain AS node-deps
 COPY --from=ctx-node . /src/
-RUN --mount=type=cache,id=srcz-check-pnpm-store,target=/home/runner/.cache/pnpm/store \
-    mise exec -- pnpm install --frozen-lockfile --store-dir=/home/runner/.cache/pnpm/store --package-import-method=copy
+RUN --mount=type=cache,id=srcz-check-pnpm-store,target=/home/runner/.local/share/pnpm/store \
+    mise exec -- pnpm install --frozen-lockfile --package-import-method=copy
 
 # Playwright picks browser builds from the locked version.
 FROM node-deps AS browsers
 RUN mise exec -- pnpm exec playwright install chromium webkit
 
-# Module downloads fill a shared cache, then a second, offline pass copies the
-# exact build list into the layer (sums still checked against go.sum).
+# Module downloads fill a shared cache (retried: the checksum database drops
+# streams now and then), then a second, offline pass copies the exact build
+# list into the layer (sums still checked against go.sum).
 FROM toolchain AS go-deps
 COPY --from=ctx-gomod . /src/
 RUN --mount=type=cache,id=srcz-check-go-mod,target=/cache/go-mod <<'EOF'
 set -eu
-GOMODCACHE=/cache/go-mod mise exec -- go mod download all
+for attempt in 1 2 3; do GOMODCACHE=/cache/go-mod mise exec -- go mod download all && break; [ "$attempt" -lt 3 ] && sleep 5 || exit 1; done
 GOMODCACHE=/home/runner/go/pkg/mod GOPROXY=file:///cache/go-mod/cache/download GOSUMDB=off mise exec -- go mod download all
 EOF
 
@@ -151,7 +153,7 @@ COPY --from=ctx-desktopmod . /src/
 RUN --mount=type=cache,id=srcz-check-go-mod,target=/cache/go-mod <<'EOF'
 set -eu
 export GOROOT=/usr/local/go1.27
-GOMODCACHE=/cache/go-mod /usr/local/go1.27/bin/go -C apps/desktop mod download all
+for attempt in 1 2 3; do GOMODCACHE=/cache/go-mod /usr/local/go1.27/bin/go -C apps/desktop mod download all && break; [ "$attempt" -lt 3 ] && sleep 5 || exit 1; done
 GOMODCACHE=/home/runner/go/pkg/mod GOPROXY=file:///cache/go-mod/cache/download GOSUMDB=off /usr/local/go1.27/bin/go -C apps/desktop mod download all
 EOF
 
