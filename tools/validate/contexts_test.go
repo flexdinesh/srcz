@@ -37,6 +37,10 @@ func TestBuildContextsMatchFingerprintInputs(t *testing.T) {
 		"ctx-bin":        {"apps/srcz/main.go", "apps/srcz/go.mod", "go.work", "tools/go.mod", "mise.toml"},
 		"ctx-toolchain":  {"mise.toml", "mise.lock"},
 	}
+	available := map[string]bool{}
+	for _, e := range s.Entries {
+		available[e.Path] = true
+	}
 	for group := range groupTargets {
 		m, _, err := manifest(s, group, "", nil, nil)
 		if err != nil {
@@ -67,8 +71,10 @@ func TestBuildContextsMatchFingerprintInputs(t *testing.T) {
 					t.Fatalf("%s %s carries %s outside the group's inputs", group, name, e.Path)
 				}
 			}
+			// Inside a validation container the repository is one group's
+			// inputs; require only files this snapshot has.
 			for _, path := range required[name] {
-				if !present[path] {
+				if available[path] && !present[path] {
 					t.Fatalf("%s %s lacks %s", group, name, path)
 				}
 			}
