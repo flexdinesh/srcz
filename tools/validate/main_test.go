@@ -238,7 +238,7 @@ func TestWebKitBrowserTaskBelongsToWebKitGroup(t *testing.T) {
 
 func TestDesktopGroupIsPartOfCheckPR(t *testing.T) {
 	if !slices.Contains(groups, "desktop") || isHostGroup("desktop") {
-		t.Fatal("check:pr must cover the desktop group, in Dagger")
+		t.Fatal("check:pr must cover the desktop group, in a container")
 	}
 	if len(groups) != 10 {
 		t.Fatalf("check:pr covers %d groups, want 10", len(groups))
@@ -294,22 +294,25 @@ func TestFrontendIncludesWalkthroughSchemaContract(t *testing.T) {
 
 func TestCapacityCancellationDoesNotReleaseOtherRuns(t *testing.T) {
 	dir := t.TempDir()
-	first, err := acquireSlot(context.Background(), dir)
+	first, firstIndex, err := acquireSlot(context.Background(), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer first.Close()
-	second, err := acquireSlot(context.Background(), dir)
+	second, secondIndex, err := acquireSlot(context.Background(), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if firstIndex == secondIndex || firstIndex < 0 || secondIndex >= validationSlots {
+		t.Fatalf("slots %d and %d must be distinct indexes below %d", firstIndex, secondIndex, validationSlots)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
-	if _, err = acquireSlot(ctx, dir); !errors.Is(err, context.DeadlineExceeded) {
+	if _, _, err = acquireSlot(ctx, dir); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("third invocation admitted: %v", err)
 	}
 	second.Close()
-	next, err := acquireSlot(context.Background(), dir)
+	next, _, err := acquireSlot(context.Background(), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,11 +338,11 @@ func TestCancellationStopsOwnedProcessAndPreservesOtherProcess(t *testing.T) {
 
 func TestSlotSurvivesSupervisorDescriptorClose(t *testing.T) {
 	dir := t.TempDir()
-	first, err := acquireSlot(context.Background(), dir)
+	first, _, err := acquireSlot(context.Background(), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := acquireSlot(context.Background(), dir)
+	second, _, err := acquireSlot(context.Background(), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,29 +358,14 @@ func TestSlotSurvivesSupervisorDescriptorClose(t *testing.T) {
 	first.Close()
 	wait, stop := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer stop()
-	if _, err = acquireSlot(wait, dir); !errors.Is(err, context.DeadlineExceeded) {
+	if _, _, err = acquireSlot(wait, dir); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("inherited lock released too early: %v", err)
 	}
 	_ = child.Process.Kill()
 	_ = child.Wait()
-	next, err := acquireSlot(context.Background(), dir)
+	next, _, err := acquireSlot(context.Background(), dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	next.Close()
-}
-
-func TestRunnerEnvironmentExcludesHostConfiguration(t *testing.T) {
-	t.Setenv("DAGGER_ENGINE", "cloud")
-	t.Setenv("DAGGER_CLOUD_TOKEN", "secret")
-	t.Setenv("SRCZ_API_TARGET", "http://localhost:9999")
-	env := strings.Join(runnerEnvironment("/private-home"), "\n")
-	for _, value := range []string{"secret", "http://localhost", "DAGGER_ENGINE=cloud"} {
-		if strings.Contains(env, value) {
-			t.Fatalf("host configuration leaked: %s", value)
-		}
-	}
-	if !strings.Contains(env, "HOME=/private-home") || !strings.Contains(env, "docker-container://"+engine) {
-		t.Fatal("explicit private runner environment missing")
-	}
 }

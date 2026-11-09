@@ -59,7 +59,7 @@ User docs: [desktop app](../apps/site/src/pages/docs/desktop.mdx); decisions 009
 mise run dev:desktop                                 # build, then run against a private daemon, roots, and page state under .dev/desktop
 .dev/desktop/srcz daemon stop --socket $PWD/.dev/desktop/daemon.sock   # stop its daemon
 mise run test:desktop                                # unit tests
-mise run test:desktop:e2e                            # built app (-tags e2e) under Xvfb in Dagger
+mise run test:desktop:e2e                            # built app (-tags e2e) under Xvfb in a container
 mise run test:desktop:extended                       # desktop resource measurements
 ```
 

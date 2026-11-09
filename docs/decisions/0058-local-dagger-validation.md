@@ -1,6 +1,6 @@
 # 0058: Explicit local Dagger validation before PR work
 
-- Status: Accepted
+- Status: Accepted; engine ownership superseded by [0110](0110-compose-validation-runner.md)
 - Date: 2026-11-01
 - Supersedes: 0054 and 0057 check execution, locking, and pre-push policy
 

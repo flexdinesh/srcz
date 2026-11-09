@@ -137,7 +137,7 @@ func newWorld(t *testing.T) (*world, string) {
 	w.project = filepath.Join(base, "project")
 	writeFixture(t, w.project)
 	w.notices = filepath.Join(base, "notices.jsonl")
-	// Dagger may supply the app built from the same immutable source snapshot.
+	// Validation may supply the app built from the same immutable source snapshot.
 	w.bin = os.Getenv("SRCZ_DESKTOP_APP_BINARY")
 	if w.bin == "" {
 		w.bin = filepath.Join(base, "srcz-desktop")

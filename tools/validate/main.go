@@ -1,6 +1,6 @@
 //go:build linux || darwin
 
-// validate runs committed source through the local, explicitly managed Dagger engine.
+// validate runs snapshot checks on the host and in Docker Compose projects.
 package main
 
 import (
@@ -18,12 +18,10 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
-
-const engine = "srcz-validation-engine-v0.21.10"
-const engineImage = "registry.dagger.io/engine@sha256:2a7c054e0864e297671c24a0726ebf1c9747d70291b8843b1726daaff200a334"
 
 type options struct {
 	Suite   string
@@ -40,6 +38,7 @@ type result struct {
 	Origin     string
 	ExitCode   int
 	DurationMS int64
+	BuildMS    int64 `json:",omitempty"`
 	Manifest   inputManifest
 }
 type record struct {
@@ -66,6 +65,14 @@ type app struct {
 	Root   string
 	Cache  string
 	Global string
+	Docker docker // nil means the host Docker CLI
+}
+
+func (a app) docker() docker {
+	if a.Docker == nil {
+		return dockerCLI{}
+	}
+	return a.Docker
 }
 
 func main() {
@@ -99,7 +106,7 @@ func run(ctx context.Context, args []string) error {
 	}
 	digest := sha256.Sum256([]byte(common))
 	global := filepath.Join(base, "local-validation")
-	a := app{root, filepath.Join(global, "srcz", hex.EncodeToString(digest[:16])), global}
+	a := app{Root: root, Cache: filepath.Join(global, "srcz", hex.EncodeToString(digest[:16])), Global: global}
 	if command == "prune" {
 		return a.prune()
 	}
@@ -295,21 +302,21 @@ func (a app) validate(ctx context.Context, o options) (record, error) {
 		return fail(err)
 	}
 	defer os.RemoveAll(private)
-	moduleDir := filepath.Join(private, "module")
-	var moduleFiles []entry
-	for _, e := range s.Entries {
-		if e.Path == "dagger.json" || strings.HasPrefix(e.Path, ".dagger/") {
-			moduleFiles = append(moduleFiles, e)
+	// Take every input lock before waiting for machine capacity, in the fixed
+	// group order every invocation uses. Reused groups need no execution.
+	type pendingGroup struct {
+		index int
+		m     inputManifest
+		key   string
+		lock  *os.File
+	}
+	var pending []pendingGroup
+	var locks []*os.File
+	defer func() {
+		for _, lock := range locks {
+			lock.Close()
 		}
-	}
-	if err = materialize(moduleDir, moduleFiles); err != nil {
-		return fail(err)
-	}
-	// Worktree-local snapshots live under ignored .dev. Give Dagger its own
-	// repository boundary so it cannot resolve the parent workspace/ignore rules.
-	if _, err = git(moduleDir, "init", "-q"); err != nil {
-		return fail(err)
-	}
+	}()
 	for _, group := range chosen(o) {
 		if err = ctx.Err(); err != nil {
 			return fail(err)
@@ -318,14 +325,79 @@ func (a app) validate(ctx context.Context, o options) (record, error) {
 		if err != nil {
 			return fail(err)
 		}
-		value, err := a.checkGroup(ctx, o, s, m, key, runDir, private, moduleDir, lease)
-		r.Results = append(r.Results, value)
+		v := result{Group: m.Group, Key: key, Manifest: m, Origin: runDir}
+		// Editing runs never read or publish committed certificates. They
+		// remain independent executions even when their source matches HEAD.
+		var keyLock *os.File
+		if !o.Working {
+			keyLock, err = acquireFile(ctx, filepath.Join(a.Cache, "locks", key+".lock"))
+			if err != nil {
+				return fail(err)
+			}
+			locks = append(locks, keyLock)
+			if cached, ok := a.receipt(key); ok && !o.Force && (cached.Complete || o.Task != "" || len(o.Args) > 0) {
+				v.Status, v.Origin = "reused", cached.Run
+				fmt.Printf("reuse %s %s\n", m.Group, key)
+				r.Results = append(r.Results, v)
+				continue
+			}
+		}
+		v.Status = "pending"
+		pending = append(pending, pendingGroup{len(r.Results), m, key, keyLock})
+		r.Results = append(r.Results, v)
+	}
+	if err = writeJSON(recordPath, r); err != nil {
+		return fail(err)
+	}
+	inherited := []*os.File{lease}
+	slot := -1
+	var pendingGroups []string
+	for _, p := range pending {
+		pendingGroups = append(pendingGroups, p.m.Group)
+	}
+	if needsSlot(pendingGroups) {
+		slotFile, index, err := acquireSlot(ctx, a.Global)
 		if err != nil {
 			return fail(err)
 		}
-		if err = writeJSON(recordPath, r); err != nil {
-			return fail(err)
+		defer slotFile.Close()
+		slot = index
+		inherited = append(inherited, slotFile)
+		fmt.Printf("slot s%d\n", slot)
+		if err = sweepSlot(ctx, a.docker(), slot); err != nil {
+			return fail(fmt.Errorf("sweep slot s%d: %w", slot, err))
 		}
+		defer func() {
+			if err := untagSlot(context.WithoutCancel(ctx), a.docker(), slot); err != nil {
+				fmt.Fprintln(os.Stderr, "untag images:", err)
+			}
+		}()
+	}
+	objects := objectStore{filepath.Join(private, "objects")}
+	var recordMu sync.Mutex
+	jobs := make([]func(context.Context) (result, error), len(pending))
+	for i, p := range pending {
+		jobs[i] = func(ctx context.Context) (result, error) {
+			files := append([]*os.File{}, inherited...)
+			if p.lock != nil {
+				files = append(files, p.lock)
+			}
+			value, err := a.checkGroup(ctx, o, s, p.m, p.key, runDir, private, objects, slot, files)
+			recordMu.Lock()
+			defer recordMu.Unlock()
+			r.Results[p.index] = value
+			if writeErr := writeJSON(recordPath, r); writeErr != nil {
+				err = errors.Join(err, writeErr)
+			}
+			if err != nil {
+				fmt.Printf("FAIL %s: %v\n", p.m.Group, err)
+			}
+			return value, err
+		}
+	}
+	_, errs := schedule(ctx, groupParallelism, jobs)
+	if err = errors.Join(errs...); err != nil {
+		return fail(err)
 	}
 	if err = ctx.Err(); err != nil {
 		return fail(err)
@@ -357,64 +429,37 @@ func unchangedSnapshot(root string, original snapshot) error {
 	return nil
 }
 
-func (a app) checkGroup(ctx context.Context, o options, s snapshot, m inputManifest, key, runDir, private, moduleDir string, lease *os.File) (result, error) {
-	v := result{Group: m.Group, Key: key, Manifest: m, Origin: runDir}
-	// Editing runs never read or publish committed certificates. They remain
-	// independent executions even when their source happens to match HEAD.
-	var keyLock *os.File
-	var err error
-	if !o.Working {
-		keyLock, err = acquireFile(ctx, filepath.Join(a.Cache, "locks", key+".lock"))
-		if err != nil {
-			return v, err
-		}
-		defer keyLock.Close()
-		if cached, ok := a.receipt(key); ok && !o.Force && (cached.Complete || o.Task != "" || len(o.Args) > 0) {
-			if err = ctx.Err(); err != nil {
-				return v, err
-			}
-			v.Status = "reused"
-			v.Origin = cached.Run
-			fmt.Printf("reuse %s %s\n", m.Group, key)
-			return v, nil
-		}
-	}
-	if !isHostGroup(m.Group) {
-		if err = checkEngine(); err != nil {
-			return v, err
-		}
-	}
-	slot, err := acquireSlot(ctx, a.Global)
-	if err != nil {
-		return v, err
-	}
-	defer slot.Close()
-	if err = ctx.Err(); err != nil {
+// checkGroup executes one group whose input lock (committed runs) the caller
+// holds. files are descriptors children inherit so locks outlive a dead
+// supervisor.
+func (a app) checkGroup(ctx context.Context, o options, s snapshot, m inputManifest, key, runDir, private string, objects objectStore, slot int, files []*os.File) (result, error) {
+	v := result{Group: m.Group, Key: key, Manifest: m, Origin: runDir, Status: "pending"}
+	// Cancellation before execution leaves prior evidence intact.
+	if err := ctx.Err(); err != nil {
 		return v, err
 	}
 	if !o.Working {
-		if err = a.invalidate(key, runDir); err != nil {
+		if err := a.invalidate(key, runDir); err != nil {
 			return v, err
 		}
 	}
 	v.Status = "failed"
-	source := filepath.Join(private, m.Group)
-	if err = materialize(source, m.Files); err != nil {
-		return v, err
-	}
 	out := filepath.Join(runDir, m.Group)
-	if err = os.MkdirAll(out, 0700); err != nil {
+	if err := os.MkdirAll(out, 0700); err != nil {
 		return v, err
-	}
-	files := []*os.File{lease, slot}
-	if keyLock != nil {
-		files = append(files, keyLock)
 	}
 	started := time.Now()
+	var err error
 	if isHostGroup(m.Group) {
+		source := filepath.Join(private, m.Group)
+		if err = materialize(source, m.Files); err != nil {
+			return v, err
+		}
 		err = a.executeHost(ctx, source, out, filepath.Join(private, "host-"+m.Group), m, files)
 	} else {
-		err = a.executeDagger(ctx, o, source, out, private, moduleDir, m.Group, files)
+		var buildMS int64
+		buildMS, err = a.executeContainer(ctx, o, m, out, filepath.Join(private, m.Group), objects, slot, files)
+		v.BuildMS = buildMS
 	}
 	v.DurationMS = time.Since(started).Milliseconds()
 	if err != nil {
@@ -455,37 +500,40 @@ func (a app) checkGroup(ctx context.Context, o options, s snapshot, m inputManif
 	return v, nil
 }
 
-func (a app) executeDagger(ctx context.Context, o options, source, out, private, moduleDir, group string, files []*os.File) error {
-	if err := os.MkdirAll(filepath.Join(private, "client-home"), 0700); err != nil {
-		return err
+// executeContainer materializes the group's build contexts, builds its image
+// target, and runs the check in the group's Compose project. It returns the
+// image build time.
+func (a app) executeContainer(ctx context.Context, o options, m inputManifest, out, private string, objects objectStore, slot int, files []*os.File) (int64, error) {
+	if slot < 0 {
+		return 0, fmt.Errorf("%s requires a validation slot", m.Group)
 	}
-	binary, err := resolveDagger(a.Root)
+	contexts, err := buildContexts(m)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	log, err := os.Create(filepath.Join(out, "dagger.log"))
-	if err != nil {
-		return err
-	}
-	defer log.Close()
-	args, _ := json.Marshal(o.Args)
-	if len(o.Args) == 0 {
-		args = []byte("[]")
-	}
-	argv := []string{"-m", moduleDir, "call", "run", "--source", source, "--group", group, "--attempt", newID(), fmt.Sprintf("--force=%t", o.Force), "--args-json", string(args), "--task", o.Task, "export", "--path", filepath.Join(out, "output")}
-	return commandWithFiles(ctx, moduleDir, runnerEnvironment(filepath.Join(private, "client-home")), log, files, binary, argv...)
-}
-
-func runnerEnvironment(home string) []string {
-	// Only host tooling discovery passes through. No Dagger Cloud credentials,
-	// Docker contexts, application URLs, Git hooks, or personal mise overrides.
-	env := []string{"_EXPERIMENTAL_DAGGER_RUNNER_HOST=docker-container://" + engine, "DAGGER_LEAVE_OLD_ENGINE=true", "NO_COLOR=1", "HOME=" + home, "XDG_CONFIG_HOME=" + filepath.Join(home, "config"), "XDG_CACHE_HOME=" + filepath.Join(home, "cache"), "XDG_DATA_HOME=" + filepath.Join(home, "data")}
-	for _, key := range []string{"PATH", "USER"} {
-		if value := os.Getenv(key); value != "" {
-			env = append(env, key+"="+value)
+	dir := filepath.Join(private, "contexts")
+	for name, entries := range contexts {
+		if err := objects.materialize(filepath.Join(dir, name), entries); err != nil {
+			return 0, err
 		}
 	}
-	return env
+	job := containerJob{Docker: a.docker(), Slot: slot, Group: m.Group, Task: o.Task, Args: o.Args, Force: o.Force, Attempt: newID(), Contexts: dir, Out: out, Files: files}
+	started := time.Now()
+	image, err := job.build(ctx)
+	built := time.Since(started).Milliseconds()
+	if err != nil {
+		return built, err
+	}
+	return built, job.execute(ctx, image)
+}
+
+func needsSlot(groups []string) bool {
+	for _, group := range groups {
+		if !isHostGroup(group) {
+			return true
+		}
+	}
+	return false
 }
 
 func command(ctx context.Context, dir string, env []string, out io.Writer, name string, args ...string) error {
@@ -523,27 +571,33 @@ func commandWithFiles(ctx context.Context, dir string, env []string, out io.Writ
 	}
 }
 
-func acquireSlot(ctx context.Context, dir string) (*os.File, error) {
+// validationSlots is the machine-wide run limit. The lock directory is shared
+// with other repositories' validation, so the limit stays global.
+const validationSlots = 2
+
+// acquireSlot returns a held slot lock and its index, which names this run's
+// Compose projects and image tags.
+func acquireSlot(ctx context.Context, dir string) (*os.File, int, error) {
 	dir = filepath.Join(dir, "slots")
 	if err := os.MkdirAll(dir, 0700); err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 	announced := false
 	for {
-		for i := range 2 {
+		for i := range validationSlots {
 			f, err := os.OpenFile(filepath.Join(dir, fmt.Sprintf("%d.lock", i)), os.O_CREATE|os.O_RDWR, 0600)
 			if err != nil {
-				return nil, err
+				return nil, -1, err
 			}
 			err = syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 			if err == nil {
-				return f, nil
+				return f, i, nil
 			}
 			f.Close()
 			if !errors.Is(err, syscall.EWOULDBLOCK) {
-				return nil, err
+				return nil, -1, err
 			}
 		}
 		if !announced {
@@ -552,47 +606,8 @@ func acquireSlot(ctx context.Context, dir string) (*os.File, error) {
 		}
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, -1, ctx.Err()
 		case <-ticker.C:
 		}
 	}
-}
-
-func resolveDagger(root string) (string, error) {
-	cmd := exec.Command("mise", "where", "dagger@0.21.10")
-	cmd.Dir = root
-	out, err := cmd.Output()
-	if err != nil {
-		return "", errors.New("install pinned CLI first: mise install dagger@0.21.10")
-	}
-	binary := filepath.Join(strings.TrimSpace(string(out)), "dagger")
-	if info, err := os.Stat(binary); err != nil || info.IsDir() {
-		return "", fmt.Errorf("pinned Dagger binary unavailable: %s", binary)
-	}
-	return binary, nil
-}
-
-func checkEngine() error {
-	cmd := exec.Command("docker", "inspect", engine, "--format", `{{.State.Running}} {{.HostConfig.NanoCpus}} {{.HostConfig.Memory}} {{.Config.Image}}`)
-	cmd.Env = []string{"PATH=" + os.Getenv("PATH")}
-	out, err := cmd.Output()
-	if err != nil {
-		return fmt.Errorf("managed engine %s unavailable; follow docs/validation.md engine setup; automatic bootstrap is disabled", engine)
-	}
-	var running bool
-	var cpus, memory int64
-	var image string
-	if _, err = fmt.Sscan(string(out), &running, &cpus, &memory, &image); err != nil {
-		return err
-	}
-	if image != engineImage {
-		return errors.New("managed engine image differs from the validation pin; see docs/validation.md")
-	}
-	if !running {
-		return errors.New("managed validation engine is stopped; start it explicitly")
-	}
-	if cpus < 2_000_000_000 || memory < 4*1024*1024*1024 {
-		return errors.New("managed engine requires explicit limits of at least 2 CPUs and 4 GiB; see docs/validation.md")
-	}
-	return nil
 }

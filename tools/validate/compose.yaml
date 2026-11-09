@@ -1,0 +1,34 @@
+# One project per group run: srcz-check-s<slot>-<group> (docs/validation.md).
+# tools/validate sets the variables below, creates the external cache volume,
+# and removes the project's containers and network after every run.
+services:
+  runner:
+    image: ${SRCZ_CHECK_IMAGE:?image id required}
+    pull_policy: never
+    init: true
+    cpus: 2
+    mem_limit: 4g
+    memswap_limit: 4g
+    shm_size: 1g
+    pids_limit: 8192
+    working_dir: /src
+    networks: [isolated]
+    environment:
+      SRCZ_CHECK_LOG_DIR: /out/logs
+      SRCZ_VALIDATION_ATTEMPT: ${SRCZ_VALIDATION_ATTEMPT:?attempt required}
+      SRCZ_VALIDATION_FORCE: ${SRCZ_VALIDATION_FORCE:?force required}
+      SRCZ_BROWSER_EXTENDED: ${SRCZ_BROWSER_EXTENDED:-0}
+      SRCZ_DESKTOP_EXTENDED: ${SRCZ_DESKTOP_EXTENDED:-0}
+    volumes:
+      - go-build:/home/runner/.cache/go-build
+
+# No egress, no published ports, no host network, no Docker socket.
+networks:
+  isolated:
+    internal: true
+
+# External, so `compose down -v` never removes the shared compiler cache.
+volumes:
+  go-build:
+    external: true
+    name: srcz-check-go-build

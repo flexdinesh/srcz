@@ -1,6 +1,6 @@
 # 0096: Correctness checks and optional extended validation
 
-- Status: Accepted
+- Status: Accepted; Dagger execution and caches replaced by [0110](0110-compose-validation-runner.md)
 - Date: 2026-11-05
 - Supersedes: [0059](0059-validation-execution-boundaries.md) aggregate aliases and input selection; [0095](0095-desktop-app-is-mygo-electron-removed.md) resource measurements in the desktop gate
 
