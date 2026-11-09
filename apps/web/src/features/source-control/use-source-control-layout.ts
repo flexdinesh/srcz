@@ -28,14 +28,15 @@ export function useSourceControlLayout(project: string) {
     return current.railWidth === railWidth ? current : { ...current, railWidth }
   }), [])
   const setRailHidden = useCallback((railHidden: boolean) => setLayout((current) => ({ ...current, railHidden })), [])
+  const setRailHideViewed = useCallback((railHideViewed: boolean) => setLayout((current) => ({ ...current, railHideViewed })), [])
   const base = Object.hasOwn(layout.bases, project) ? layout.bases[project] ?? "" : ""
   // setBase chooses project's base; "" returns to the default.
   const setBase = useCallback((next: string) => setLayout((current) => withBase(current, project, next)), [project])
 
   return {
     range: layout.range, weights: layout.weights, collapsed: layout.collapsed, changesView: layout.changesView,
-    railWidth: layout.railWidth, railHidden: layout.railHidden, base,
-    setRange, setPaneCollapsed, resizePanes, resetPanes, setChangesView, setRailWidth, setRailHidden, setBase,
+    railWidth: layout.railWidth, railHidden: layout.railHidden, railHideViewed: layout.railHideViewed, base,
+    setRange, setPaneCollapsed, resizePanes, resetPanes, setChangesView, setRailWidth, setRailHidden, setRailHideViewed, setBase,
   }
 }
 

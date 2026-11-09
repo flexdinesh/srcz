@@ -41,6 +41,8 @@ import { DiffStatsText, FileStatsText } from "./DiffStatsText.tsx"
 import { DIFF_THEME } from "./diff-theme.ts"
 import type { CollapseRequest } from "./FilesTree.tsx"
 import { loadReviewDiff, useReviewDiff, type RenderedDiff } from "./review-diffs.ts"
+import { adjacentFile, nextUnviewed, reviewKeyCommand, reviewKeyShortcuts, type ReviewKeyCommand } from "./review-keys.ts"
+import type { ViewedState } from "./review-viewed.ts"
 import type { CompareData } from "./use-compare-data.ts"
 import { statsLabel, totals } from "./use-compare-stats.ts"
 
@@ -119,7 +121,8 @@ interface ReviewDocumentProps {
   expandRequest: CollapseRequest | null
   // treeFiles are the project's files; Open File needs a working copy.
   treeFiles: ReadonlySet<string>
-  viewed(path: string, blob: string): boolean
+  // viewedState reads a file's Viewed mark against its blob (decision 0117).
+  viewedState(path: string, blob: string): ViewedState
   onViewedChange(path: string, blob: string, viewed: boolean): void
   // onSelectLines replaces the fragment; null lines keep only the file.
   onSelectLines(path: string, lines: SelectedLineRange | null): void
@@ -166,6 +169,24 @@ interface ShownDiff {
 type RegisterShown = (path: string, shown: ShownDiff | null) => void
 const ShownContext = createContext<RegisterShown>(() => {})
 
+// OpenOverride is the user's choice to open or close a file, made at blob;
+// a new blob lets it lapse, so a file changed since viewed opens again.
+interface OpenOverride {
+  open: boolean
+  blob: string
+}
+
+function isTextField(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [contenteditable=true]") !== null)
+}
+
+// inReview is whether a key press belongs to the review: focus in its pane,
+// its toolbar, or its Files rail, or nowhere in particular.
+function inReview(target: EventTarget | null, root: HTMLElement): boolean {
+  if (target === document.body) return true
+  return target instanceof Node && (root.contains(target) || (target instanceof Element && target.closest(".review-rail, .diff-toolbar") !== null))
+}
+
 // ObserveContext shares one IntersectionObserver across sections.
 type Observe = (element: Element, onNear: (near: boolean) => void) => () => void
 const ObserveContext = createContext<Observe>(() => () => {})
@@ -187,7 +208,7 @@ export function ReviewDocument(props: ReviewDocumentProps) {
 
 function ReviewBody({
   annotation, compare, data, expandRequest, marked, name, narrow, options, project, scope, scrollRoot, selection, treeFiles,
-  onAllExpandedChange, onCurrentFile, onOpenFile, onRegisterHunkStep, onSelectLines, onStatus, onViewedChange, viewed,
+  onAllExpandedChange, onCurrentFile, onOpenFile, onRegisterHunkStep, onSelectLines, onStatus, onViewedChange, viewedState,
 }: ReviewDocumentProps) {
   const pool = useWorkerPool()
   const [virtualizer] = useState(() => new Virtualizer())
@@ -195,16 +216,24 @@ function ReviewBody({
   const list = data?.list
   const files = useMemo(() => list?.kind === "ready" ? displayOrder(list.files) : [], [list])
   const stats = data?.stats ?? null
+  const blobOf = useCallback((path: string) => stats?.byPath.get(path)?.blob ?? "", [stats])
+  const viewed = useCallback((path: string) => viewedState(path, blobOf(path)) === "viewed", [blobOf, viewedState])
   // open overrides a file's default: viewed files start closed, others open.
   // A walkthrough step's file opens and leads; the others start closed
-  // (decision 0113).
-  const [open, setOpen] = useState<ReadonlyMap<string, boolean>>(() => new Map())
+  // (decision 0113). An override lapses when the file's blob changes
+  // (decision 0117).
+  const [open, setOpen] = useState<ReadonlyMap<string, OpenOverride>>(() => new Map())
   const annotatedPath = annotation?.path ?? ""
   const focused = annotatedPath !== "" && files.some((file) => file.path === annotatedPath)
   const isOpen = useCallback((file: CompareFile) => {
-    const blob = stats?.byPath.get(file.path)?.blob ?? ""
-    return open.get(file.path) ?? (focused ? file.path === annotatedPath : !viewed(file.path, blob))
-  }, [annotatedPath, focused, open, stats, viewed])
+    const blob = blobOf(file.path)
+    const override = open.get(file.path)
+    if (override && (!override.blob || !blob || override.blob === blob)) return override.open
+    return focused ? file.path === annotatedPath : !viewed(file.path)
+  }, [annotatedPath, blobOf, focused, open, viewed])
+  const setFileOpen = useCallback((path: string, next: boolean) => {
+    setOpen((current) => new Map(current).set(path, { open: next, blob: blobOf(path) }))
+  }, [blobOf])
 
   // The pane, not a nested scroller, scrolls, so keyboard scrolling and focus
   // keep working. A fresh load mounts the pane with this review, and layout
@@ -259,7 +288,7 @@ function ReviewBody({
   const [applied, setApplied] = useState(expandRequest?.id ?? 0)
   if (expandRequest && expandRequest.id !== applied) {
     setApplied(expandRequest.id)
-    setOpen(new Map(files.map((file): [string, boolean] => [file.path, expandRequest.expand])))
+    setOpen(new Map(files.map((file): [string, OpenOverride] => [file.path, { open: expandRequest.expand, blob: blobOf(file.path) }])))
   }
   const anyOpen = files.some(isOpen)
   useEffect(() => onAllExpandedChange(anyOpen), [anyOpen, onAllExpandedChange])
@@ -477,16 +506,72 @@ function ReviewBody({
     return () => root.removeEventListener("keydown", step)
   }, [scrollRoot, stepHunk])
 
+  // goToFile shows a file at the pane's top, as the fragment does. The
+  // fragment's own file, already revealed, scrolls there directly.
+  const latestGo = useRef({ target, anchor })
+  useLayoutEffect(() => { latestGo.current = { target, anchor } })
+  const goToFile = useCallback((path: string) => {
+    const root = scrollRoot.current
+    if (path !== latestGo.current.target || latestGo.current.anchor) return onSelectLines(path, null)
+    const section = container.current?.querySelector(`[data-review-path="${CSS.escape(path)}"]`)
+    if (!root || !(section instanceof HTMLElement)) return
+    root.scrollTo({ top: section.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop })
+  }, [onSelectLines, scrollRoot])
+
+  // Marking a file Viewed closes it and moves on to the next file not yet
+  // viewed, as a pull request review does (decision 0117).
+  const markViewed = useCallback((path: string, next: boolean) => {
+    const blob = blobOf(path)
+    if (!blob) return
+    onViewedChange(path, blob, next)
+    setFileOpen(path, !next)
+    if (!next) return
+    const following = nextUnviewed(files.map((file) => file.path), path, (other) => !viewed(other))
+    if (following) goToFile(following)
+  }, [blobOf, files, goToFile, onViewedChange, setFileOpen, viewed])
+
+  // ] and [ go to the next and previous file, and v toggles Viewed on the
+  // file in view, outside text fields (decision 0117).
+  const latestKeys = useRef({ files, markViewed, goToFile, viewed })
+  useLayoutEffect(() => { latestKeys.current = { files, markViewed, goToFile, viewed } })
+  useEffect(() => {
+    const root = scrollRoot.current
+    if (!root) return
+    const run = (command: ReviewKeyCommand) => {
+      const { files: all, markViewed: mark, goToFile: go, viewed: isViewed } = latestKeys.current
+      const path = currentFile.current
+      if (command === "toggleViewed") {
+        if (path) mark(path, !isViewed(path))
+        return
+      }
+      const next = adjacentFile(all.map((file) => file.path), path, command === "nextFile" ? 1 : -1)
+      if (next) go(next)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || !inReview(event.target, root)) return
+      const command = reviewKeyCommand({
+        key: event.key, altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, isComposing: event.isComposing,
+        textField: isTextField(event.target),
+      })
+      if (!command) return
+      event.preventDefault()
+      run(command)
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [scrollRoot])
+
   const sum = totals(stats)
-  const viewedCount = files.filter((file) => viewed(file.path, stats?.byPath.get(file.path)?.blob ?? "")).length
+  const viewedCount = files.filter((file) => viewed(file.path)).length
 
   return (
     <ObserveContext.Provider value={observe}>
       <ShownContext.Provider value={registerShown}>
       <VirtualizerContext.Provider value={virtualizer}>
-        <div ref={container} className="review">
+        <div ref={container} className="review"
+          aria-keyshortcuts={`${reviewKeyShortcuts.nextFile} ${reviewKeyShortcuts.previousFile} ${reviewKeyShortcuts.toggleViewed}`}>
           <header className="review-header">
-            <h1 className="review-title" title={name.title}>{reviewHeading(compare, data, name)}</h1>
+            <h1 className="review-title" title={name.title}>{reviewHeading(data, name)}</h1>
             <ReviewMeta compare={compare} data={data} />
             {scope && <ScopeSwitch scope={scope} />}
             <div className="review-totals">
@@ -494,7 +579,7 @@ function ReviewBody({
               {sum && <span className="review-totals-lines" title={`${sum.additions.toLocaleString()} added, ${sum.deletions.toLocaleString()} deleted lines`}>
                 <DiffStatsText {...sum} />
               </span>}
-              {files.length > 0 && <span>{viewedCount.toLocaleString()} of {files.length.toLocaleString()} viewed</span>}
+              {files.length > 0 && <span title={reviewKeysHint}>{viewedCount.toLocaleString()} of {files.length.toLocaleString()} viewed</span>}
             </div>
           </header>
           {annotation && list?.kind === "ready" && !files.some((file) => file.path === annotation.path) && (
@@ -512,20 +597,16 @@ function ReviewBody({
           )}
           {files.length > 0 && <div className="review-files">{files.map((file) => {
             const fileStats = stats?.byPath.get(file.path)
-            const blob = fileStats?.blob ?? ""
             return (
               <ReviewFile key={file.path} project={project} compare={compare} file={file} stats={fileStats}
                 version={data?.version ?? ""} uncommitted={marked?.has(file.path) ?? false}
-                open={isOpen(file)} viewed={viewed(file.path, blob)} options={options} narrow={narrow} scrollRoot={scrollRoot}
+                open={isOpen(file)} viewed={viewedState(file.path, fileStats?.blob ?? "")} options={options} narrow={narrow} scrollRoot={scrollRoot}
                 lines={selection?.path === file.path ? selection.lines : null}
                 annotation={annotation?.path === file.path ? annotation : undefined}
                 openFileReason={file.status === "deleted" ? "This file was deleted; there's no working copy to open"
                   : treeFiles.has(file.path) ? "" : "This file isn't in the working tree"}
-                onOpenChange={(next) => setOpen((current) => new Map(current).set(file.path, next))}
-                onViewedChange={(next) => {
-                  onViewedChange(file.path, blob, next)
-                  setOpen((current) => new Map(current).set(file.path, !next))
-                }}
+                onOpenChange={(next) => setFileOpen(file.path, next)}
+                onViewedChange={(next) => markViewed(file.path, next)}
                 onSelectLines={(lines) => {
                   pointer.current = `${file.path}#${lines ? diffLineAnchor(lines) : ""}`
                   onSelectLines(file.path, lines)
@@ -540,9 +621,13 @@ function ReviewBody({
   )
 }
 
-function reviewHeading(compare: Compare, data: CompareData | null, name: CompareName): string {
+// reviewKeysHint names the review keys where the review counts its progress.
+const reviewKeysHint = "] and [ go to the next and previous file; V toggles Viewed on the file in view"
+
+// reviewHeading is the compare's tab label, as every review titles itself;
+// a commit reads its subject.
+function reviewHeading(data: CompareData | null, name: CompareName): string {
   if (data?.details.kind === "commit" && data.details.commit) return data.details.commit.subject || shortHash(data.details.commit.hash)
-  if (compare.kind === "working") return "Uncommitted changes"
   return name.label
 }
 
@@ -619,7 +704,7 @@ interface ReviewFileProps {
   // uncommitted marks a file with uncommitted edits (decision 0051).
   uncommitted: boolean
   open: boolean
-  viewed: boolean
+  viewed: ViewedState
   options: DiffOptions
   narrow: boolean
   scrollRoot: RefObject<HTMLElement | null>
@@ -690,13 +775,19 @@ function ReviewFile({
           <span className="review-file-path" data-status={file.status}>{file.path}</span>
           {file.oldPath && <span className="review-file-from">from {file.oldPath}</span>}
         </Button>
-        {label && <span className="review-file-stats"><FileStatsText stats={stats} /></span>}
+        {label && <span className="review-file-stats"><FileStatsText stats={stats} oldPath={file.oldPath} /></span>}
         {uncommitted && <span className="review-file-uncommitted" role="img" aria-label="Has uncommitted changes" title="Has uncommitted changes" />}
         <span className="commit-file-status" data-status={file.status} title={statusNames[file.status]}>{statusLetters[file.status]}</span>
-        <ToggleButton size="text" className="review-viewed" pressed={viewed} disabled={!stats?.blob}
-          title={stats?.blob ? "Mark as viewed; changes to the file unmark it" : "Waiting for the file's content hash"}
+        {viewed === "changed" && (
+          <span className="review-file-changed" title="Changed since viewed: the file changed after it was marked viewed">
+            Changed<span className="review-file-changed-rest"> since viewed</span>
+          </span>
+        )}
+        <ToggleButton size="text" className="review-viewed" pressed={viewed === "viewed"} disabled={!stats?.blob}
+          aria-keyshortcuts={reviewKeyShortcuts.toggleViewed}
+          title={stats?.blob ? "Mark as viewed (V)" : "Waiting for the file's content hash"}
           onPressedChange={onViewedChange}>
-          {viewed && <CheckIcon aria-hidden="true" />}Viewed
+          {viewed === "viewed" && <CheckIcon aria-hidden="true" />}Viewed
         </ToggleButton>
         <IconButton size="xs" label="Open File" icon={<FileInputIcon aria-hidden="true" />}
           disabledReason={openFileReason || undefined} onClick={onOpenFile} />

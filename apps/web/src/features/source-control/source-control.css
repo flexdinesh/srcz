@@ -648,6 +648,17 @@
   margin-left: auto;
 }
 
+/* The path filter sits under the header, on the tree's surface. */
+.review-rail-filter {
+  flex: none;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+.review-rail-filter-count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .review-rail-body {
   display: flex;
   min-height: 0;

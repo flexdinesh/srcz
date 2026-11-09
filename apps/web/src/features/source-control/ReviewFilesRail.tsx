@@ -1,11 +1,14 @@
-import { FoldVerticalIcon, PanelRightCloseIcon, UnfoldVerticalIcon, XIcon } from "lucide-react"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { EyeOffIcon, FoldVerticalIcon, FunnelIcon, PanelRightCloseIcon, UnfoldVerticalIcon, XIcon } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { Badge } from "../../components/ui/badge.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { DialogShell } from "../../components/ui/dialog-shell.tsx"
 import { IconButton } from "../../components/ui/icon-button.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
+import { TextField } from "../../components/ui/text-field.tsx"
+import { ToggleButton } from "../../components/ui/toggle-button.tsx"
+import { emptyFilterMessage, filesFilterActive, filterFiles } from "./files-filter.ts"
 import { FilesTree, type CollapseRequest } from "./FilesTree.tsx"
 import type { CompareData } from "./use-compare-data.ts"
 
@@ -18,18 +21,27 @@ interface FilesListProps {
   marked?: ReadonlySet<string>
   // viewed says whether the review's Viewed mark holds for a file.
   viewed(path: string): boolean
+  // hideViewed leaves viewed files out of the tree; saved per browser.
+  hideViewed: boolean
+  onHideViewedChange(hide: boolean): void
   // close is the header's dismiss action: hide the rail, or close the sheet.
   close: ReactNode
   onOpen(path: string, focusDocument: boolean): void
 }
 
 // FilesList is a review's files as a tree under a header with a count and
-// Expand/Collapse All Folders (decision 0040).
-function FilesList({ activePath, close, data, itemHeight, marked, viewed, onOpen }: FilesListProps) {
+// Expand/Collapse All Folders (decision 0040), and a path filter with Hide
+// viewed (decision 0117).
+function FilesList({ activePath, close, data, hideViewed, itemHeight, marked, viewed, onHideViewedChange, onOpen }: FilesListProps) {
   const [anyExpanded, setAnyExpanded] = useState(true)
   const [collapseRequest, setCollapseRequest] = useState<CollapseRequest | null>(null)
+  const [query, setQuery] = useState("")
+  const input = useRef<HTMLInputElement>(null)
   const list = data?.list
-  const files = list?.kind === "ready" ? list.files : []
+  const files = useMemo(() => list?.kind === "ready" ? list.files : [], [list])
+  const filter = useMemo(() => ({ query, hideViewed }), [hideViewed, query])
+  const shown = useMemo(() => filterFiles(files, filter, viewed), [files, filter, viewed])
+  const filtering = filesFilterActive(filter)
   return <>
     <div className="review-rail-header">
       <h2 className="review-rail-title">Files</h2>
@@ -41,11 +53,40 @@ function FilesList({ activePath, close, data, itemHeight, marked, viewed, onOpen
       <span className="review-rail-actions">
         <IconButton size="xs" label={anyExpanded ? "Collapse All Folders" : "Expand All Folders"}
           icon={anyExpanded ? <FoldVerticalIcon aria-hidden="true" /> : <UnfoldVerticalIcon aria-hidden="true" />}
-          disabled={files.length === 0}
+          disabled={shown.length === 0}
           onClick={() => setCollapseRequest({ expand: !anyExpanded, id: (collapseRequest?.id ?? 0) + 1 })} />
         {close}
       </span>
     </div>
+    {files.length > 0 && (
+      <div className="review-rail-filter">
+        <TextField inputRef={input} icon={<FunnelIcon />} type="text" aria-label="Filter files by path" placeholder="Filter files"
+          value={query} spellCheck={false} autoComplete="off" autoCapitalize="off"
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || !query) return
+            event.preventDefault()
+            event.stopPropagation()
+            setQuery("")
+          }}
+          trailing={<>
+            <span className="review-rail-filter-count" role="status">
+              {filtering && <>
+                <span aria-hidden="true">{shown.length.toLocaleString()} / {files.length.toLocaleString()}</span>
+                <span className="visually-hidden">{shown.length.toLocaleString()} of {files.length.toLocaleString()} files shown</span>
+              </>}
+            </span>
+            {query && <IconButton size="xs" label="Clear filter" icon={<XIcon aria-hidden="true" />}
+              onClick={() => {
+                setQuery("")
+                input.current?.focus()
+              }} />}
+            <ToggleButton label="Hide viewed files" pressed={hideViewed} onPressedChange={onHideViewedChange}>
+              <EyeOffIcon aria-hidden="true" />
+            </ToggleButton>
+          </>} />
+      </div>
+    )}
     <div className="review-rail-body">
       {(!list || list.kind === "loading") && <div className="source-control-message"><StatusMessage>Loading files…</StatusMessage></div>}
       {list?.kind === "error" && (
@@ -55,8 +96,11 @@ function FilesList({ activePath, close, data, itemHeight, marked, viewed, onOpen
         </div>
       )}
       {list?.kind === "ready" && files.length === 0 && <div className="source-control-message"><StatusMessage>No file changes.</StatusMessage></div>}
-      {files.length > 0 && (
-        <FilesTree key={itemHeight} files={files} stats={data?.stats?.byPath ?? null} marked={marked} activePath={activePath} itemHeight={itemHeight}
+      {files.length > 0 && shown.length === 0 && (
+        <div className="source-control-message"><StatusMessage>{emptyFilterMessage(filter)}</StatusMessage></div>
+      )}
+      {shown.length > 0 && (
+        <FilesTree key={itemHeight} files={shown} stats={data?.stats?.byPath ?? null} marked={marked} activePath={activePath} itemHeight={itemHeight}
           viewed={viewed} label="Files in this review" collapseRequest={collapseRequest} onExpandedChange={setAnyExpanded} onOpen={onOpen} />
       )}
     </div>

@@ -549,10 +549,12 @@ as Tree / View as List (persisted; list by default), Collapse/Expand All
 Folders in tree mode, and Open Changes. The list is a `role="listbox"` named
 “Uncommitted changes” of 22px rows (32px narrow) indented to the pane title:
 the Pierre file icon, the name in `text-primary` (struck through when
-deleted), the folder in muted 12px, `+N −M` (or “binary”, “large”) in 12px
-tabular figures, additions `success` and deletions `destructive` (zero stays
-muted), and the 11px status letter. Rows are named “path, Modified, +2
-−1”; the title adds “Renamed from <old path>”. Tree mode renders the Files
+deleted), the folder in muted 12px, `+N −M` (or “binary”, “large”, or a
+muted “renamed” for a rename without line changes) in 12px tabular figures,
+additions `success` and deletions `destructive` (zero stays muted), and the
+11px status letter. Rows follow the review's tree order (folders first, by
+name; decision 0117). Rows are named “path, Modified, +2 −1” (a pure rename
+“path, Renamed”); the title adds “Renamed from <old path>”. Tree mode renders the Files
 tree described below. Click or Space opens the file in the Uncommitted review
 and keeps focus; Enter and double-click move focus to it; arrows and Home/End
 move. The file in view is selected. States: “Reading changes…”, “No changes
@@ -641,7 +643,8 @@ titles, never color alone. Deleted names strike through. Line stats (`+12
 −3` in the status hues, a zero keeping the row's ink; “binary”, “large”)
 decorate files in tabular figures and keep their width, so long names truncate
 in the middle instead; renamed files without stats show a
-muted “from <old path>”, and the title says “Renamed from <old path>”. Click
+muted “from <old path>”, renames without line changes a muted “renamed”, and
+the title says “Renamed from <old path>”. Click
 or Space opens the file in the review and keeps focus; Enter and double-click
 move focus to it. The file in view is selected. States: “Loading files…”,
 “No file changes.”, and the read error with Retry.
@@ -652,12 +655,16 @@ Each compare opens one review tab in the shared strip, labelled “Uncommitted�
 “vs main”, “feat-b vs feat-a”, `3577ec6 subject…` (40 characters), or
 `a1b2c3d..e4f5g6h`, with a git-compare icon. Tabs follow close, context-menu,
 and memory behavior. The mode-toggle slot holds the diff toolbar in the
-document mode-toggle treatment: [Split][Unified], Wrap, Ignore whitespace,
-Inline (compact menu: Word, Character, Off), Expand unchanged, Previous change
-and Next change (Shift+F7, F7; they step across files), Collapse/Expand All
-Files, and, for commit, range, and branch reviews, Files (panel-right icon,
-`aria-pressed` while the rail shows). Toggles use `aria-pressed`. Options
-persist in this browser under `srcz-diff-options`, not Settings. When the
+document mode-toggle treatment: [Split][Unified], View options (settings
+icon; a 4px `accent` square marks it while a choice differs from its default),
+Previous change and Next change (Shift+F7, F7; they step across files),
+Collapse/Expand All Files, and, for commit, range, and branch reviews, Files
+(panel-right icon, `aria-pressed` while the rail shows). View options is a
+menu (decision 0117): checkbox items Wrap lines, Ignore whitespace, and Expand
+unchanged lines, a separator, then the “Inline changes” group label (12px 600
+muted) over radio items Word, Character, and Off; checks sit in a 16px leading
+column, and the menu stays open while choices change. Options persist in this
+browser under `srcz-diff-options`, not Settings. When the
 diff area is narrower than 48rem (a narrow window, or a wide sidebar or rail)
 Split is `aria-disabled` with “Split view needs a wider window” as its
 tooltip, and Unified is forced; below 30rem the layout group hides so tabs
@@ -670,8 +677,14 @@ on that edge resizes it, revealing a 2px accent line on hover and focus; Left
 and Right arrows step
 1rem and double-click restores 16rem. Its header matches a file header
 (`control-lg` tall on `surface-secondary`, 1px `border` rule below) and reads
-“Files” (12px, 600 monospace) with a count badge, Collapse/Expand All Folders, and Hide Files; the
-Files tree fills the rest, and opening a file scrolls the review to it.
+“Files” (12px, 600 monospace) with a count badge, Collapse/Expand All Folders, and Hide Files.
+Below it, on the tree's surface (8px inset, 4px below), a 28px “Filter files
+by path” field (funnel icon, “Filter files”) keeps files whose path or old
+path holds every term; its trailing slot shows a muted tabular “3 / 12” while
+anything is hidden, Clear filter, and a Hide viewed files icon toggle (eye-off,
+saved per browser; decision 0117). Escape clears the text. An empty result
+reads “No files match.” or “Every file is viewed.”. The Files tree fills the
+rest, and opening a file scrolls the review to it.
 Viewed files (rail and sheet only, decision 0053) lead their stats with a 12px
 lucide check in the lane's muted ink, title “…, Viewed”; unless selected, their
 name takes `text-muted` (4.5:1 in every theme, where a dimmed status hue is
@@ -679,14 +692,16 @@ not) and their icon 0.6 opacity, while the status letter keeps its hue. The
 toolbar's Files toggle hides and shows the rail (persisted). Uncommitted
 reviews have no rail: the sidebar pane is their list. On phones the Files
 button opens a bottom sheet (`DialogShell` sheet: flush to the bottom and sides,
-up to 70% of the viewport or 32rem tall) with a 32px header, the same tree, and Close files;
+up to 70% of the viewport or 32rem tall) with a 32px header, the same filter and tree, and Close files;
 choosing a file jumps there and closes the sheet.
 
 The tab body is one continuous buffer on `surface`, sharing `main`'s reserved
 scrollbar gutter (decision 0102). It opens on a flat header (16px inset, a 1px
-`border` rule below): the compare's title (16px, 600),
+`border` rule below): the compare's title (16px, 600; the tab label, so
+“Uncommitted” for the working tree, or a commit's subject),
 the commit's meta, the branch's merge-base, or the range's span, then totals:
-“12 files”, `+120 −30` (in the status hues), and “3 of 12 viewed”. HEAD's
+“12 files”, `+120 −30` (in the status hues), and “3 of 12 viewed”, whose
+tooltip names the review keys. HEAD's
 branch review adds a small `SegmentedControl` above the totals, “Committed” |
 “+ Uncommitted 8” (muted tabular count), whose second item is `aria-disabled`
 with “No uncommitted changes” on a clean checkout; while it is pressed, files
@@ -697,10 +712,20 @@ path and has a sticky band (`--z-sticky`, `control-lg` tall, on
 `surface-secondary`, which holds the contrast floors for stats and status
 letters, sticking to the top of the pane, with a bottom border that hides while
 the file is collapsed): a plain disclosure toggle (no hover fill) with chevron,
-file icon, and path; a muted “from <old path>”; stats; the status letter; a
-Viewed toggle button (disabled until the file's blob hash arrives); and Open
-File (disabled, with its reason, when the working tree lacks the file). Viewed files start collapsed; marks persist
-under `srcz-review-viewed` and clear when the file's content changes.
+file icon, and path; a muted “from <old path>”; stats (a muted “renamed” for a rename without line
+changes); the status letter; “Changed since viewed”
+(12px `warning`; “Changed” below 30rem, the title keeping the rest) when the
+file's mark was made at another blob; a Viewed
+toggle button (disabled until the file's blob hash arrives; “Mark as viewed
+(V)”, `aria-keyshortcuts="v"`); and Open File (disabled, with its reason, when
+the working tree lacks the file). Viewed files start collapsed; marks persist
+under `srcz-review-viewed` with the blob they were made at. A changed file
+opens and does not count as viewed until marked again (decision 0117).
+Marking a file Viewed collapses it and reveals the next file not yet viewed
+at the top, wrapping past the end; unmarking opens it in place. Outside text
+fields, with focus in the review, its toolbar, its rail, or nowhere, `]` and `[` reveal the
+next and previous file (no wrap) and `v` toggles Viewed on the file in view;
+the review's root lists them in `aria-keyshortcuts`.
 Diffs load as files near the viewport and keep their height while away.
 
 Slim notices sit inside a file in the large-file bar treatment: renamed,

@@ -137,8 +137,9 @@ test("Source Control lists every pending change and reviews them in one tab", as
   await expect(diffLines(page, "change-addition", "README.md").filter({ hasText: "Four" })).toBeVisible()
   await expect(diffLines(page, "change-deletion", "README.md").filter({ hasText: "Two" })).toBeVisible()
   await expect(page).toHaveTitle(/Uncommitted changes/)
-  // One tab reviews every change.
-  await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Uncommitted changes" })).toBeVisible()
+  // One tab reviews every change, under the header every review has.
+  await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Uncommitted", exact: true })).toBeVisible()
+  await expect(page.getByRole("main").getByText(`${gitFixtureChanges} files`, { exact: true })).toBeVisible()
   await expect(page.getByRole("main").getByRole("region")).toHaveCount(gitFixtureChanges)
   await expect(page.getByRole("main").getByText(`0 of ${gitFixtureChanges} viewed`)).toBeVisible()
   await expect(changeRow(page, "README.md")).toHaveAttribute("aria-selected", "true")
@@ -171,12 +172,14 @@ test("large diffs keep the page responsive and render only rows near the viewpor
 
   // Controls remain usable while the worker reparses the diff. Avoid wall-clock
   // thresholds: CPU contention across agent sessions is not a product failure.
-  const whitespace = page.getByRole("button", { name: "Ignore whitespace" })
-  const wrap = page.getByRole("button", { name: "Wrap lines" })
+  await page.getByRole("button", { name: "View options" }).click()
+  const whitespace = page.getByRole("menuitemcheckbox", { name: "Ignore whitespace" })
+  const wrap = page.getByRole("menuitemcheckbox", { name: "Wrap lines" })
   await whitespace.click()
   await wrap.click()
-  await expect(wrap).toHaveAttribute("aria-pressed", "true")
-  await expect(whitespace).toHaveAttribute("aria-pressed", "true")
+  await expect(wrap).toHaveAttribute("aria-checked", "true")
+  await expect(whitespace).toHaveAttribute("aria-checked", "true")
+  await page.keyboard.press("Escape")
 
   // The document pane scrolls the review; rows render where it lands. A
   // wheel turn lets go of the linked file first.
@@ -930,7 +933,7 @@ test("a failed switch to all history never lists the branch as all history", asy
   await expect(commitsList(page).getByRole("option")).toHaveCount(3)
 })
 
-test("Viewed marks collapse files, survive reloads, and clear when the file changes", async ({ page, live }) => {
+test("Viewed marks collapse files, survive reloads, and read changed since viewed when the file changes", async ({ page, live }) => {
   const file = path.join(live.root, "untracked.txt")
   const original = readFileSync(file, "utf8")
   try {
@@ -949,16 +952,161 @@ test("Viewed marks collapse files, survive reloads, and clear when the file chan
     await expect(fileToggle(page, "untracked.txt")).toHaveAttribute("aria-expanded", "false")
     await expect(page.getByRole("main").getByText(`1 of ${gitFixtureChanges} viewed`)).toBeVisible()
 
-    // New content is a new blob, so the mark no longer applies.
+    // New content is a new blob: the mark no longer counts, and the file
+    // opens again saying it changed since it was viewed, without a reload.
+    const changed = reviewFile(page, "untracked.txt").getByText("Changed since viewed")
+    await expect(changed).toHaveCount(0)
     writeFileSync(file, `${original}Edited after review.\n`)
-    await page.reload()
     await expect(reviewFile(page, "untracked.txt")).toContainText("+2 −0")
     await expect(viewed).toHaveAttribute("aria-pressed", "false")
+    await expect(changed).toBeVisible()
     await expect(fileToggle(page, "untracked.txt")).toHaveAttribute("aria-expanded", "true")
     await expect(page.getByRole("main").getByText(`0 of ${gitFixtureChanges} viewed`)).toBeVisible()
+    await page.reload()
+    await expect(changed).toBeVisible()
+    await expect(fileToggle(page, "untracked.txt")).toHaveAttribute("aria-expanded", "true")
+    // Marking it again takes the new content.
+    await viewed.click()
+    await expect(viewed).toHaveAttribute("aria-pressed", "true")
+    await expect(changed).toHaveCount(0)
   } finally {
     writeFileSync(file, original)
   }
+})
+
+test("the Uncommitted list, its review, and its tree share one order, and pure renames read renamed", async ({ page }) => {
+  await openSourceControl(page)
+  const rows = changesList(page).getByRole("option")
+  await expect(rows).toHaveCount(gitFixtureChanges)
+  expect(await rows.evaluateAll((items) => items.map((item) => item.getAttribute("data-path")))).toEqual(uncommittedFiles)
+  // A rename without line changes says so instead of +0 −0.
+  await expect(changeRow(page, "guides/start.md")).toHaveAccessibleName("guides/start.md, Renamed")
+  await expect(changeRow(page, "guides/start.md").locator(".changes-row-stats")).toHaveText("renamed")
+
+  await changeRow(page, "README.md").click()
+  const sections = page.getByRole("main").locator("[data-review-path]")
+  await expect(sections).toHaveCount(gitFixtureChanges)
+  expect(await sections.evaluateAll((items) => items.map((item) => item.getAttribute("data-review-path")))).toEqual(uncommittedFiles)
+
+  await pane(page, "Uncommitted").getByRole("button", { name: "View as Tree" }).click()
+  const renamed = pane(page, "Uncommitted").getByRole("treeitem", { name: "start.md", exact: true })
+  await expect(renamed).toContainText("renamed")
+  await expect(renamed).not.toContainText("+0")
+})
+
+test("marking a file Viewed closes it and moves to the next file not yet viewed", async ({ page }) => {
+  await openReview(page, "review=working#f=guides/start.md")
+  const viewed = (file: string) => reviewFile(page, file).getByRole("button", { name: "Viewed" })
+  await expect(viewed("guides/start.md")).toBeEnabled()
+  await expect(viewed("guides/start.md")).toHaveAttribute("aria-keyshortcuts", "v")
+  await expect(viewed("guides/start.md")).toHaveAttribute("title", "Mark as viewed (V)")
+  await viewed("guides/start.md").click()
+  await expect(fileToggle(page, "guides/start.md")).toHaveAttribute("aria-expanded", "false")
+  await expect(page).toHaveURL(/#f=notes\/removed\.md$/)
+  await expect(reviewFile(page, "notes/removed.md").locator(".review-file-header")).toBeInViewport()
+
+  // Past the last file it wraps to the first one not yet viewed.
+  await openReview(page, "review=working#f=untracked.txt")
+  await viewed("untracked.txt").click()
+  await expect(page).toHaveURL(/#f=assets\/logo\.bin$/)
+  // Unmarking opens the file and stays put.
+  await viewed("untracked.txt").click()
+  await expect(fileToggle(page, "untracked.txt")).toHaveAttribute("aria-expanded", "true")
+  await expect(page).toHaveURL(/#f=assets\/logo\.bin$/)
+})
+
+test("] and [ move between a review's files and v toggles Viewed on the file in view", async ({ page }) => {
+  await openReview(page, "review=working#f=README.md")
+  await expect(page.getByRole("main").locator(".review")).toHaveAttribute("aria-keyshortcuts", "] [ v")
+  await expect(reviewFile(page, "README.md").getByRole("button", { name: "Viewed" })).toBeEnabled()
+  await page.getByRole("main").focus()
+  await page.keyboard.press("]")
+  await expect(page).toHaveURL(/#f=untracked\.txt$/)
+  // The last file has no next one.
+  await page.keyboard.press("]")
+  await expect(page).toHaveURL(/#f=untracked\.txt$/)
+  await page.keyboard.press("[")
+  await expect(page).toHaveURL(/#f=README\.md$/)
+  await page.keyboard.press("[")
+  await expect(page).toHaveURL(/#f=large\.txt$/)
+
+  await page.keyboard.press("v")
+  await expect(reviewFile(page, "large.txt").getByRole("button", { name: "Viewed" })).toHaveAttribute("aria-pressed", "true")
+  await expect(fileToggle(page, "large.txt")).toHaveAttribute("aria-expanded", "false")
+  await expect(page).toHaveURL(/#f=README\.md$/)
+  await expect(page.getByRole("main").getByText(`1 of ${gitFixtureChanges} viewed`)).toBeVisible()
+  // Modified keys stay with the browser.
+  await page.keyboard.press("Control+]")
+  await expect(page).toHaveURL(/#f=README\.md$/)
+})
+
+test("the Files rail filters by path and hides viewed files, remembered per browser", async ({ page }) => {
+  await openReview(page, "review=branch&uncommitted=1#f=clean.md")
+  await expect(railFile(page, "clean.md")).toBeVisible()
+  // A rename without line changes reads renamed in the rail too.
+  await expect(railFile(page, "start.md")).toContainText("renamed")
+  await expect(railFile(page, "start.md")).not.toContainText("+0")
+
+  const filter = rail(page).getByRole("textbox", { name: "Filter files by path" })
+  await filter.fill("guides")
+  await expect(railFile(page, "start.md")).toBeVisible()
+  await expect(railFile(page, "clean.md")).toHaveCount(0)
+  await expect(rail(page).getByRole("status")).toHaveText(/^1 \/ \d+1 of \d+ files shown$/)
+  // Review keys never fire in a text field.
+  await filter.press("]")
+  await expect(filter).toHaveValue("guides]")
+  await expect(page).toHaveURL(/#f=clean\.md$/)
+  await filter.fill("nothing-matches")
+  await expect(rail(page).getByText("No files match.")).toBeVisible()
+  await filter.press("Escape")
+  await expect(filter).toHaveValue("")
+  await expect(railFile(page, "clean.md")).toBeVisible()
+
+  await reviewFile(page, "clean.md").getByRole("button", { name: "Viewed" }).click()
+  await expect(reviewFile(page, "clean.md").getByRole("button", { name: "Viewed" })).toHaveAttribute("aria-pressed", "true")
+  const hideViewed = rail(page).getByRole("button", { name: "Hide viewed files" })
+  await expect(hideViewed).toHaveAttribute("aria-pressed", "false")
+  await hideViewed.click()
+  await expect(hideViewed).toHaveAttribute("aria-pressed", "true")
+  await expect(railFile(page, "clean.md")).toHaveCount(0)
+  await expect(railFile(page, "start.md")).toBeVisible()
+
+  await page.reload()
+  await expect(rail(page).getByRole("button", { name: "Hide viewed files" })).toHaveAttribute("aria-pressed", "true")
+  await expect(railFile(page, "start.md")).toBeVisible()
+  await expect(railFile(page, "clean.md")).toHaveCount(0)
+})
+
+test("the diff toolbar keeps layout and steps on the bar and the rest in View options", async ({ page }) => {
+  await openReview(page, "review=branch#f=clean.md")
+  for (const name of ["Split", "Unified", "Previous change", "Next change", "Collapse All Files", "Files"]) {
+    await expect(page.getByRole("button", { name, exact: true })).toBeVisible()
+  }
+  for (const name of ["Wrap lines", "Ignore whitespace", "Expand unchanged lines"]) {
+    await expect(page.getByRole("button", { name })).toHaveCount(0)
+  }
+  const trigger = page.getByRole("button", { name: "View options" })
+  await expect(trigger).not.toHaveAttribute("data-modified")
+  await trigger.click()
+  const menu = page.getByRole("menu", { name: "View options" })
+  const wrap = menu.getByRole("menuitemcheckbox", { name: "Wrap lines" })
+  await expect(wrap).toHaveAttribute("aria-checked", "false")
+  await wrap.click()
+  // The menu stays open for further choices.
+  await expect(wrap).toHaveAttribute("aria-checked", "true")
+  await expect(menu.getByRole("menuitemradio", { name: "Word" })).toHaveAttribute("aria-checked", "true")
+  await menu.getByRole("menuitemradio", { name: "Character" }).click()
+  await expect(menu.getByRole("menuitemradio", { name: "Character" })).toHaveAttribute("aria-checked", "true")
+  await expect(menu.getByRole("menuitemcheckbox", { name: "Ignore whitespace" })).toHaveAttribute("aria-checked", "false")
+  await expect(menu.getByRole("menuitemcheckbox", { name: "Expand unchanged lines" })).toHaveAttribute("aria-checked", "false")
+  await page.keyboard.press("Escape")
+  await expect(menu).toBeHidden()
+  await expect(trigger).toHaveAttribute("data-modified", "true")
+  await expect(reviewFile(page, "clean.md").locator(".diff-view pre[data-overflow]")).toHaveAttribute("data-overflow", "wrap")
+
+  await page.reload()
+  await page.getByRole("button", { name: "View options" }).click()
+  await expect(page.getByRole("menu", { name: "View options" }).getByRole("menuitemcheckbox", { name: "Wrap lines" })).toHaveAttribute("aria-checked", "true")
 })
 
 test("closing the last review tab ends every diff worker", async ({ page }) => {

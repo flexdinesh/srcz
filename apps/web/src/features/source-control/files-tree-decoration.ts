@@ -1,6 +1,6 @@
 import type { FileStats } from "@srcz/contracts"
 import { statsLabel } from "./use-compare-stats.ts"
-import { countedLines } from "./diff-stats.ts"
+import { countedLines, pureRename } from "./diff-stats.ts"
 
 // DecorationPart is a run of a Files tree row's trailing text; color is a
 // CSS color, inherited by the tree's shadow root.
@@ -29,23 +29,26 @@ export interface RowMarks {
 
 // fileDecoration is a changed file's row decoration: line stats with
 // additions in success and deletions in destructive, as elsewhere in Source
-// Control; "binary" or "large" as plain notes; or, for a renamed file without
-// stats, where it came from. A marked file leads with an accent dot. The
+// Control; "binary" or "large" as plain notes; a muted "renamed" for a rename
+// without line changes (decision 0117); or, for a renamed file without stats,
+// where it came from. A marked file leads with an accent dot. The
 // title names the marks, the rename, and the lines; a viewed file keeps a
 // lane for viewedCSS's check.
 export function fileDecoration(stats: FileStats | undefined, oldPath: string | undefined, { marked = false, viewed = false }: RowMarks = {}): FileDecoration | null {
-  const lines = statsLabel(stats)
+  const renamed = pureRename(stats, oldPath)
+  const lines = renamed ? "" : statsLabel(stats)
   const title = [marked ? "Has uncommitted changes" : "", oldPath ? `Renamed from ${oldPath}` : "", lines ? `${lines} lines` : "", viewed ? "Viewed" : ""]
     .filter(Boolean).join(", ")
-  const text = lines || (oldPath ? `from ${oldPath}` : "")
+  const text = renamed ? "renamed" : lines || (oldPath ? `from ${oldPath}` : "")
   // Pierre lays parts out as flex items, which drop a plain space.
-  const counted = countedLines(stats)
+  const counted = renamed ? null : countedLines(stats)
   const parts: DecorationPart[] = counted
     ? [stat("+", counted.additions, "var(--color-success)"), { text: "\u00a0" }, stat("−", counted.deletions, "var(--color-destructive)")]
+    : renamed ? [{ text, color: "var(--color-text-muted)" }]
     : text ? [{ text }] : []
   if (marked) parts.unshift({ text: "●", color: "var(--color-accent)" }, ...(parts.length > 0 ? [{ text: "\u00a0" }] : []))
   if (parts.length === 0) return viewed ? { text: "", title } : null
-  if (!counted && !marked) return { text, title }
+  if (!counted && !marked && !renamed) return { text, title }
   return { text: [marked ? "●" : "", text].filter(Boolean).join(" "), title, parts }
 }
 

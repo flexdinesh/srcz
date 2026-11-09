@@ -45,6 +45,13 @@ export function parseDiffOptions(value: unknown): DiffOptions {
   }
 }
 
+// diffOptionsModified is whether a View options choice differs from its
+// default; the layout has its own control.
+export function diffOptionsModified(options: DiffOptions): boolean {
+  return options.wrap !== defaultDiffOptions.wrap || options.ignoreWhitespace !== defaultDiffOptions.ignoreWhitespace
+    || options.inline !== defaultDiffOptions.inline || options.expandUnchanged !== defaultDiffOptions.expandUnchanged
+}
+
 // splitMinimumWidth is the diff area's width, in rem, below which Split has
 // no room.
 export const splitMinimumWidth = 48

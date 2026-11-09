@@ -14,6 +14,11 @@
     display: none;
   }
 
+  /* "Changed since viewed" reads "Changed" (its title says the rest), so the path keeps room. */
+  .review-file-changed-rest {
+    display: none;
+  }
+
   /* A rename's old path takes a second line, so neither path truncates to nothing. */
   .review-file-toggle:has(.review-file-from) {
     height: auto;
@@ -39,17 +44,32 @@
   margin: 0 var(--space-1);
 }
 
-.diff-inline-check {
+/* A changed View option leaves a small accent mark on the trigger. */
+.diff-view-options {
+  position: relative;
+}
+
+.diff-view-options[data-modified]::after {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: var(--space-1);
+  height: var(--space-1);
+  background: var(--color-accent);
+  content: "";
+}
+
+.diff-option-check {
   display: inline-grid;
   width: var(--icon-sm);
   place-items: center;
 }
 
-.diff-inline-check[data-unchecked] {
+.diff-option-check[data-unchecked] {
   visibility: hidden;
 }
 
-.diff-inline-check svg {
+.diff-option-check svg {
   width: var(--icon-sm);
   height: var(--icon-sm);
 }
@@ -270,6 +290,15 @@
 
 .review-file-uncommitted + .commit-file-status {
   margin-left: 0;
+}
+
+/* A Viewed mark made at an older blob (decision 0117): status text in the
+   header band, which holds the status hues' contrast floors. */
+.review-file-changed {
+  flex: none;
+  color: var(--color-warning);
+  font-size: var(--text-xs);
+  white-space: nowrap;
 }
 
 .review-viewed {

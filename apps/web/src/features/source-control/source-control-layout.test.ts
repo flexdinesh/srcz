@@ -9,6 +9,7 @@ test("layout defaults to the branch range, a flat change list, a shown rail, and
   assert.equal(defaultLayout.range, "branch")
   assert.equal(defaultLayout.changesView, "list")
   assert.equal(defaultLayout.railHidden, false)
+  assert.equal(defaultLayout.railHideViewed, false)
   assert.deepEqual(defaultLayout.collapsed, {})
   assert.deepEqual(paneIds, ["working", "commits", "branches"])
   assert.deepEqual(parseLayout(null), defaultLayout)
@@ -19,13 +20,14 @@ test("stored layout keeps well-formed fields and drops the earlier list split", 
   const parsed = parseLayout({
     range: "all", listShare: 0.3, bases: { "/a": "develop", "/b": 3, "/c": "" },
     weights: { working: 0.5, commits: -1, branches: "x" }, collapsed: { working: true, commits: "no", branches: false },
-    changesView: "tree", railWidth: 20, railHidden: true,
+    changesView: "tree", railWidth: 20, railHidden: true, railHideViewed: true,
   })
   assert.deepEqual(parsed, {
     range: "all", bases: { "/a": "develop" },
     weights: { working: 0.5, commits: defaultLayout.weights.commits, branches: defaultLayout.weights.branches },
-    collapsed: { working: true, branches: false }, changesView: "tree", railWidth: 20, railHidden: true,
+    collapsed: { working: true, branches: false }, changesView: "tree", railWidth: 20, railHidden: true, railHideViewed: true,
   })
+  assert.equal(parseLayout({ railHideViewed: "yes" }).railHideViewed, false)
   assert.deepEqual(parseLayout({ range: "everything", changesView: "grid", railWidth: Number.NaN, bases: [] }), defaultLayout)
   assert.equal(parseLayout({ railWidth: 99 }).railWidth, maximumRailWidth)
   assert.equal(clampRailWidth(1), minimumRailWidth)
