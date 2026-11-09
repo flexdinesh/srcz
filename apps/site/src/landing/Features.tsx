@@ -51,7 +51,7 @@ function FeatureCopy({ id }: { id: FeatureId }) {
             your language servers.
           </p>
           <pre className="landing-term">
-            <span className="landing-prompt">$</span> srcz .
+            <span className="landing-prompt">$</span> zero .
           </pre>
           <DocLink href={links.browsing}>Browsing</DocLink>
         </>
@@ -76,7 +76,7 @@ function FeatureCopy({ id }: { id: FeatureId }) {
             note inline. Steps pinned to a commit never move; if code drifts, the step says so instead of guessing.
           </p>
           <pre className="landing-term">
-            <span className="landing-prompt">$</span> srcz walkthrough publish walkthrough.json
+            <span className="landing-prompt">$</span> zero walkthrough publish walkthrough.json
           </pre>
           <p className="landing-keys">
             <span>
@@ -97,7 +97,7 @@ function FeatureCopy({ id }: { id: FeatureId }) {
         <>
           <h2>Serve a remote box to your laptop.</h2>
           <p className="landing-lede">
-            Run srcz with <code>--remote</code> beside the files, then <code>srcz connect</code> on your computer.
+            Run zero with <code>--remote</code> beside the files, then <code>zero connect</code> on your computer.
             The desktop app opens that machine in its own window over pinned TLS with a token. The host needs only
             the CLI.
           </p>

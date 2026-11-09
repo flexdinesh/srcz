@@ -1,6 +1,6 @@
 # Releases
 
-srcz ships only as GitHub release assets, installed with the scripts in
+Zero ships only as GitHub release assets, installed with the scripts in
 `scripts/` (decisions 0073, 0079). No branch or tag carries built files; tags
 point at plain `main` commits. Homebrew and `go install` are not supported.
 
@@ -9,6 +9,22 @@ Two workflows call it:
 
 - `release.yml`: pushing a `vX.Y.Z` tag publishes that stable release.
 - `ci.yml` (**Edge**): every push to `main` replaces the `edge` prerelease.
+
+## First Zero release: v0.2.0
+
+Keep the `0.2` series in `.release-version`; the first Zero stable release is
+**v0.2.0** (decision [0118](decisions/0118-zero-name-and-collision-safe-installs.md)).
+The operator coordinates the repository rename to `flexdinesh/zero`, the stable
+release, an edge build with Zero assets, and the site announcement. The website
+domain and `sourcezero-docs` Cloudflare Worker stay unchanged. Implementation
+and PR merge do not tag or publish a release or rename the repository.
+
+Previously published releases remain immutable. Old releases carry `srcz`
+asset names; the new installers require `zero_*` and `zero-desktop_*` assets.
+Between cutover and their publication, stable or edge installation fails
+clearly before changing either component. Publish v0.2.0 and complete the
+Zero edge build before announcing those install commands as available.
+Existing srcz installs and data remain untouched; Zero starts fresh.
 
 ## Stable releases
 
@@ -24,8 +40,8 @@ No repository secrets are needed; publishing uses the workflow's
 
    ```sh
    git fetch origin
-   git tag v0.1.7 origin/main
-   git push origin v0.1.7
+   git tag v0.2.0 origin/main
+   git push origin v0.2.0
    ```
 
 4. `check` rejects a tag that is not `vX.Y.Z` or whose commit is not on
@@ -36,8 +52,8 @@ No repository secrets are needed; publishing uses the workflow's
      binary.
    - `desktop-linux` (Ubuntu) and `desktop-macos` (macOS) package the desktop
      app per arch with `apps/desktop/scripts/package.sh`, bundling the matching
-     archive's `srcz`. Each smoke tests one package: Linux checks the amd64
-     app's and bundled binary's versions, the desktop entry's `srcz://`
+     archive's `zero`. Each smoke tests one package: Linux checks the amd64
+     app's and bundled binary's versions, the desktop entry's `zero://`
      handler, and the icon; macOS checks the arm64 app's versions, its signature,
      and `CFBundleURLSchemes`.
    - `assets` checks the exact asset set and writes `checksums.txt`.
@@ -61,8 +77,8 @@ no longer built. A newer push cancels an older build; publishing is never
 cancelled, and an older run skips publishing when `edge` already has a newer
 commit. The first green push creates the prerelease.
 
-Edge binaries report `srcz 0.0.0-edge <commit> <date>`; the desktop app
-reports `srcz-desktop 0.0.0-edge <commit>`.
+Edge binaries report `zero 0.0.0-edge <commit> <date>`; the desktop app
+reports `zero-desktop 0.0.0-edge <commit>`.
 
 ## Assets
 
@@ -70,9 +86,9 @@ Each release and `edge` publishes `checksums.txt`, four archives, and four
 desktop packages, where `<version>` is the tag without its leading `v`, or
 `0.0.0-edge`:
 
-- `srcz_<version>_<darwin|linux>_<amd64|arm64>.tar.gz`
-- `srcz-desktop_<version>_linux_<amd64|arm64>.tar.gz`
-- `srcz-desktop_<version>_darwin_<amd64|arm64>.zip`
+- `zero_<version>_<darwin|linux>_<amd64|arm64>.tar.gz`
+- `zero-desktop_<version>_linux_<amd64|arm64>.tar.gz`
+- `zero-desktop_<version>_darwin_<amd64|arm64>.zip`
 
 `edge` omits every `darwin_amd64` asset (decision 0093); the edge install
 scripts stop on macOS Intel and point at the stable ones.
@@ -84,23 +100,29 @@ The install scripts download these names:
 | `install.sh` | CLI and desktop app; CLI alone with `--cli-only` | the release `releases/latest` redirects to |
 | `install-edge.sh` | CLI and desktop app; CLI alone with `--cli-only` | `releases/download/edge/` |
 
-Renaming an asset breaks them for every user at once. v0.1.6 and earlier have
-neither `srcz_*` nor desktop assets, so `install.sh` stops until a release
-carries them.
+These names are part of the installer contract. v0.1.6 and earlier have no
+`zero_*` or `zero-desktop_*` assets. The new stable installer stops until
+v0.2.0 publishes them; the new edge installer likewise requires a completed
+Zero build. Missing assets never authorize falling back to old srcz binaries.
 
-Each archive contains the native `srcz` binary, README, and license. The
-frontend is built into `apps/srcz/internal/web/dist/` before Go
+Each archive contains the native `zero` binary, README, and license. The
+frontend is built into `apps/zero/internal/web/dist/` before Go
 compilation and embedded in the binary. Node.js and pnpm are build-time
 dependencies only; installed releases need no JavaScript runtime, external
 assets, or sidecar server.
 
 Desktop packages bundle the same Go binary as the archive for their OS and
-arch, at `resources/bin/srcz` (not on `PATH`). Linux needs WebKitGTK 4.1 on the
+arch, at `resources/bin/zero` (not on `PATH`). Linux needs WebKitGTK 4.1 on the
 machine. macOS builds are ad-hoc signed, not notarized, so Gatekeeper blocks the
 first launch of a browser-downloaded package until the user allows it. There is
 no auto-update; upgrade by running the install script again. To package locally,
 run `apps/desktop/scripts/package.sh` from the repository root with archives
 from the `cli` job.
+
+Stable and edge installers remember the exposed CLI name (`zero`, `zero-cli`,
+or an explicit `--name NAME`) and verify managed paths before updates and
+uninstall. Archives and the desktop's bundled binary always keep `zero`.
+See [installation details](../apps/site/src/pages/docs/getting-started.mdx#command-name-collisions).
 
 For development installs from `edge`, see the
 [development guide](development.md#install-from-main).
@@ -121,7 +143,7 @@ settings:
 | --- | --- |
 | Worker name | `sourcezero-docs` (must match `name` in `wrangler.jsonc`) |
 | Root directory | repository root (CF reads `.node-version`, Node 26) |
-| Build command | `pnpm install --frozen-lockfile --filter @srcz/site... && pnpm build:site` |
+| Build command | `pnpm install --frozen-lockfile --filter @zero/site... && pnpm build:site` |
 | Deploy command | `npx wrangler deploy --config apps/site/wrangler.jsonc` |
 | Build variables | `SKIP_DEPENDENCY_INSTALL=1`; `PNPM_VERSION=11.24.0` if the build image ignores `packageManager` |
 
@@ -132,12 +154,12 @@ paths.
 ## Version series
 
 `.release-version` contains the active `major.minor` release series, which
-`go run ./tools/release-version` reads. For example, `0.1` selects `v0.1.0`
-when the series has no releases, then `v0.1.1`, `v0.1.2`, and so on; when a
+`go run ./tools/release-version` reads. The current `0.2` series selects `v0.2.0`
+when the series has no releases, then `v0.2.1`, `v0.2.2`, and so on; when a
 release tag already names `HEAD`, it prints that tag.
 
 To begin a new minor or major series, change `.release-version` in the repo.
-Changing it to `0.2` makes the next release `v0.2.0`; changing it to `1.0`
+Changing it to `0.3` makes the next release `v0.3.0`; changing it to `1.0`
 makes the next release `v1.0.0`. Later releases continue incrementing that
 series' patch number. The workflow accepts any `vX.Y.Z` tag on `main`; the
 series only suggests the next one.

@@ -10,7 +10,7 @@ export function Footer() {
       <div className="sz-footer-brand">
         <span className="sz-footer-wordmark">
           <Mark />
-          Source Zero
+          Zero
         </span>
         <span className="sz-footer-muted">MIT License</span>
       </div>

@@ -441,6 +441,24 @@ article:has(> .landing) {
   background: var(--l-surface-2);
 }
 
+.landing-install-note {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--l-border);
+  color: var(--l-muted);
+  line-height: 1.5;
+}
+
+.landing-install-note a {
+  color: var(--l-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.125em;
+}
+
+.landing-install-note a:hover {
+  color: var(--l-accent-hover);
+}
+
 .landing-ctas {
   display: flex;
   flex-wrap: wrap;

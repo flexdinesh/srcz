@@ -1,4 +1,4 @@
-import { isWalkthrough, isWalkthroughSummary, type Walkthrough, type WalkthroughSummary } from "@srcz/contracts"
+import { isWalkthrough, isWalkthroughSummary, type Walkthrough, type WalkthroughSummary } from "@zero/contracts"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { deleteResource, failureReason, fetchJSON, isAbort, RequestError } from "../../api/http.ts"

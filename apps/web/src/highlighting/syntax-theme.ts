@@ -1,12 +1,12 @@
 import type { Theme } from "@pierre/highlights"
 
-// SYNTAX_THEME is srcz's Highlights theme: every syntax category resolves to
-// a `--color-syntax-*` token, so highlighting follows the active srcz theme
+// SYNTAX_THEME is zero's Highlights theme: every syntax category resolves to
+// a `--color-syntax-*` token, so highlighting follows the active zero theme
 // without a palette per theme (decision 0029). Categories without an entry
 // inherit from their nearest parent (`keyword.control` from `keyword`);
 // unmapped ones use the foreground.
 export const SYNTAX_THEME: Theme = {
-  name: "srcz",
+  name: "zero",
   appearance: "dark",
   cssVariables: {
     prefix: "--color-syntax-",

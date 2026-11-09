@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { DiffResponse, DiffSide, FileType } from "@srcz/contracts"
+import type { DiffResponse, DiffSide, FileType } from "@zero/contracts"
 import {
   clampPercent, imageDiffModes, imageMeta, imageSides, imageUrl, maxImageBytes, pointerPercent, stageLayout, swipeClip,
 } from "./image-diff.ts"

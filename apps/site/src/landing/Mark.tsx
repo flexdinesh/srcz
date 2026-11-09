@@ -1,4 +1,4 @@
-// The Source Zero mark, a Z inside a zero (decision 0104), on the 32 grid at the
+// The Zero mark, a Z inside a zero (decision 0104), on the 32 grid at the
 // docs logo's 28px. Decorative: the wordmark beside it names the product.
 export function Mark() {
   return (

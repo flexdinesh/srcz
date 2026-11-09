@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from "react"
 
 import { Button } from "../../components/ui/button.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
-import type { WalkthroughSummary } from "@srcz/contracts"
+import type { WalkthroughSummary } from "@zero/contracts"
 import { DocumentPreview } from "../documents/DocumentPreview.tsx"
 import { commitAge, commitDate, type CompareContext } from "../source-control/compare.ts"
 import type { WalkthroughDetail } from "./use-walkthroughs.ts"

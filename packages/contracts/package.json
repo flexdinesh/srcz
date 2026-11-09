@@ -1,8 +1,8 @@
 {
-  "name": "@srcz/contracts",
+  "name": "@zero/contracts",
   "private": true,
   "type": "module",
-  "description": "Transport contract types and runtime guards generated from apps/srcz/pkg/contract by tools/contracts (decision 0080).",
+  "description": "Transport contract types and runtime guards generated from apps/zero/pkg/contract by tools/contracts (decision 0080).",
   "exports": {
     ".": "./src/index.ts"
   }

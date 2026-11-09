@@ -22,8 +22,8 @@ import (
 // compose.yaml: concurrent projects stay isolated, the host is unreachable,
 // and tearing down one project leaves the other running.
 func TestComposeIsolationAcceptance(t *testing.T) {
-	if os.Getenv("SRCZ_COMPOSE_ACCEPTANCE") != "1" {
-		t.Skip("set SRCZ_COMPOSE_ACCEPTANCE=1 with a local Docker daemon")
+	if os.Getenv("ZERO_COMPOSE_ACCEPTANCE") != "1" {
+		t.Skip("set ZERO_COMPOSE_ACCEPTANCE=1 with a local Docker daemon")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
 	defer cancel()
@@ -69,7 +69,7 @@ func TestComposeIsolationAcceptance(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(contexts, "ctx-src", "tools", "validate", "compose.yaml"), composeFile, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := d.output(ctx, "volume", "create", "--label", "io.srcz.validation=cache", goBuildVolume); err != nil {
+	if _, err := d.output(ctx, "volume", "create", "--label", "io.zero.validation=cache", goBuildVolume); err != nil {
 		t.Fatal(err)
 	}
 

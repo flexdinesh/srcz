@@ -1,4 +1,4 @@
-import type { Directory, Project, ProjectKind, ProjectsResponse } from "@srcz/contracts"
+import type { Directory, Project, ProjectKind, ProjectsResponse } from "@zero/contracts"
 
 // Pure list logic for the project picker; ProjectPicker.tsx only renders it.
 

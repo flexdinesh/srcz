@@ -17,7 +17,7 @@ import {
 } from "./dev-server.ts"
 
 const devServerBanner: Plugin = {
-  name: "srcz-dev-server-banner",
+  name: "zero-dev-server-banner",
   configureServer(server) {
     server.printUrls = () => {
       const address = server.httpServer?.address()
@@ -35,7 +35,7 @@ const devServerBanner: Plugin = {
 }
 
 // @pierre/diffs can load Shiki, its grammars, and every Pierre, Shiki, and
-// Highlights theme. srcz highlights only with Highlights and its own theme,
+// Highlights theme. zero highlights only with Highlights and its own theme,
 // so production builds resolve those imports to local stand-ins and none of
 // them ship (decision 0029).
 const shikiUnavailable = "./src/highlighting/shiki-unavailable.ts"
@@ -52,7 +52,7 @@ const diffsSubsets: ReadonlyMap<string, string> = new Map([
 ].map(([source, subset]) => [source, fileURLToPath(new URL(subset, import.meta.url))]))
 
 const diffsSubset: Plugin = {
-  name: "srcz-diffs-subset",
+  name: "zero-diffs-subset",
   apply: "build",
   enforce: "pre",
   resolveId(source, importer) {
@@ -67,7 +67,7 @@ const mockFixturesDirectory = fileURLToPath(
 
 function mockApi(enabled: boolean): Plugin {
   return {
-    name: "srcz-mock-api",
+    name: "zero-mock-api",
     apply: "serve",
     configureServer(server) {
       if (!enabled) return
@@ -95,15 +95,15 @@ function mockApi(enabled: boolean): Plugin {
 }
 
 // Ports come from the environment; mise loads them from .env (decision 0038).
-const goServerPort = devServerPort(process.env, "SRCZ_DEV_SERVER_PORT", 8080)
-const webServerPort = devServerPort(process.env, "SRCZ_DEV_WEB_PORT", 5173)
+const goServerPort = devServerPort(process.env, "ZERO_DEV_SERVER_PORT", 8080)
+const webServerPort = devServerPort(process.env, "ZERO_DEV_WEB_PORT", 5173)
 
 export default defineConfig(({ command, mode }) => ({
   base: command === "build" ? "/assets/" : "/",
   build: {
     assetsDir: "",
     emptyOutDir: true,
-    outDir: "../srcz/internal/web/dist",
+    outDir: "../zero/internal/web/dist",
   },
   plugins: [diffsSubset, react(), tailwindcss(), devServerBanner, mockApi(mode === "mock")],
   resolve: {
@@ -118,7 +118,7 @@ export default defineConfig(({ command, mode }) => ({
     open: shouldOpenBrowser(process.env),
     port: webServerPort,
     proxy: mode === "mock" ? undefined : {
-      "/api": process.env.SRCZ_API_TARGET || `http://127.0.0.1:${goServerPort}`,
+      "/api": process.env.ZERO_API_TARGET || `http://127.0.0.1:${goServerPort}`,
     },
     strictPort: true,
   },

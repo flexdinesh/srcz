@@ -4,7 +4,7 @@ import test from "node:test"
 
 import { parseDiffFromFile, type FileContents } from "@pierre/diffs"
 
-import { isDiffResponse } from "@srcz/contracts"
+import { isDiffResponse } from "@zero/contracts"
 import { diffContent } from "./diff-content.ts"
 import { fileDiffMetadata } from "./diff-metadata.ts"
 import { lineDiffOf } from "./line-diff-testing.ts"

@@ -1,4 +1,4 @@
-import { isProcessMetrics, type ProcessMetrics } from "@srcz/contracts"
+import { isProcessMetrics, type ProcessMetrics } from "@zero/contracts"
 import { useEffect, useState } from "react"
 
 import { fetchJSON } from "../api/http.ts"

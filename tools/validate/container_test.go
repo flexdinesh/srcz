@@ -108,10 +108,10 @@ func testJob(t *testing.T, d docker, group string) containerJob {
 }
 
 func TestNamesAreRepositoryAndSlotScoped(t *testing.T) {
-	if got := projectName(1, "browser-extended"); got != "srcz-check-s1-browser-extended" {
+	if got := projectName(1, "browser-extended"); got != "zero-check-s1-browser-extended" {
 		t.Fatal(got)
 	}
-	if got := imageTag(0, "browser"); got != "srcz-check:s0-browser" {
+	if got := imageTag(0, "browser"); got != "zero-check:s0-browser" {
 		t.Fatal(got)
 	}
 	if containerTask("go", "") != "_container:go" || containerTask("go", "_container:test:go") != "_container:test:go" {
@@ -140,7 +140,7 @@ func TestBuildUsesSnapshotDockerfileAndNamedContexts(t *testing.T) {
 	call, _, _ := d.find("buildx build")
 	args := strings.Join(call.args, " ")
 	for _, want := range []string{
-		"--target browser", "--tag srcz-check:s1-browser", "--load", "--platform linux/amd64",
+		"--target browser", "--tag zero-check:s1-browser", "--load", "--platform linux/amd64",
 		"--file " + filepath.Join(job.Contexts, "ctx-src", "tools", "validate", "Dockerfile"),
 		"--build-context ctx-bin=" + filepath.Join(job.Contexts, "ctx-bin"),
 		"--build-context ctx-src=" + filepath.Join(job.Contexts, "ctx-src"),
@@ -165,27 +165,27 @@ func TestBuildUsesSnapshotDockerfileAndNamedContexts(t *testing.T) {
 }
 
 func TestExecuteExportsArtifactsAndTearsDown(t *testing.T) {
-	d := &fakeDocker{listing: map[string]string{"ps --all --quiet --filter label=com.docker.compose.project=srcz-check-s1-browser-extended": "c1\n"}}
+	d := &fakeDocker{listing: map[string]string{"ps --all --quiet --filter label=com.docker.compose.project=zero-check-s1-browser-extended": "c1\n"}}
 	job := testJob(t, d, "browser-extended")
 	job.Args = []string{"tests/browser/app.spec.ts"}
 	if err := job.execute(context.Background(), "sha256:abc"); err != nil {
 		t.Fatal(err)
 	}
-	run, runIndex, ok := d.find("compose --project-name srcz-check-s1-browser-extended")
+	run, runIndex, ok := d.find("compose --project-name zero-check-s1-browser-extended")
 	if !ok {
 		t.Fatal("compose run missing")
 	}
 	runArgs := strings.Join(run.args, " ")
-	if !strings.Contains(runArgs, "run --no-TTY --name srcz-check-s1-browser-extended-runner") || !strings.HasSuffix(runArgs, "runner mise run --force --skip-deps _container:browser-extended tests/browser/app.spec.ts") {
+	if !strings.Contains(runArgs, "run --no-TTY --name zero-check-s1-browser-extended-runner") || !strings.HasSuffix(runArgs, "runner mise run --force --skip-deps _container:browser-extended tests/browser/app.spec.ts") {
 		t.Fatalf("compose run: %s", runArgs)
 	}
-	for _, want := range []string{"SRCZ_CHECK_IMAGE=sha256:abc", "SRCZ_BROWSER_EXTENDED=1", "SRCZ_VALIDATION_FORCE=false"} {
+	for _, want := range []string{"ZERO_CHECK_IMAGE=sha256:abc", "ZERO_BROWSER_EXTENDED=1", "ZERO_VALIDATION_FORCE=false"} {
 		if !slices.Contains(run.env, want) {
 			t.Fatalf("compose env lacks %s: %v", want, run.env)
 		}
 	}
-	_, volumeIndex, _ := d.find("volume create --label io.srcz.validation=cache srcz-check-go-build")
-	_, cpIndex, _ := d.find("cp srcz-check-s1-browser-extended-runner:/out " + filepath.Join(job.Out, "output"))
+	_, volumeIndex, _ := d.find("volume create --label io.zero.validation=cache zero-check-go-build")
+	_, cpIndex, _ := d.find("cp zero-check-s1-browser-extended-runner:/out " + filepath.Join(job.Out, "output"))
 	_, rmIndex, _ := d.find("rm --force --volumes c1")
 	down, downAt, _ := findLast(d, "down --volumes --remove-orphans")
 	if volumeIndex < 0 || volumeIndex > runIndex || cpIndex < runIndex || rmIndex < cpIndex || downAt < rmIndex {
@@ -207,7 +207,7 @@ func TestExecuteTearsDownAfterFailureAndCancellation(t *testing.T) {
 	if _, _, ok := findLast(failed, "down --volumes"); !ok {
 		t.Fatal("no teardown after failure")
 	}
-	if _, _, ok := failed.find("cp srcz-check-s1-go-runner:/out"); !ok {
+	if _, _, ok := failed.find("cp zero-check-s1-go-runner:/out"); !ok {
 		t.Fatal("failure artifacts not exported")
 	}
 
@@ -221,7 +221,7 @@ func TestExecuteTearsDownAfterFailureAndCancellation(t *testing.T) {
 	if !ok || blocked.cancelled[index] {
 		t.Fatal("teardown skipped or ran with the cancelled context")
 	}
-	_, psIndex, _ := blocked.find("ps --all --quiet --filter label=com.docker.compose.project=srcz-check-s1-go")
+	_, psIndex, _ := blocked.find("ps --all --quiet --filter label=com.docker.compose.project=zero-check-s1-go")
 	if psIndex < 0 || blocked.cancelled[psIndex] {
 		t.Fatal("cancelled run left its containers")
 	}
@@ -229,17 +229,17 @@ func TestExecuteTearsDownAfterFailureAndCancellation(t *testing.T) {
 
 func TestSweepRemovesOnlyThisSlotsResources(t *testing.T) {
 	d := &fakeDocker{listing: map[string]string{
-		`ps --all --filter label=com.docker.compose.project --format {{.Label "com.docker.compose.project"}}`:   "srcz-check-s1-go\nsrcz-check-s0-go\ndiffx-check-s1-go\nsrcz-check-s10-docs\n",
-		`network ls --filter label=com.docker.compose.project --format {{.Label "com.docker.compose.project"}}`: "srcz-check-s1-browser\nsrcz-dev\n",
-		"ps --all --quiet --filter label=com.docker.compose.project=srcz-check-s1-go":                           "a\n",
-		"network ls --quiet --filter label=com.docker.compose.project=srcz-check-s1-browser":                    "n1\n",
-		"image ls srcz-check --format {{.Tag}}":                                                                 "s1-go\ns0-go\ns1-browser\ns10-docs\n",
+		`ps --all --filter label=com.docker.compose.project --format {{.Label "com.docker.compose.project"}}`:   "zero-check-s1-go\nzero-check-s0-go\ndiffx-check-s1-go\nzero-check-s10-docs\n",
+		`network ls --filter label=com.docker.compose.project --format {{.Label "com.docker.compose.project"}}`: "zero-check-s1-browser\nzero-dev\n",
+		"ps --all --quiet --filter label=com.docker.compose.project=zero-check-s1-go":                           "a\n",
+		"network ls --quiet --filter label=com.docker.compose.project=zero-check-s1-browser":                    "n1\n",
+		"image ls zero-check --format {{.Tag}}":                                                                 "s1-go\ns0-go\ns1-browser\ns10-docs\n",
 	}}
 	if err := sweepSlot(context.Background(), d, 1); err != nil {
 		t.Fatal(err)
 	}
 	commands := strings.Join(d.commands(), "\n")
-	for _, want := range []string{"rm --force --volumes a", "network rm n1", "image rm srcz-check:s1-browser srcz-check:s1-go"} {
+	for _, want := range []string{"rm --force --volumes a", "network rm n1", "image rm zero-check:s1-browser zero-check:s1-go"} {
 		if !strings.Contains(commands, want) {
 			t.Fatalf("sweep missed %q:\n%s", want, commands)
 		}
@@ -249,7 +249,7 @@ func TestSweepRemovesOnlyThisSlotsResources(t *testing.T) {
 		if !strings.Contains(line, " rm ") && !strings.HasPrefix(line, "rm ") && !strings.Contains(line, "project=") {
 			continue
 		}
-		for _, foreign := range []string{"s0-go", "diffx-check", "s10-docs", "srcz-dev"} {
+		for _, foreign := range []string{"s0-go", "diffx-check", "s10-docs", "zero-dev"} {
 			if strings.Contains(line, foreign) {
 				t.Fatalf("sweep touched %s: %s", foreign, line)
 			}
@@ -258,7 +258,7 @@ func TestSweepRemovesOnlyThisSlotsResources(t *testing.T) {
 }
 
 func TestDockerEnvironmentPassesOnlyDaemonAccess(t *testing.T) {
-	t.Setenv("SRCZ_API_TARGET", "http://localhost:9999")
+	t.Setenv("ZERO_API_TARGET", "http://localhost:9999")
 	t.Setenv("GITHUB_TOKEN", "secret")
 	t.Setenv("DOCKER_HOST", "unix:///run/user/docker.sock")
 	env := strings.Join(dockerEnvironment(), "\n")
@@ -271,7 +271,7 @@ func TestDockerEnvironmentPassesOnlyDaemonAccess(t *testing.T) {
 		t.Fatal("daemon address dropped")
 	}
 	job := containerJob{Group: "desktop-extended", Attempt: "a"}
-	if got := job.composeEnvironment("sha256:x"); !slices.Equal(got, []string{"SRCZ_CHECK_IMAGE=sha256:x", "SRCZ_VALIDATION_ATTEMPT=a", "SRCZ_VALIDATION_FORCE=false", "SRCZ_DESKTOP_EXTENDED=1"}) {
+	if got := job.composeEnvironment("sha256:x"); !slices.Equal(got, []string{"ZERO_CHECK_IMAGE=sha256:x", "ZERO_VALIDATION_ATTEMPT=a", "ZERO_VALIDATION_FORCE=false", "ZERO_DESKTOP_EXTENDED=1"}) {
 		t.Fatalf("compose environment: %v", got)
 	}
 }
@@ -283,7 +283,7 @@ func TestComposeFileIsolatesRunner(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(raw)
-	for _, want := range []string{"internal: true", "external: true", "name: srcz-check-go-build", "init: true", "cpus: 2", "mem_limit: 4g", "pull_policy: never"} {
+	for _, want := range []string{"internal: true", "external: true", "name: zero-check-go-build", "init: true", "cpus: 2", "mem_limit: 4g", "pull_policy: never"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("compose.yaml lacks %q", want)
 		}
@@ -303,7 +303,7 @@ func TestEveryTargetCopiesTheCapture(t *testing.T) {
 	}
 	text := string(raw)
 	for target := range targetContexts {
-		marker := " AS " + target + "\nCOPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture\n"
+		marker := " AS " + target + "\nCOPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture\n"
 		if !strings.Contains(text, marker) {
 			t.Fatalf("target %s does not start by copying the capture", target)
 		}

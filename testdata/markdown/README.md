@@ -1,4 +1,4 @@
-# srcz test library
+# zero test library
 
 This committed library is the shared development and test corpus.
 

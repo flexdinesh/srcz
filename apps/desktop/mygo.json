@@ -1,23 +1,23 @@
 {
-  "name": "srcz-desktop",
-  "slug": "srcz-desktop",
-  "identifier": "io.github.flexdinesh.srcz.desktop",
+  "name": "zero-desktop",
+  "slug": "zero-desktop",
+  "identifier": "io.github.flexdinesh.zero.desktop",
   "version": "0.0.0",
   "copyright": "© 2026 Dinesh Pandiyan",
   "out": "build",
   "urlSchemes": [
-    "srcz"
+    "zero"
   ],
   "macos": {
     "icon": "resources/icon.icns",
     "signingIdentity": "-"
   },
   "linux": {
-    "comment": "Browse local files with Source Zero",
+    "comment": "Browse local files with Zero",
     "categories": [
       "Development"
     ],
     "webview": true,
-    "command": "srcz-desktop"
+    "command": "zero-desktop"
   }
 }

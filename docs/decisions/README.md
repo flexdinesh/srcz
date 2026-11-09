@@ -120,3 +120,4 @@ rewriting history; update `Status` on the old record.
 | [0115](0115-source-change-markers.md) | Change markers in Source | Accepted; extends 0024, 0083 |
 | [0116](0116-image-diffs.md) | Image diffs | Accepted; extends 0004, 0035, 0083 |
 | [0117](0117-review-order-viewed-flow-and-view-options.md) | One review order, a quicker Viewed flow, and View options | Accepted; revises 0035, 0040, 0051 |
+| [0118](0118-zero-name-and-collision-safe-installs.md) | Zero name and collision-safe installs | Accepted; supersedes 0100 naming; revises 0073, 0101, 0104 |

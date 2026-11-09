@@ -1,7 +1,7 @@
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, ListOrderedIcon, XIcon } from "lucide-react"
 
 import { IconButton } from "../../components/ui/icon-button.tsx"
-import type { Walkthrough } from "@srcz/contracts"
+import type { Walkthrough } from "@zero/contracts"
 import { nextStepKeys, previousStepKeys } from "./Narration.tsx"
 import { StepProgress } from "./StepProgress.tsx"
 import type { StepPosition } from "./walkthrough-steps.ts"

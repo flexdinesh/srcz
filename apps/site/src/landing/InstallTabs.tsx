@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { installMethods } from './links'
+import { installMethods, links } from './links'
 
 export function InstallTabs() {
   const [selected, setSelected] = useState(0)
@@ -49,6 +49,10 @@ export function InstallTabs() {
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
+      <p className="landing-install-note">
+        If <code>zero</code> is taken, confirm <code>zero-cli</code> in your terminal or choose <code>--name</code>.{' '}
+        <a href={`${links.getStarted}#command-name-collisions`}>Install details</a>
+      </p>
     </div>
   )
 }

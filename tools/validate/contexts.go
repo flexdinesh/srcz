@@ -49,10 +49,10 @@ var contextPredicates = map[string]func(string) bool{
 	"ctx-src":  func(string) bool { return true },
 	"ctx-node": isNodeManifest,
 	"ctx-gomod": func(name string) bool {
-		return name == "go.work" || name == "apps/srcz/go.mod" || name == "apps/srcz/go.sum" || name == "tools/go.mod"
+		return name == "go.work" || name == "apps/zero/go.mod" || name == "apps/zero/go.sum" || name == "tools/go.mod"
 	},
 	"ctx-desktopmod": func(name string) bool {
-		return name == "apps/desktop/go.mod" || name == "apps/desktop/go.sum" || name == "apps/srcz/go.mod" || name == "apps/srcz/go.sum"
+		return name == "apps/desktop/go.mod" || name == "apps/desktop/go.sum" || name == "apps/zero/go.mod" || name == "apps/zero/go.sum"
 	},
 	"ctx-web": func(name string) bool {
 		if strings.HasPrefix(name, "apps/web/") {
@@ -69,13 +69,13 @@ var contextPredicates = map[string]func(string) bool{
 			return false
 		}
 		switch name {
-		case "mise.toml", "mise.lock", ".node-version", "go.work", "tools/go.mod", "apps/srcz/go.mod", "apps/srcz/go.sum":
+		case "mise.toml", "mise.lock", ".node-version", "go.work", "tools/go.mod", "apps/zero/go.mod", "apps/zero/go.sum":
 			return true
 		}
-		if strings.HasPrefix(name, "apps/srcz/") && !strings.Contains(strings.TrimPrefix(name, "apps/srcz/"), "/") {
+		if strings.HasPrefix(name, "apps/zero/") && !strings.Contains(strings.TrimPrefix(name, "apps/zero/"), "/") {
 			return strings.HasSuffix(name, ".go")
 		}
-		for _, prefix := range []string{"apps/srcz/cmd/", "apps/srcz/internal/", "apps/srcz/pkg/"} {
+		for _, prefix := range []string{"apps/zero/cmd/", "apps/zero/internal/", "apps/zero/pkg/"} {
 			if strings.HasPrefix(name, prefix) {
 				return true
 			}

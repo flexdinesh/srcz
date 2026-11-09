@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { DiffResponse, DiffSide } from "@srcz/contracts"
-import type { FileType } from "@srcz/contracts"
+import type { DiffResponse, DiffSide } from "@zero/contracts"
+import type { FileType } from "@zero/contracts"
 import { binaryChangeLabel, diffContent } from "./diff-content.ts"
 import { countedLines, diffStatsLabel } from "./diff-stats.ts"
 

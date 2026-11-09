@@ -15,7 +15,7 @@ Constraints: local assets, one Go binary, strict TypeScript, existing diagrams/s
 
 THESIS: Sharp slate panes: a compact workspace with VS Code's conventions and Zed's visual language. App identity and global actions stay in the status bar.
 
-OWN-WORLD: Cool slate surfaces, with a near-white document in Source Zero Light; square panes meeting on 1px hairlines, with no canvas gaps; flat rows, compact sans UI, mono chrome labels, proportional prose, monospace code. Every corner is square. All named themes share semantic tokens.
+OWN-WORLD: Cool slate surfaces, with a near-white document in Zero Light; square panes meeting on 1px hairlines, with no canvas gaps; flat rows, compact sans UI, mono chrome labels, proportional prose, monospace code. Every corner is square. All named themes share semantic tokens.
 
 STORY: Browse paths with Pierre, read a document, or search its workspace's content separately. Review a compare as one continuous buffer.
 

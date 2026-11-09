@@ -21,7 +21,7 @@ import { Chevron } from "../../components/ui/section-toggle.tsx"
 import { IconButton } from "../../components/ui/icon-button.tsx"
 import { SegmentedControl, SegmentedItem } from "../../components/ui/segmented-control.tsx"
 import { ToggleButton } from "../../components/ui/toggle-button.tsx"
-import type { FileStats, LineDiff } from "@srcz/contracts"
+import type { FileStats, LineDiff } from "@zero/contracts"
 import { formatBytes } from "../../lib/format-bytes.ts"
 import { shortHash } from "../../lib/commit-hash.ts"
 import { lineReference } from "../../lib/line-selection.ts"
@@ -47,7 +47,7 @@ import type { ViewedState } from "./review-viewed.ts"
 import type { CompareData } from "./use-compare-data.ts"
 import { statsLabel, totals } from "./use-compare-stats.ts"
 
-// One srcz theme serves both polarities; themeType picks the scheme.
+// One zero theme serves both polarities; themeType picks the scheme.
 const theme = { light: DIFF_THEME, dark: DIFF_THEME }
 
 // Highlights tokenizes small diffs on the main thread; larger ones go to two
@@ -58,7 +58,7 @@ const poolOptions: WorkerPoolOptions = {
   mainThreadMaxCharacters: MAIN_THREAD_MAX_CHARACTERS,
 }
 
-// Browser surfaces inside Pierre's shadow root follow srcz tokens: square
+// Browser surfaces inside Pierre's shadow root follow zero tokens: square
 // corners over Pierre's own radii (decision 0102), the selection, and wide
 // code's square, inset scrollbar thumb (decision 0055).
 const diffCSS = `*, ::before, ::after { border-radius: 0 !important; }

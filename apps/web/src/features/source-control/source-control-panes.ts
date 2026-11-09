@@ -1,4 +1,4 @@
-import type { StackLayer, StackResponse } from "@srcz/contracts"
+import type { StackLayer, StackResponse } from "@zero/contracts"
 import { branchCompare, type Compare } from "./compare.ts"
 import { displayOrder, type CompareFile } from "./compare-files.ts"
 

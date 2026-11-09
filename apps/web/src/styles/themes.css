@@ -1,4 +1,4 @@
-/* Source Zero Light and Source Zero Dark resolve the light-dark() values in tokens.css; Auto
+/* Zero Light and Zero Dark resolve the light-dark() values in tokens.css; Auto
    follows the browser through the default "light dark" color-scheme.
    Named themes override every theme value.
 
@@ -26,7 +26,7 @@
   color-scheme: dark;
 }
 
-/* Source Zero Light and Dark are slate (decision 0102). Chrome is set directly
+/* Zero Light and Dark are slate (decision 0102). Chrome is set directly
    rather than mixed toward the canvas; in Dark it matches the sidebar and the
    active tab drops to the darker document surface. Chrome hover moves toward
    the active tone rather than past it in Light (decision 0044). */
@@ -36,7 +36,7 @@
   --color-field-border: light-dark(#7a808a, color-mix(in srgb, var(--color-text-muted) 90%, var(--color-surface)));
 }
 
-/* Source Zero Light added lines: Pierre mixes 12% of a hue into the surface, and
+/* Zero Light added lines: Pierre mixes 12% of a hue into the surface, and
    the dark success green reads grey at that strength, so additions mix a
    vivid green instead. Other themes keep Pierre's mix of their success. */
 :root.light:is([data-theme="system"], [data-theme="light"]) {

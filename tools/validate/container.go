@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	repoName      = "srcz"
+	repoName      = "zero"
 	imageRepo     = repoName + "-check"
 	projectPrefix = repoName + "-check-s"
 	goBuildVolume = repoName + "-check-go-build"
@@ -129,12 +129,12 @@ func (j containerJob) build(ctx context.Context) (string, error) {
 }
 
 func (j containerJob) composeEnvironment(image string) []string {
-	env := []string{"SRCZ_CHECK_IMAGE=" + image, "SRCZ_VALIDATION_ATTEMPT=" + j.Attempt, fmt.Sprintf("SRCZ_VALIDATION_FORCE=%t", j.Force)}
+	env := []string{"ZERO_CHECK_IMAGE=" + image, "ZERO_VALIDATION_ATTEMPT=" + j.Attempt, fmt.Sprintf("ZERO_VALIDATION_FORCE=%t", j.Force)}
 	switch j.Group {
 	case "browser-extended":
-		env = append(env, "SRCZ_BROWSER_EXTENDED=1")
+		env = append(env, "ZERO_BROWSER_EXTENDED=1")
 	case "desktop-extended":
-		env = append(env, "SRCZ_DESKTOP_EXTENDED=1")
+		env = append(env, "ZERO_DESKTOP_EXTENDED=1")
 	}
 	return env
 }
@@ -154,7 +154,7 @@ func (j containerJob) execute(ctx context.Context, image string) (err error) {
 			err = errors.Join(err, cleanupErr)
 		}
 	}()
-	if _, err = j.Docker.output(ctx, "volume", "create", "--label", "io.srcz.validation=cache", goBuildVolume); err != nil {
+	if _, err = j.Docker.output(ctx, "volume", "create", "--label", "io.zero.validation=cache", goBuildVolume); err != nil {
 		return err
 	}
 	log, err := os.Create(filepath.Join(j.Out, "check.log"))

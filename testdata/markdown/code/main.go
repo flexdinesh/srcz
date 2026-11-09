@@ -1,8 +1,8 @@
-// Package main is a source-only sample for srcz.
+// Package main is a source-only sample for zero.
 package main
 
 import "fmt"
 
 func main() {
-	fmt.Println("hello from srcz") // go-search-token
+	fmt.Println("hello from zero") // go-search-token
 }

@@ -1,21 +1,21 @@
 {
-  "name": "srcz",
+  "name": "zero",
   "private": true,
   "type": "module",
   "scripts": {
-    "build:site": "pnpm --filter @srcz/site build",
-    "build:web": "pnpm --filter @srcz/web build",
+    "build:site": "pnpm --filter @zero/site build",
+    "build:web": "pnpm --filter @zero/web build",
     "check": "mise run check:pr",
-    "dev:site": "pnpm --filter @srcz/site dev",
-    "dev:web": "pnpm --filter @srcz/web dev",
-    "dev:mock": "pnpm --filter @srcz/web dev:mock",
+    "dev:site": "pnpm --filter @zero/site dev",
+    "dev:web": "pnpm --filter @zero/web dev",
+    "dev:mock": "pnpm --filter @zero/web dev:mock",
     "dev": "mise run dev",
     "link:local": "mise run install",
-    "lint": "pnpm --filter @srcz/web lint",
+    "lint": "pnpm --filter @zero/web lint",
     "test:browser": "mise run test:browser",
     "test:release": "node --test --test-concurrency=2 --test-reporter=dot tests/*.test.ts tests/browser/live-fixture.test.ts",
-    "test:web": "pnpm --filter @srcz/web test",
-    "typecheck": "pnpm exec tsc --noEmit && pnpm --filter @srcz/web typecheck && pnpm --filter @srcz/site typecheck"
+    "test:web": "pnpm --filter @zero/web test",
+    "typecheck": "pnpm exec tsc --noEmit && pnpm --filter @zero/web typecheck && pnpm --filter @zero/site typecheck"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

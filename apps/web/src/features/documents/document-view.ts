@@ -1,4 +1,4 @@
-import type { PageData } from "@srcz/contracts"
+import type { PageData } from "@zero/contracts"
 
 import type { DocumentMode } from "../../api/page-contract.ts"
 import type { FormatState } from "./document-format.ts"

@@ -9,37 +9,37 @@ showAskAi: false
 Open the current directory:
 
 ```sh
-srcz .
+zero .
 ```
 
 Or another directory:
 
 ```sh
-srcz path/to/markdown
+zero path/to/markdown
 ```
 
-With the [desktop app](/docs/desktop) installed, `srcz [path]` opens the
+With the [desktop app](/docs/desktop) installed, `zero [path]` opens the
 directory in it and exits. Without it, or with `--host` or `--port`, it serves
-in a browser, as `srcz browser [path]` does. On a machine without a UI (an
+in a browser, as `zero browser [path]` does. On a machine without a UI (an
 SSH session, or Linux without a display) it tells you to run
-`srcz [path] --remote`, which prints a `srcz connect` command to run on your
+`zero [path] --remote`, which prints a `zero connect` command to run on your
 computer ([Remote hosts](/docs/remote)).
 
-`srcz browser [path]` always serves in a browser and takes the same flags.
+`zero browser [path]` always serves in a browser and takes the same flags.
 Subcommand names take precedence over directories, so open a directory named
-`browser`, `walkthrough`, or `daemon` as `srcz ./browser`,
-`srcz ./walkthrough`, or `srcz ./daemon`.
+`browser`, `walkthrough`, or `daemon` as `zero ./browser`,
+`zero ./walkthrough`, or `zero ./daemon`.
 
 Serve several directories with a repeatable `--path` (a positional path is
 shorthand for one); overlapping directories fail before starting:
 
 ```sh
-srcz --path ~/work --path ~/personal
+zero --path ~/work --path ~/personal
 ```
 
 ## Projects and worktrees
 
-Source Zero looks for git repositories (including linked worktrees) up to
+Zero looks for git repositories (including linked worktrees) up to
 `--scan-depth` folders deep in each directory (default `10`; `0` checks only
 the served directories) and lists them in the project picker (Cmd/Ctrl+O). It
 stops descending at a repository and skips hidden, `node_modules`, and
@@ -63,7 +63,7 @@ A project that opens with no tabs to restore shows the Welcome tab: shortcuts
 to open a project, find a file, and run a command; the project's branch,
 uncommitted changes, and walkthroughs; every served project (when there is
 more than one) with a filter and each repository's worktrees; and a short
-guide in which every entry runs what it describes. Click **Source Zero** in the
+guide in which every entry runs what it describes. Click **Zero** in the
 status bar, or run **Help › Welcome** from the command palette, to open it
 again. Turn it off with **Workbench › Show Welcome on Startup** in Settings;
 the project picker then opens on the first launch instead.
@@ -74,7 +74,7 @@ walkthrough to start.
 
 ## Host and port
 
-Without `--port`, Source Zero uses the first free port from `7971` through `7980`.
+Without `--port`, Zero uses the first free port from `7971` through `7980`.
 Use `--host` to bind a specific IP address or `--port` to select an exact port.
 
 Setting either one always serves in a browser. For parallel agent sessions or
@@ -82,15 +82,15 @@ worktrees, use a different port for each server, or let the OS select an
 available port:
 
 ```sh
-srcz . --port 8123 --no-open
-srcz . --port 0 --no-open
+zero . --port 8123 --no-open
+zero . --port 0 --no-open
 ```
 
 Use the URL printed at startup. Each server serves its own roots and stops
 independently. An occupied explicit port fails without stopping another server.
-Open Source Zero by `localhost` or an IP address; other hostnames are refused, so
+Open Zero by `localhost` or an IP address; other hostnames are refused, so
 websites cannot reach it through DNS rebinding.
-If the range is full, Source Zero can stop all verified instances after confirmation.
+If the range is full, Zero can stop all verified instances after confirmation.
 
 ## Files
 
@@ -108,27 +108,27 @@ repository checkout, regardless of `--depth` and skipped folders.
 
 ## Daemon
 
-`srcz daemon` is plumbing for the [desktop app](/docs/desktop): one long-lived
-Source Zero per user, reachable only through a private Unix socket (macOS and
+`zero daemon` is plumbing for the [desktop app](/docs/desktop): one long-lived
+Zero per user, reachable only through a private Unix socket (macOS and
 Linux), whose directories are added while it runs and remembered across
 restarts. Clients start it on demand; it stops after 30 minutes without
 requests. To check on it or stop it:
 
 ```sh
-srcz daemon status
-srcz daemon stop
+zero daemon status
+zero daemon stop
 ```
 
-`srcz daemon ensure` starts it unless it is running; `--json` prints status
+`zero daemon ensure` starts it unless it is running; `--json` prints status
 as JSON.
 
 ## All options
 
 ```sh
-srcz --help
-srcz daemon run --help
+zero --help
+zero daemon run --help
 ```
 
-`srcz daemon` subcommands take `--socket` to use another socket path;
+`zero daemon` subcommands take `--socket` to use another socket path;
 `run` and `ensure` also take `--depth`, `--scan-depth`, and `--idle-exit`
 (`0` never stops).

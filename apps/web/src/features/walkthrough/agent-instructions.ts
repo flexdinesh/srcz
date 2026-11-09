@@ -1,3 +1,5 @@
+const commandNote = "Commands use the canonical `zero`; if installed as `zero-cli` or with `--name NAME`, substitute your chosen command for `zero`."
+
 // agentExample is the walkthrough the copied instructions show; its fields
 // must stay within the server's JSON Schema (decision 0049).
 export function agentExample(project: string) {
@@ -18,10 +20,10 @@ export function agentExample(project: string) {
 }
 
 // agentInstructions is the prompt the Walkthroughs view copies (decision
-// 0049): where srcz runs, how to prepare a walkthrough, its format, and
+// 0049): where zero runs, how to prepare a walkthrough, its format, and
 // how to publish it: the CLI first (decision 0065), then curl to origin. It
 // ends with "Walk me through: " for the user's topic. An origin that is not
-// http(s), such as the desktop app's srcz://local, takes no HTTP
+// http(s), such as the desktop app's zero://local, takes no HTTP
 // requests, so the prompt names the CLI only; a null origin (a desktop
 // window over ssh, decision 0076) is not named at all.
 export function agentInstructions(origin: string | null, project: string): string {
@@ -30,20 +32,22 @@ export function agentInstructions(origin: string | null, project: string): strin
   const example = JSON.stringify(fields, null, 2)
     .replace(/\n}$/, `,\n  "steps": [\n${steps.map((step) => `    ${JSON.stringify(step)}`).join(",\n")}\n  ]\n}`)
   const http = origin !== null && /^https?:\/\//.test(origin)
-  const format = http ? `GET ${origin}/api/walkthrough-schema, or: srcz walkthrough schema` : "srcz walkthrough schema"
+  const format = http ? `GET ${origin}/api/walkthrough-schema, or: zero walkthrough schema` : "zero walkthrough schema"
   const fallback = http
-    ? `If srcz isn't on PATH or lacks "walkthrough publish":
+    ? `If zero isn't on PATH or lacks "walkthrough publish":
 
 curl -q -sS -X POST -H 'Content-Type: application/json' --data @walkthrough.json ${origin}/api/walkthroughs
 
 `
     : ""
   const responses = http ? ` Over HTTP, 201 creates, 200 replaces, the response is {"id", "url", "created"}, and a 400 lists every problem.` : ""
-  return `Write a srcz walkthrough of the topic at the end, and publish it with srcz.
+  return `Write a Zero walkthrough of the topic at the end, and publish it with zero.
 
-${origin === null ? "" : `srcz: ${origin}\n`}Project: ${project}
-Publish: srcz walkthrough publish walkthrough.json (no server needed)
+${origin === null ? "" : `zero: ${origin}\n`}Project: ${project}
+Publish: zero walkthrough publish walkthrough.json (no server needed)
 Format: ${format} (JSON Schema; authoritative if anything below is unclear)
+
+${commandNote}
 
 ## What a walkthrough is
 
@@ -67,7 +71,7 @@ Paths are project-relative with forward slashes. Lines are 1-based and inclusive
 
 Write the JSON to walkthrough.json, then:
 
-srcz walkthrough publish walkthrough.json
+zero walkthrough publish walkthrough.json
 
 ${fallback}\`\`\`json
 ${example}
@@ -101,7 +105,7 @@ export interface StepPromptInput {
 // walkthrough and step being read, what the step points at, and a link to
 // it, ending with "Question: " for the user's follow-up.
 export function stepPrompt({ count, href, index, label, origin, project, stepTitle, walkthroughId, walkthroughTitle }: StepPromptInput): string {
-  return `I'm reading a srcz walkthrough and have a question about one step.
+  return `I'm reading a Zero walkthrough and have a question about one step.
 
 Walkthrough: ${walkthroughTitle} (id ${walkthroughId})
 Project: ${project}
@@ -109,6 +113,8 @@ Step ${index + 1} of ${count}: ${stepTitle}
 Target: ${label}
 ${origin === null ? "" : `Link: ${origin}${href}\n`}
 Read the code the step points at before answering. If the answer changes the walkthrough, revise it under the same id.
+
+${commandNote}
 
 Question: `
 }

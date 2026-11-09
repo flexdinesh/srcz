@@ -1,4 +1,4 @@
-import type { FileStats } from "@srcz/contracts"
+import type { FileStats } from "@zero/contracts"
 
 export interface DiffStats {
   additions: number

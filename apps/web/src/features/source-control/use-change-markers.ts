@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 
-import { isDiffResponse, type ChangedFile, type PageData } from "@srcz/contracts"
+import { isDiffResponse, type ChangedFile, type PageData } from "@zero/contracts"
 import { failureReason, fetchJSON } from "../../api/http.ts"
 import { diffMarkers, markerSource, wholeMarkers, type ChangeMarker } from "./change-markers.ts"
 import { workingCompare } from "./compare.ts"

@@ -8,7 +8,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-const schema: unknown = JSON.parse(readFileSync(new URL("../../../../srcz/internal/walkthrough/schema.json", import.meta.url), "utf8"))
+const schema: unknown = JSON.parse(readFileSync(new URL("../../../../zero/internal/walkthrough/schema.json", import.meta.url), "utf8"))
 
 function resolve(node: unknown): Record<string, unknown> {
   assert.ok(isRecord(node) && isRecord(schema) && isRecord(schema.$defs))
@@ -57,30 +57,30 @@ function example(prompt: string): unknown {
   return JSON.parse(match[1])
 }
 
-test("instructions name the running srcz, the project, and the endpoints", () => {
+test("instructions name the running zero, the project, and the endpoints", () => {
   const prompt = agentInstructions("http://localhost:7971", "/home/me/src/app")
-  assert.match(prompt, /^srcz: http:\/\/localhost:7971$/m)
+  assert.match(prompt, /^zero: http:\/\/localhost:7971$/m)
   assert.match(prompt, /^Project: \/home\/me\/src\/app$/m)
-  assert.match(prompt, /^Publish: srcz walkthrough publish walkthrough\.json/m)
-  assert.match(prompt, /^srcz walkthrough publish walkthrough\.json$/m)
+  assert.match(prompt, /^Publish: zero walkthrough publish walkthrough\.json/m)
+  assert.match(prompt, /^zero walkthrough publish walkthrough\.json$/m)
   assert.match(prompt, /GET http:\/\/localhost:7971\/api\/walkthrough-schema/)
   assert.match(prompt, /--data @walkthrough\.json http:\/\/localhost:7971\/api\/walkthroughs$/m)
   assert.ok(prompt.endsWith("\n\nWalk me through: "))
 })
 
-test("without a shareable origin the prompt names the CLI only and no srcz line", () => {
+test("without a shareable origin the prompt names the CLI only and no zero line", () => {
   const prompt = agentInstructions(null, "/home/me/src/app")
-  assert.doesNotMatch(prompt, /^srcz:/m)
-  assert.match(prompt, /Write a srcz walkthrough of the topic at the end, and publish it with srcz\.\n\nProject: \/home\/me\/src\/app$/m)
-  assert.doesNotMatch(prompt, /curl|\/api\/|Over HTTP|srcz-app/)
+  assert.doesNotMatch(prompt, /^zero:/m)
+  assert.match(prompt, /Write a Zero walkthrough of the topic at the end, and publish it with zero\.\n\nProject: \/home\/me\/src\/app$/m)
+  assert.doesNotMatch(prompt, /curl|\/api\/|Over HTTP|zero-app/)
   assert.deepEqual(example(prompt), example(agentInstructions("http://localhost:7971", "/home/me/src/app")))
 })
 
 test("an origin that is not http(s) names only the CLI", () => {
-  const prompt = agentInstructions("srcz://local", "/home/me/src/app")
-  assert.match(prompt, /^srcz: srcz:\/\/local$/m)
-  assert.match(prompt, /^Format: srcz walkthrough schema \(JSON Schema;/m)
-  assert.match(prompt, /^srcz walkthrough publish walkthrough\.json$/m)
+  const prompt = agentInstructions("zero://local", "/home/me/src/app")
+  assert.match(prompt, /^zero: zero:\/\/local$/m)
+  assert.match(prompt, /^Format: zero walkthrough schema \(JSON Schema;/m)
+  assert.match(prompt, /^zero walkthrough publish walkthrough\.json$/m)
   assert.doesNotMatch(prompt, /curl|\/api\/|Over HTTP/)
   assert.ok(prompt.endsWith("\n\nWalk me through: "))
   // Only the HTTP parts differ from an http origin's prompt.
@@ -97,6 +97,15 @@ test("the example walkthrough follows the server's schema", () => {
   assert.deepEqual(problems({ ...walkthrough, steps: [{ title: "x", file: { path: "a", line: 1 } }] }, schema, "walkthrough"), [
     "walkthrough.steps[0].file.line: unknown field",
   ])
+})
+
+test("instructions explain alternate command names for every transport", () => {
+  for (const origin of [null, "zero://local", "http://localhost:7971"]) {
+    const prompt = agentInstructions(origin, "/work/app")
+    assert.match(prompt, /canonical `zero`/)
+    assert.match(prompt, /`zero-cli` or with `--name NAME`, substitute your chosen command for `zero`/)
+    assert.match(prompt, /^Publish: zero walkthrough publish walkthrough\.json/m)
+  }
 })
 
 test("the example quotes awkward project paths as JSON", () => {
@@ -119,4 +128,7 @@ test("a step's prompt names the walkthrough, the step, its target, and a link", 
   assert.match(prompt, /^Link: http:\/\/127\.0\.0\.1:8080\/view\?project=%2Fwork%2Fapp&wt=session-refresh&step=3#f=auth\/refresh\.go$/m)
   assert.ok(prompt.endsWith("Question: "))
   assert.doesNotMatch(stepPrompt({ ...input, origin: null }), /^Link:/m)
+  for (const origin of [input.origin, null]) {
+    assert.match(stepPrompt({ ...input, origin }), /`zero-cli` or with `--name NAME`, substitute your chosen command for `zero`/)
+  }
 })

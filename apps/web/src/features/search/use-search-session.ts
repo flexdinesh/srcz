@@ -1,4 +1,4 @@
-import { isSearchDocumentsResponse, type SearchDocumentsResponse } from "@srcz/contracts"
+import { isSearchDocumentsResponse, type SearchDocumentsResponse } from "@zero/contracts"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 
 import { createSearchController, emptyQuery, type SearchHandlers, type SearchResults, type SearchStatus, type SearchView } from "./search-controller.ts"

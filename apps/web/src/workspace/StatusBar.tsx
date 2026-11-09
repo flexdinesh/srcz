@@ -1,5 +1,5 @@
 import { formatBytes } from "../lib/format-bytes.ts"
-import type { PageData } from "@srcz/contracts"
+import type { PageData } from "@zero/contracts"
 import { projectUrl } from "../api/project-url.ts"
 import { useProcessMetrics } from "./process-metrics.ts"
 import { CheckIcon, CopyIcon, SearchIcon, SettingsIcon } from "lucide-react"
@@ -46,7 +46,7 @@ export function StatusBar({ detail, diff, isLoading, error, lines, live, navigat
   const pathCopy = useClipboardCopy()
   const processTitle = metrics
     ? [
-        "Source Zero process",
+        "Zero process",
         metrics.memorySource === "rss"
           ? `Resident RAM: ${formatBytes(metrics.memoryBytes)}`
           : `Go runtime system memory: ${formatBytes(metrics.memoryBytes)}`,
@@ -58,7 +58,7 @@ export function StatusBar({ detail, diff, isLoading, error, lines, live, navigat
   return (
     <footer className="status-bar">
       <div className="status-explorer" role="group" aria-label="File tree status">
-        <a className="status-brand" href={page.project ? projectUrl("/", page.project) : "/"} aria-label="srcz home" title="srcz home" onClick={(event) => {
+        <a className="status-brand" href={page.project ? projectUrl("/", page.project) : "/"} aria-label="zero home" title="zero home" onClick={(event) => {
           if (!onHome || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
           event.preventDefault()
           onHome()
@@ -70,7 +70,7 @@ export function StatusBar({ detail, diff, isLoading, error, lines, live, navigat
             {isLoading ? "Loading…" : error ? "Error" : "Ready"}
           </summary>
           <div className="ui-popover status-process-panel">
-            <strong>Source Zero process</strong>
+            <strong>Zero process</strong>
             {error && <p>{error}</p>}
             {metrics ? <p>{processTitle?.split("\n").slice(1).map((line) => <span key={line}>{line}</span>)}</p>
               : <p>Process metrics unavailable.</p>}
@@ -87,7 +87,7 @@ export function StatusBar({ detail, diff, isLoading, error, lines, live, navigat
       </div>
       <div className="status-document" role="group" aria-label="Document status">
         <span className="status-path" title={diff?.path || page.selected || page.rootName}>
-          {diff?.path || page.selected || page.rootName || "Source Zero"}
+          {diff?.path || page.selected || page.rootName || "Zero"}
         </span>
         {(diff || (page.hasFile && page.selected)) && (
           <IconButton

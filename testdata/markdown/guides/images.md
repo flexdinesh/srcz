@@ -4,12 +4,12 @@ Use this guide to exercise local Markdown image rendering.
 
 ## SVG
 
-![srcz SVG preview](../assets/preview.svg)
+![zero SVG preview](../assets/preview.svg)
 
 ## PNG
 
-![srcz PNG preview](../assets/preview.png)
+![zero PNG preview](../assets/preview.png)
 
 ## JPEG
 
-![srcz JPEG preview](../assets/preview.jpg)
+![zero JPEG preview](../assets/preview.jpg)

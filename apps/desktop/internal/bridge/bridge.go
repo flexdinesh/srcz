@@ -1,4 +1,4 @@
-// Package bridge validates what pages send through window.srczDesktop
+// Package bridge validates what pages send through window.zeroDesktop
 // (decision 0081). Pages are untrusted input: every field is checked and
 // anything invalid is refused whole. It is pure but for a RealPath callback.
 package bridge
@@ -23,7 +23,7 @@ const (
 
 // Reveal refusals, shown without blocking.
 var (
-	ErrNotServed          = errors.New("The project is not in a folder srcz serves.")
+	ErrNotServed          = errors.New("The project is not in a folder zero serves.")
 	ErrProjectUnavailable = errors.New("The project is unavailable.")
 	ErrPathMissing        = errors.New("The file no longer exists.")
 	ErrPathEscapes        = errors.New("The path leads outside its project.")

@@ -31,10 +31,10 @@ func TestBuildContextsMatchFingerprintInputs(t *testing.T) {
 	required := map[string][]string{
 		"ctx-src":        {"tools/validate/Dockerfile", "tools/validate/compose.yaml", "mise.toml", "mise.lock", ".gitignore"},
 		"ctx-node":       {"package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "apps/web/package.json", "apps/site/package.json", "packages/contracts/package.json"},
-		"ctx-gomod":      {"go.work", "apps/srcz/go.mod", "apps/srcz/go.sum", "tools/go.mod"},
-		"ctx-desktopmod": {"apps/desktop/go.mod", "apps/desktop/go.sum", "apps/srcz/go.mod", "apps/srcz/go.sum"},
+		"ctx-gomod":      {"go.work", "apps/zero/go.mod", "apps/zero/go.sum", "tools/go.mod"},
+		"ctx-desktopmod": {"apps/desktop/go.mod", "apps/desktop/go.sum", "apps/zero/go.mod", "apps/zero/go.sum"},
 		"ctx-web":        {"apps/web/package.json", "apps/web/vite.config.ts", "packages/contracts/package.json", "mise.toml", "pnpm-lock.yaml"},
-		"ctx-bin":        {"apps/srcz/main.go", "apps/srcz/go.mod", "go.work", "tools/go.mod", "mise.toml"},
+		"ctx-bin":        {"apps/zero/main.go", "apps/zero/go.mod", "go.work", "tools/go.mod", "mise.toml"},
 		"ctx-toolchain":  {"mise.toml", "mise.lock"},
 	}
 	available := map[string]bool{}

@@ -9,33 +9,42 @@ mise tasks                                     # list every task
 
 ## Install from main
 
-CI publishes the `edge` prerelease after every green push to `main`; `srcz --version` prints `0.0.0-edge` and the commit. Edge has no macOS Intel builds.
+CI publishes the `edge` prerelease after every green push to `main`; `zero --version` prints `0.0.0-edge` and the commit. Edge has no macOS Intel builds.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install-edge.sh | sh                  # CLI and desktop app
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install-edge.sh | sh -s -- --cli-only   # CLI only
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install.sh | sh                       # back to stable
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/uninstall.sh | sh                     # remove all
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh                  # CLI and desktop app
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh -s -- --cli-only   # CLI only
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh                       # back to stable
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/uninstall.sh | sh                     # remove all
 ```
+
+Stable and edge share collision checks and remember the installed command name.
+If `zero` is taken, confirm available `zero-cli` through the terminal or use
+`sh -s -- --name my-zero`; without a terminal, a collision requires `--name`.
+Substitute the chosen name for `zero` below. See
+[installation details](../apps/site/src/pages/docs/getting-started.mdx#command-name-collisions).
+Existing srcz installs and data stay untouched; Zero starts with fresh data.
+At cutover, edge needs a completed build with Zero assets and stable needs
+v0.2.0. Until then the respective installer fails without changing an install.
 
 Run it:
 
 ```sh
-srcz --version              # srcz 0.0.0-edge <commit> <date>
-srcz daemon stop            # restart the daemon on the new build (next srcz starts it)
-srcz .                      # desktop app, else browser
-srcz browser .              # browser
-srcz-desktop .              # desktop app, without the CLI
-srcz-desktop --version
-which -a srcz               # which install wins on PATH
+zero --version              # zero 0.0.0-edge <commit> <date>
+zero daemon stop            # restart the daemon on the new build (next zero starts it)
+zero .                      # desktop app, else browser
+zero browser .              # browser
+zero-desktop .              # desktop app, without the CLI
+zero-desktop --version
+which -a zero               # which install wins on PATH
 ```
 
 From a checkout:
 
 ```sh
 mise run install                                                  # go install to $(go env GOBIN) (mise's Go bin; on PATH in mise shells)
-mise run build:web && go build -o ./bin/srcz ./apps/srcz      # local binary in ./bin
-./bin/srcz .                                                    # run it (--version prints srcz dev)
+mise run build:web && go build -o ./bin/zero ./apps/zero      # local binary in ./bin
+./bin/zero .                                                    # run it (--version prints zero dev)
 ```
 
 ## Browser
@@ -46,10 +55,10 @@ mise run dev:server           # Go only
 mise run dev:web              # Vite only, against the Go server
 mise run dev:mock             # Vite with testdata/api fixtures, no Go; /__ui is the primitive gallery
 mise run dev:walkthroughs     # republish sample walkthroughs
-./bin/srcz browser ~/code/foo   # local binary against any folder
+./bin/zero browser ~/code/foo   # local binary against any folder
 ```
 
-Ports: copy `.env.example` to `.env`, set `SRCZ_DEV_SERVER_PORT` and `SRCZ_DEV_WEB_PORT`.
+Ports: copy `.env.example` to `.env`, set `ZERO_DEV_SERVER_PORT` and `ZERO_DEV_WEB_PORT`.
 
 ## Desktop app
 
@@ -57,7 +66,7 @@ User docs: [desktop app](../apps/site/src/pages/docs/desktop.mdx); decisions 009
 
 ```sh
 mise run dev:desktop                                 # build, then run against a private daemon, roots, and page state under .dev/desktop
-.dev/desktop/srcz daemon stop --socket $PWD/.dev/desktop/daemon.sock   # stop its daemon
+.dev/desktop/zero daemon stop --socket $PWD/.dev/desktop/daemon.sock   # stop its daemon
 mise run test:desktop                                # unit tests
 mise run test:desktop:e2e                            # built app (-tags e2e) under Xvfb in a container
 mise run test:desktop:extended                       # desktop resource measurements
@@ -66,8 +75,8 @@ mise run test:desktop:extended                       # desktop resource measurem
 ## Remote
 
 ```sh
-ssh host 'srcz ~/code/foo'                    # no-UI host: prints web: and desktop: links
-srcz browser --host 0.0.0.0 --no-open .       # simulate a remote server locally
+ssh host 'zero ~/code/foo'                    # no-UI host: prints web: and desktop: links
+zero browser --host 0.0.0.0 --no-open .       # simulate a remote server locally
 ```
 
 ## Docs site
@@ -75,7 +84,7 @@ srcz browser --host 0.0.0.0 --no-open .       # simulate a remote server locally
 ```sh
 mise run dev:site                               # Vocs dev server
 pnpm build:site                                 # static build to apps/site/dist/public
-pnpm --filter @srcz/site preview              # preview the build
+pnpm --filter @zero/site preview              # preview the build
 ```
 
 ## Test
