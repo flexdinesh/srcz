@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-const policy = "srcz-validation-v3-suites-host-and-linux-amd64-dagger-0.21.10"
+const policy = "srcz-validation-v4-suites-host-and-linux-amd64-compose"
 
 type entry struct {
 	Path    string
@@ -319,10 +319,10 @@ func selected(group, name string) bool {
 		return true
 	}
 	switch name {
-	case "mise.toml", "mise.lock", ".node-version", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "apps/web/package.json", "apps/site/package.json", "packages/contracts/package.json", "dagger.json", "go.work", "apps/srcz/go.mod", "apps/srcz/go.sum", "tools/go.mod", ".gitignore", ".npmrc", ".pnpmfile.cjs":
+	case "mise.toml", "mise.lock", ".node-version", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "apps/web/package.json", "apps/site/package.json", "packages/contracts/package.json", "go.work", "apps/srcz/go.mod", "apps/srcz/go.sum", "tools/go.mod", ".gitignore", ".npmrc", ".pnpmfile.cjs":
 		return true
 	}
-	for _, prefix := range []string{".dagger/", "patches/", "tools/validate/"} {
+	for _, prefix := range []string{"patches/", "tools/validate/"} {
 		if strings.HasPrefix(name, prefix) {
 			return true
 		}

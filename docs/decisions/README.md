@@ -62,8 +62,8 @@ rewriting history; update `Status` on the old record.
 | [0054](0054-worktree-checks.md) | Queued worktree checks and critical browser coverage | Accepted; supersedes 0032/0038 check execution; check output superseded by 0057 |
 | [0055](0055-scrollbars.md) | Thin, hover-revealed scrollbars with reserved gutters | Accepted; review gutter surface revised by 0102 |
 | [0057](0057-quiet-check-runner.md) | Quiet check runner and targeted agent checks | Accepted |
-| [0058](0058-local-dagger-validation.md) | Explicit local Dagger validation before PR work | Boundaries, certification, and PR wrappers superseded by 0059; engine ownership retained |
-| [0059](0059-validation-execution-boundaries.md) | Test isolation and safe host checks before PR work | Accepted; groups revised by 0095; suites and inputs by 0096 |
+| [0058](0058-local-dagger-validation.md) | Explicit local Dagger validation before PR work | Boundaries, certification, and PR wrappers superseded by 0059; engine ownership superseded by 0110 |
+| [0059](0059-validation-execution-boundaries.md) | Test isolation and safe host checks before PR work | Accepted; groups revised by 0095; suites and inputs by 0096; execution by 0110 |
 | [0060](0060-scope-flags-removed.md) | Scope flags removed; `srcz browser` alias | Accepted; bare `srcz` clause superseded by 0068 |
 | [0061](0061-daemon-roots-and-leases.md) | Daemon, runtime roots, and project leases | Accepted (leases via 0066; optional TCP listener via 0098) |
 | [0062](0062-desktop-app.md) | Desktop app | Electron shell superseded by 0095 |
@@ -100,7 +100,7 @@ rewriting history; update `Status` on the old record.
 | [0093](0093-no-macos-intel-on-edge.md) | No macOS Intel on edge | Accepted; revises 0079 |
 | [0094](0094-mygo-app-uses-web-views.md) | mygo app uses web views | Accepted; names and ssh superseded by 0095 |
 | [0095](0095-desktop-app-is-mygo-electron-removed.md) | Desktop app is mygo in web views; Electron removed | Accepted; resource checks moved to extended by 0096; server connections return in 0098; notifications return in 0099; Electron and mygo cleanup dropped by 0100; desktop scripts removed by 0101 |
-| [0096](0096-correctness-and-extended-validation.md) | Correctness checks and optional extended validation | Accepted |
+| [0096](0096-correctness-and-extended-validation.md) | Correctness checks and optional extended validation | Accepted; Dagger execution replaced by 0110 |
 | [0098](0098-remote-connections.md) | Remote connections: `srcz --remote` and `srcz connect` | Accepted; bridge revised by 0099 |
 | [0099](0099-desktop-notifications.md) | Desktop notifications | Accepted |
 | [0100](0100-rename-to-srcz.md) | Rename to srcz (Source Zero) | Accepted |
@@ -113,3 +113,4 @@ rewriting history; update `Status` on the old record.
 | [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |
 | [0108](0108-wider-mark-and-macos-squircle-icon.md) | Wider mark and macOS squircle icon | Accepted; revises 0104 |
 | [0109](0109-neutral-selection-fill.md) | Neutral selection fill | Accepted; revises 0033 |
+| [0110](0110-compose-validation-runner.md) | Docker Compose validation runner | Accepted; supersedes Dagger execution in 0058, 0059, 0096 |

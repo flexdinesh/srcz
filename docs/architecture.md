@@ -76,8 +76,9 @@ Add another Go module or pnpm package only for an independently consumed unit.
 
 `mise run check:pr` validates an immutable committed snapshot before separate PR
 creation or updates. `tools/validate/` owns snapshot selection, host static checks,
-certificates, resource admission, cancellation, and artifact retention. `.dagger/`
-owns all test execution, prerequisite builds, and immutable container preparation.
+certificates, resource admission, cancellation, and artifact retention. Its
+`Dockerfile` and `compose.yaml` own all test execution, prerequisite builds, and
+container preparation (decision 0110).
 Host static checks use private worktree-local state; development and formatting
 remain host operations. Public mise tasks orchestrate, and hidden host/container
 leaves never call public wrappers. This tooling is independent of the distributed
@@ -85,15 +86,15 @@ application. See [validation](validation.md).
 
 - `mise run dev`: Go over `testdata/markdown` plus Vite with API proxying.
 - `mise run dev:mock`: Vite plus committed JSON fixtures; no Go process.
-- `mise run test:go`: Go unit and HTTP integration behavior in Dagger.
-- `mise run test:web`: frontend logic and fixture-contract behavior in Dagger.
+- `mise run test:go`: Go unit and HTTP integration behavior in a container.
+- `mise run test:web`: frontend logic and fixture-contract behavior in a container.
 - `mise run test:browser`: production bootstrap and end-to-end behavior.
 
 Targeted tests capture current edits without certifying PR readiness. Complete
 committed coverage is keyed by relevant inputs; history-only rebases can reuse
 it. An active rerun invalidates prior success until a new successful result is
-published. `check:status` verifies coverage without running tests or starting an
-engine. No local convention provides remote enforcement.
+published. `check:status` verifies coverage without running tests or containers.
+No local convention provides remote enforcement.
 
 ## Distribution
 

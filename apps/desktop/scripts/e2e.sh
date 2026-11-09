@@ -2,7 +2,7 @@
 # Real-app smoke (decision 0094): the app built with -tags e2e (mygo's
 # automation plugin) on a display, driving its page against the real srcz
 # binary (SRCZ_DESKTOP_BINARY). Run it under a display and a session bus, as
-# the Dagger desktop group does:
+# the desktop validation group does:
 #
 #   xvfb-run -a dbus-run-session -- sh apps/desktop/scripts/e2e.sh
 #
