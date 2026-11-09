@@ -48,12 +48,14 @@ export function isChangesResponse(value: unknown): value is ChangesResponse {
 }
 
 // DiffSide is one side of a diff under the 0004 limits. Content is absent
-// when the side is binary or too large to diff.
+// when the side is binary or too large to diff. Commit, a full hash, is the
+// commit the side was read from; it is absent for the working tree.
 export interface DiffSide {
   content?: string
   size: number
   binary: boolean
   tooLarge: boolean
+  commit?: string
 }
 
 export function isDiffSide(value: unknown): value is DiffSide {
@@ -62,6 +64,7 @@ export function isDiffSide(value: unknown): value is DiffSide {
     && isNumber(value.size)
     && isBoolean(value.binary)
     && isBoolean(value.tooLarge)
+    && (value.commit === undefined || isString(value.commit))
 }
 
 // DiffResponse is GET /api/diff: one file's sides and, when both are text,

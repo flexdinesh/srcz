@@ -57,8 +57,8 @@ func (c *Client) SearchDocuments(ctx context.Context, project string) (contract.
 	return call(ctx, func() (contract.SearchDocumentsResponse, error) { return c.app.Documents.SearchDocuments(project) })
 }
 
-func (c *Client) Image(ctx context.Context, project, path string) (contract.Image, error) {
-	return call(ctx, func() (contract.Image, error) { return c.app.Documents.ReadImage(project, path) })
+func (c *Client) Image(ctx context.Context, request contract.ImageRequest) (contract.Image, error) {
+	return call(ctx, func() (contract.Image, error) { return c.app.Documents.ReadImage(request) })
 }
 
 func (c *Client) Events(ctx context.Context, request contract.EventsRequest) (*client.Stream[contract.Event], error) {

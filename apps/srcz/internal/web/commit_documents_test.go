@@ -165,3 +165,54 @@ func selectedNode(nodes []contract.TreeNode) string {
 	}
 	return ""
 }
+
+// TestImageAtCommitIsSandboxedAndSized serves an image at a commit with the
+// raw-file sandbox and its length; an invalid hash is a plain-text 400
+// (decision 0116).
+func TestImageAtCommitIsSandboxedAndSized(t *testing.T) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo, err := gogit.PlainInit(root, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := "\x89PNG\r\n\x1a\ncommitted"
+	writeMarkdown(t, filepath.Join(root, "dot.png"), content)
+	if _, err := worktree.Add("dot.png"); err != nil {
+		t.Fatal(err)
+	}
+	hash, err := worktree.Commit("image", &gogit.CommitOptions{Author: &object.Signature{Name: "srcz", Email: "srcz@example.com"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeMarkdown(t, filepath.Join(root, "dot.png"), "\x89PNG\r\n\x1a\nworking")
+	app := newTestApp(t, root)
+
+	response := request(t, app, "/api/image?project=.&path=dot.png&at="+hash.String())
+	if response.Code != http.StatusOK || response.Body.String() != content {
+		t.Fatalf("image at commit = %d %q", response.Code, response.Body.String())
+	}
+	for header, want := range map[string]string{
+		"Content-Type":            "image/png",
+		"Content-Length":          "17",
+		"Content-Security-Policy": "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+		"X-Content-Type-Options":  "nosniff",
+	} {
+		if got := response.Header().Get(header); got != want {
+			t.Errorf("%s = %q, want %q", header, got, want)
+		}
+	}
+	invalid := request(t, app, "/api/image?project=.&path=dot.png&at=HEAD")
+	if invalid.Code != http.StatusBadRequest || strings.TrimSpace(invalid.Body.String()) != "That commit hash is invalid." {
+		t.Errorf("invalid hash = %d %q", invalid.Code, invalid.Body.String())
+	}
+	if missing := request(t, app, "/api/image?project=.&path=gone.png&at="+hash.String()); missing.Code != http.StatusNotFound {
+		t.Errorf("missing at commit = %d", missing.Code)
+	}
+}

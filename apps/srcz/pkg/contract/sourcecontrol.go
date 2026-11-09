@@ -34,12 +34,14 @@ type ChangesResponse struct {
 }
 
 // DiffSide is one side of a diff under the 0004 limits. Content is absent
-// when the side is binary or too large to diff.
+// when the side is binary or too large to diff. Commit, a full hash, is the
+// commit the side was read from; it is absent for the working tree.
 type DiffSide struct {
 	Content  *string `json:"content,omitempty"`
 	Size     int64   `json:"size"`
 	Binary   bool    `json:"binary"`
 	TooLarge bool    `json:"tooLarge"`
+	Commit   string  `json:"commit,omitempty"`
 }
 
 // DiffResponse is GET /api/diff: one file's sides and, when both are text,

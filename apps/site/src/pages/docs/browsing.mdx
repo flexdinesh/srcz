@@ -152,6 +152,12 @@ viewed; the rail checks viewed files and dims their names. When a viewed
 file changes, it opens again and reads "Changed since viewed" until you mark
 it again. Outside text fields, `]` and `[` go to the next and previous file,
 and `v` marks the file in view Viewed or unmarks it.
+
+Changed images (PNG, JPEG, GIF, WebP, and other raster formats) show both
+versions side by side with their dimensions and size (2-up), or one over the
+other: Swipe drags a divider across them, and Onion skin fades the new one
+in. Added and deleted images show their one version. Images over 32 MiB, or
+any that can't be read, show the binary file note instead.
 Uncommitted and branch reviews follow new edits and commits; commit and range
 reviews stay fixed. On phones, tap a commit to show its diff button,
 long-press a commit and tap another to select a range, and use the Files

@@ -5,7 +5,8 @@ import { expect, type Page } from "@playwright/test"
 import { test } from "./live-test.ts"
 
 import {
-  featureSubject, gitFixtureChanges, gitFixtureRoot, lowerBranch, lowerSubject, upperBranch,
+  badgeSize, diagramAfter, diagramBefore, featureSubject, gitFixtureChanges, gitFixtureRoot, imagesBranch, lowerBranch, lowerSubject,
+  upperBranch,
 } from "./git-fixture.ts"
 import { gitApiOrigin } from "./ports.ts"
 import { grantClipboard } from "./clipboard.ts"
@@ -1282,4 +1283,70 @@ test("Source change marks follow live edits and leave with the change", async ({
   } finally {
     writeFileSync(file, original)
   }
+})
+
+// naturalSize is a loaded image's decoded size.
+function naturalSize(element: SVGElement | HTMLElement) {
+  return element instanceof HTMLImageElement ? { width: element.naturalWidth, height: element.naturalHeight } : null
+}
+
+test("image diffs compare 2-up, Swipe, and Onion skin; an added image shows its one side", async ({ page }) => {
+  await openReview(page, `review=branch&base=main&head=${imagesBranch}`)
+  const diagram = reviewFile(page, "assets/diagram.png")
+  const modes = diagram.getByRole("group", { name: "Image comparison" })
+  await expect(modes.getByRole("button", { name: "2-up" })).toHaveAttribute("aria-pressed", "true")
+
+  // 2-up: the merge base's image beside the branch's, each with its size.
+  const before = diagram.getByRole("img", { name: "Before: assets/diagram.png" })
+  const after = diagram.getByRole("img", { name: "After: assets/diagram.png" })
+  await expect.poll(() => before.evaluate(naturalSize)).toEqual(diagramBefore)
+  await expect.poll(() => after.evaluate(naturalSize)).toEqual(diagramAfter)
+  await expect(before).toHaveAttribute("src", /&at=[0-9a-f]{40}$/)
+  await expect(after).toHaveAttribute("src", /&at=[0-9a-f]{40}$/)
+  expect(await before.getAttribute("src")).not.toBe(await after.getAttribute("src"))
+  await expect(diagram.getByText(new RegExp(`^${diagramBefore.width} × ${diagramBefore.height} · \\d`))).toBeVisible()
+  await expect(diagram.getByText(new RegExp(`^${diagramAfter.width} × ${diagramAfter.height} · \\d`))).toBeVisible()
+
+  // Swipe: the after image shows left of the handle; arrows and dragging move it.
+  await modes.getByRole("button", { name: "Swipe" }).click()
+  await expect(modes.getByRole("button", { name: "Swipe" })).toHaveAttribute("aria-pressed", "true")
+  const position = diagram.getByRole("slider", { name: "Swipe position" })
+  await expect(position).toHaveValue("50")
+  const stage = diagram.getByRole("group", { name: "Swipe between before and after" })
+  const handle = stage.locator(".image-diff-handle")
+  await expect(handle).toHaveAttribute("style", /left: 50%/)
+  await position.focus()
+  await page.keyboard.press("End")
+  await expect(position).toHaveValue("100")
+  await expect(handle).toHaveAttribute("style", /left: 100%/)
+  const box = await stage.boundingBox()
+  if (!box) throw new Error("the swipe stage has no box")
+  await page.mouse.move(box.x + box.width / 4, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.up()
+  await expect(position).toHaveValue("25")
+
+  // Onion skin: the after image's opacity follows the slider.
+  await modes.getByRole("button", { name: "Onion skin" }).click()
+  const opacity = diagram.getByRole("slider", { name: "After image opacity" })
+  await expect(opacity).toHaveValue("50")
+  const overlay = diagram.locator(".image-diff-layer").nth(1)
+  await expect(overlay).toHaveCSS("opacity", "0.5")
+  await opacity.focus()
+  await page.keyboard.press("Home")
+  await expect(overlay).toHaveCSS("opacity", "0")
+
+  // An added image shows only its new side, with no modes.
+  const badge = reviewFile(page, "assets/badge.png")
+  await expect(badge.getByRole("group", { name: "Image comparison" })).toHaveCount(0)
+  const added = badge.getByRole("img", { name: "Added: assets/badge.png" })
+  await expect.poll(() => added.evaluate(naturalSize)).toEqual(badgeSize)
+  await expect(badge.getByText(new RegExp(`^${badgeSize.width} × ${badgeSize.height} · \\d`))).toBeVisible()
+})
+
+test("an image diff whose image can't be read falls back to the binary notice", async ({ page }) => {
+  await page.route("**/api/image?*", (route) => route.fulfill({ status: 404, body: "" }))
+  await openReview(page, `review=branch&base=main&head=${imagesBranch}`)
+  await expect(reviewFile(page, "assets/diagram.png").getByRole("note")).toHaveText(/^Binary file changed · .+ → .+$/)
+  await expect(reviewFile(page, "assets/badge.png").getByRole("note")).toHaveText(/^Binary file added · /)
 })

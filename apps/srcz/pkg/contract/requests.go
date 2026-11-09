@@ -19,6 +19,14 @@ type FormatRequest struct {
 	At      string
 }
 
+// ImageRequest reads a project image (GET /api/image): from the working
+// tree, or with At, a full commit hash, from that commit's tree.
+type ImageRequest struct {
+	Project string
+	Path    string
+	At      string
+}
+
 // EventsRequest follows a project's live updates (decision 0050) at a lease
 // level: "open" (the default when empty) or "watched" (decision 0066).
 type EventsRequest struct {

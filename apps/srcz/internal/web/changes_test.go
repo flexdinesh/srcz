@@ -148,7 +148,8 @@ func TestChangesReportsFoldersAndProjectErrors(t *testing.T) {
 	}
 }
 
-// diff reads a diff's sides; TestDiffCarriesTheLineDiff covers line diffs.
+// diff reads a diff's sides; TestDiffCarriesTheLineDiff covers line diffs
+// and TestDiffSidesNameTheirCommits the sides' commits.
 func diff(t *testing.T, app *App, query string) contract.DiffResponse {
 	t.Helper()
 	var response contract.DiffResponse
@@ -156,7 +157,34 @@ func diff(t *testing.T, app *App, query string) contract.DiffResponse {
 		t.Fatalf("%s status = %d", query, status)
 	}
 	response.LineDiff = nil
+	for _, side := range []*contract.DiffSide{response.Original, response.Modified} {
+		if side != nil {
+			side.Commit = ""
+		}
+	}
 	return response
+}
+
+// TestDiffSidesNameTheirCommits names HEAD as a working diff's old side and
+// no commit for its working-tree side (decision 0116).
+func TestDiffSidesNameTheirCommits(t *testing.T) {
+	root := changesRepo(t)
+	app := newTestApp(t, root)
+	repo, err := gogit.PlainOpen(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	head, err := repo.Head()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var response contract.DiffResponse
+	if status := requestJSON(t, app, "/api/diff?project=.&path=doc.md", &response); status != http.StatusOK {
+		t.Fatalf("status = %d", status)
+	}
+	if response.Original == nil || response.Original.Commit != head.Hash().String() || response.Modified == nil || response.Modified.Commit != "" {
+		t.Errorf("sides = %s, want the old side at %s and the new side in the working tree", describeDiff(response), head.Hash())
+	}
 }
 
 func text(content string) *contract.DiffSide {

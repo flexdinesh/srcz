@@ -125,46 +125,112 @@ func readCommitDocument(root, at, name string, fileType document.Type, limit int
 	return file, nil
 }
 
-// OpenImage opens a Markdown image dependency: any file of an image media
-// type within the project, indexed or not (root-confined). Every failure is
-// not found.
-func (d *Documents) OpenImage(projectID, name string) (RawFile, error) {
+// ImageFile is an open image, its size, and the media type it is served
+// as. The caller closes Content.
+type ImageFile struct {
+	Content   io.ReadCloser
+	Size      int64
+	MediaType string
+}
+
+// OpenImage opens a project image of an image media type. From the working
+// tree it is any such file within the project, indexed or not
+// (root-confined), as Markdown image dependencies need. With At, a full
+// commit hash, it is the file that commit's tree has at the path, up to
+// contract.MaxImageBytes (decision 0116). An invalid hash is invalid, a
+// larger image at a commit too large, and every other failure not found.
+func (d *Documents) OpenImage(request contract.ImageRequest) (ImageFile, error) {
 	notFound := fail(contract.KindNotFound, contract.ImageUnavailableMessage)
-	mediaType, ok := d.config.Types.MediaType(name)
+	mediaType, ok := d.config.Types.MediaType(request.Path)
 	if !ok {
-		return RawFile{}, notFound
+		return ImageFile{}, notFound
 	}
-	project, err := d.projectWorkspace(projectID)
+	project, err := d.projectWorkspace(request.Project)
 	if err != nil {
-		return RawFile{}, notFound
+		return ImageFile{}, notFound
 	}
-	resolved, err := files.ResolveFile(project.Root, name)
+	if request.At != "" {
+		return openCommitImage(project.Root, request.At, request.Path, mediaType)
+	}
+	resolved, err := files.ResolveFile(project.Root, request.Path)
 	if err != nil {
-		return RawFile{}, notFound
+		return ImageFile{}, notFound
 	}
 	file, err := d.config.OpenFile(resolved)
 	if err != nil {
-		return RawFile{}, notFound
+		return ImageFile{}, notFound
 	}
-	return RawFile{File: file, MediaType: mediaType}, nil
+	info, err := file.Stat()
+	if err != nil {
+		_ = file.Close()
+		return ImageFile{}, notFound
+	}
+	return ImageFile{Content: file, Size: info.Size(), MediaType: mediaType}, nil
+}
+
+// openCommitImage opens the image name in the tree of the commit at. The
+// repository stays open until the image is closed.
+func openCommitImage(root, at, name, mediaType string) (ImageFile, error) {
+	hash, ok := git.ParseHash(at)
+	if !ok {
+		return ImageFile{}, fail(contract.KindInvalid, InvalidCommitMessage)
+	}
+	notFound := fail(contract.KindNotFound, contract.ImageUnavailableMessage)
+	repo, err := git.Open(root)
+	if errors.Is(err, git.ErrNotRepository) {
+		return ImageFile{}, notFound
+	}
+	if err != nil {
+		return ImageFile{}, fail(contract.KindInternal, "Couldn't read git history: "+err.Error())
+	}
+	blob, err := repo.CommitBlob(hash, name)
+	switch {
+	case errors.Is(err, git.ErrUnavailable):
+		_ = repo.Close()
+		return ImageFile{}, notFound
+	case err != nil:
+		_ = repo.Close()
+		return ImageFile{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s: %v", name, err))
+	case blob.Size > contract.MaxImageBytes:
+		_ = repo.Close()
+		return ImageFile{}, fail(contract.KindTooLarge, contract.ImageTooLargeMessage)
+	}
+	reader, err := blob.Open()
+	if err != nil {
+		_ = repo.Close()
+		return ImageFile{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s: %v", name, err))
+	}
+	return ImageFile{Content: blobReader{ReadCloser: reader, repo: repo}, Size: blob.Size, MediaType: mediaType}, nil
+}
+
+// blobReader reads a blob and closes its repository with it.
+type blobReader struct {
+	io.ReadCloser
+	repo *git.Repository
+}
+
+func (r blobReader) Close() error {
+	err := r.ReadCloser.Close()
+	if closeErr := r.repo.Close(); err == nil {
+		err = closeErr
+	}
+	return err
 }
 
 // ReadImage reads an image OpenImage opens, up to contract.MaxImageBytes.
-func (d *Documents) ReadImage(projectID, name string) (contract.Image, error) {
-	image, err := d.OpenImage(projectID, name)
+func (d *Documents) ReadImage(request contract.ImageRequest) (contract.Image, error) {
+	image, err := d.OpenImage(request)
 	if err != nil {
 		return contract.Image{}, err
 	}
-	defer func() { _ = image.File.Close() }()
+	defer func() { _ = image.Content.Close() }()
 	tooLarge := fail(contract.KindTooLarge, contract.ImageTooLargeMessage)
-	if info, err := image.File.Stat(); err != nil {
-		return contract.Image{}, fail(contract.KindNotFound, contract.ImageUnavailableMessage)
-	} else if info.Size() > contract.MaxImageBytes {
+	if image.Size > contract.MaxImageBytes {
 		return contract.Image{}, tooLarge
 	}
-	content, err := io.ReadAll(io.LimitReader(image.File, contract.MaxImageBytes+1))
+	content, err := io.ReadAll(io.LimitReader(image.Content, contract.MaxImageBytes+1))
 	if err != nil {
-		return contract.Image{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s: %v", name, err))
+		return contract.Image{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s: %v", request.Path, err))
 	}
 	if len(content) > contract.MaxImageBytes {
 		return contract.Image{}, tooLarge

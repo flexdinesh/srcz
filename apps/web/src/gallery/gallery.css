@@ -78,3 +78,7 @@
   height: var(--source-line-height);
   background: var(--color-surface);
 }
+
+.gallery-slider {
+  width: 16rem;
+}

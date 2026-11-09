@@ -233,7 +233,7 @@ func (s *SourceControl) worktreeDiff(root string, entry git.Entry, label string,
 		}
 		side, err := blob(name)
 		if err == nil {
-			original, err = readDiffSide(side.Size, side.Open, fileType)
+			original, err = readBlobSide(side, fileType)
 		}
 		if err != nil {
 			return contract.DiffResponse{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s from %s: %v", name, label, err))
@@ -270,7 +270,7 @@ func (s *SourceControl) historyDiff(change git.Change, originalSide, modifiedSid
 		}
 		side, err := originalSide.blob(name)
 		if err == nil {
-			original, err = readDiffSide(side.Size, side.Open, fileType)
+			original, err = readBlobSide(side, fileType)
 		}
 		if err != nil {
 			return contract.DiffResponse{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s from %s: %v", name, originalSide.label, err))
@@ -279,7 +279,7 @@ func (s *SourceControl) historyDiff(change git.Change, originalSide, modifiedSid
 	if change.Status != git.Deleted {
 		side, err := modifiedSide.blob(change.Path)
 		if err == nil {
-			modified, err = readDiffSide(side.Size, side.Open, fileType)
+			modified, err = readBlobSide(side, fileType)
 		}
 		if err != nil {
 			return contract.DiffResponse{}, fail(contract.KindInternal, fmt.Sprintf("Could not read %s from %s: %v", change.Path, modifiedSide.label, err))
@@ -308,6 +308,16 @@ func diffResponse(change git.Change, documentType contract.FileType, original, m
 		response.LineDiff = lineDiff(diff.Lines(oldText, newText, diff.Options{IgnoreWhitespace: ignoreWhitespace}), ignoreWhitespace)
 	}
 	return response
+}
+
+// readBlobSide reads a committed diff side and names its commit.
+func readBlobSide(blob git.Blob, fileType document.Type) (*sideText, error) {
+	side, err := readDiffSide(blob.Size, blob.Open, fileType)
+	if err != nil {
+		return nil, err
+	}
+	side.side.Commit = blob.Commit.String()
+	return side, nil
 }
 
 // readDiffSide applies the 0004 limits to one side of size bytes. Sides over

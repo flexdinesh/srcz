@@ -583,6 +583,13 @@ func TestCommitLookupAndBlobsFollowCommitFiles(t *testing.T) {
 	if got := read(repo.CommitBlob(Hash(child), "edit.txt")); got != "after" {
 		t.Errorf("CommitBlob(edit.txt) = %q", got)
 	}
+	// Each blob names the commit it was read from.
+	if blob, err := repo.CommitBlob(Hash(child), "edit.txt"); err != nil || blob.Commit != Hash(child) {
+		t.Errorf("CommitBlob(edit.txt).Commit = %s, %v; want %s", blob.Commit, err, child)
+	}
+	if blob, err := repo.ParentBlob(Hash(child), "edit.txt"); err != nil || blob.Commit != Hash(root) {
+		t.Errorf("ParentBlob(edit.txt).Commit = %s, %v; want %s", blob.Commit, err, root)
+	}
 	if got := read(repo.ParentBlob(Hash(child), "edit.txt")); got != "before" {
 		t.Errorf("ParentBlob(edit.txt) = %q", got)
 	}
