@@ -95,11 +95,12 @@ func uncommittedQuery(query url.Values) (bool, string) {
 }
 
 // serveCommits pages history: range defaults to branch, skip to 0, limit to
-// 50 of at most 100, head to HEAD, and base to the default base branch.
+// 50 of at most 100, head to HEAD, and base to the default base branch; q
+// and path filter it (decision 0114).
 func (a *App) serveCommits(w http.ResponseWriter, r *http.Request, query url.Values) {
 	request := contract.CommitsRequest{
 		Project: query.Get("project"), Range: contract.CommitRange(query.Get("range")),
-		Head: query.Get("head"), Base: query.Get("base"),
+		Head: query.Get("head"), Base: query.Get("base"), Query: query.Get("q"), Path: query.Get("path"),
 	}
 	// Values that are not whole numbers, or a limit of 0, are as invalid as
 	// those out of range; -1 is out of range for both.

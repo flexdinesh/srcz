@@ -178,6 +178,8 @@ func (c *HTTP) Commits(ctx context.Context, request contract.CommitsRequest) (co
 	}
 	setNonEmpty(query, "head", request.Head)
 	setNonEmpty(query, "base", request.Base)
+	setNonEmpty(query, "q", request.Query)
+	setNonEmpty(query, "path", request.Path)
 	var response contract.CommitsResponse
 	return response, c.getJSON(ctx, "/api/commits", query, &response)
 }

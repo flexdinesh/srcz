@@ -8,7 +8,9 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/flexdinesh/srcz/internal/diff"
 	"github.com/flexdinesh/srcz/internal/document"
@@ -31,6 +33,8 @@ const (
 	// commitsDefaultLimit and commitsMaxLimit bound one history page.
 	commitsDefaultLimit = 50
 	commitsMaxLimit     = 100
+	// commitsMaxQuery bounds a history query, in characters.
+	commitsMaxQuery = 256
 	// commitFilesLimit caps the changes one commit, branch, or range lists.
 	commitFilesLimit = 1000
 	// refsLimit caps the branches one refs read lists.
@@ -99,7 +103,7 @@ func (s *SourceControl) Commits(ctx context.Context, request contract.CommitsReq
 	if err != nil {
 		return contract.CommitsResponse{}, err
 	}
-	response := contract.CommitsResponse{Range: contract.CommitRange(options.Range), Commits: []contract.Commit{}}
+	response := contract.CommitsResponse{Range: contract.CommitRange(options.Range), Query: options.Query, Path: options.Path, Commits: []contract.Commit{}}
 	repo, err := git.Open(project.Root)
 	if errors.Is(err, git.ErrNotRepository) {
 		return response, nil
@@ -125,6 +129,7 @@ func (s *SourceControl) Commits(ctx context.Context, request contract.CommitsReq
 	response.Base = history.Base
 	response.Ahead = history.Ahead
 	response.More = history.More
+	response.Next = history.Next
 	response.Head = hashString(history.Head)
 	for _, commit := range history.Commits {
 		response.Commits = append(response.Commits, contract.Commit{
@@ -140,9 +145,19 @@ func (s *SourceControl) Commits(ctx context.Context, request contract.CommitsReq
 }
 
 // logOptions checks a history request: range branch or all, skip of at
-// least 0, limit 0 (50) or from 1 to 100, and a full head hash.
+// least 0, limit 0 (50) or from 1 to 100, a full head hash, a query of at
+// most 256 characters once trimmed, and a valid repository path.
 func logOptions(request contract.CommitsRequest) (git.LogOptions, error) {
-	options := git.LogOptions{Range: git.RangeBranch, Skip: request.Skip, Limit: commitsDefaultLimit, Base: request.Base}
+	options := git.LogOptions{
+		Range: git.RangeBranch, Skip: request.Skip, Limit: commitsDefaultLimit, Base: request.Base,
+		Query: strings.TrimSpace(request.Query), Path: request.Path,
+	}
+	if utf8.RuneCountInString(options.Query) > commitsMaxQuery {
+		return options, fail(contract.KindInvalid, fmt.Sprintf("Query must be at most %d characters.", commitsMaxQuery))
+	}
+	if options.Path != "" && !git.ValidPath(options.Path) {
+		return options, fail(contract.KindInvalid, "Path must be a repository-relative path.")
+	}
 	switch request.Range {
 	case "":
 	case contract.RangeBranch, contract.RangeAll:

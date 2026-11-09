@@ -155,12 +155,20 @@ type CommitsResponse struct {
 	// Base is the branch the range compares with, "" when none was found.
 	Base  string      `json:"base"`
 	Range CommitRange `json:"range"`
+	// Query and Path are the filters the page applied, "" for none
+	// (decision 0114).
+	Query string `json:"query"`
+	Path  string `json:"path"`
 	// Head is the commit the walk started from; later pages pass it back.
 	Head string `json:"head"`
 	// Ahead counts base..head, 0 without a base.
 	Ahead   int      `json:"ahead"`
 	Commits []Commit `json:"commits"`
 	More    bool     `json:"more"`
+	// Next is the skip that reads the following page. A filtered page
+	// counts the commits it tested, at most 10,000, so a page may stop on
+	// that cap with fewer matches than its limit, or none.
+	Next int `json:"next"`
 }
 
 // CommitFilesResponse is GET /api/commit-files: a commit's changes against

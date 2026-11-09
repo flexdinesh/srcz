@@ -1,5 +1,5 @@
-import { ChevronsDownIcon, FileDiffIcon, GitBranchIcon, RefreshCwIcon } from "lucide-react"
-import { useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
+import { ChevronsDownIcon, FileDiffIcon, GitBranchIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react"
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
 
 import { Button } from "../../components/ui/button.tsx"
 import { CopyButton } from "../../components/ui/copy-button.tsx"
@@ -7,13 +7,16 @@ import { IconButton } from "../../components/ui/icon-button.tsx"
 import { ListButton, ListRow } from "../../components/ui/list-row.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
 import { Chevron } from "../../components/ui/section-toggle.tsx"
+import { TextField } from "../../components/ui/text-field.tsx"
 import { FileIcon } from "../../components/FileIcon.tsx"
 import type { Commit } from "@srcz/contracts"
 import { shortHash } from "../../lib/commit-hash.ts"
 import { useClipboardCopy } from "../../lib/clipboard.ts"
+import { emptyHistoryMessage, filterAnnouncement, moreLabel } from "./commit-filter.ts"
 import { commitAge, commitDate, selectedHashes, selectionCompare, type Compare } from "./compare.ts"
 import { statusLetters, type FileList } from "./compare-files.ts"
 import { detailsFiles, diffGlyph, fileParts, moreFilesLabel, type RefChip } from "./source-control-panes.ts"
+import type { CommitFilterState } from "./use-commit-filter.ts"
 import type { Commits } from "./use-commits.ts"
 
 // Long-pressing a commit on a phone starts a range; the next tap ends it.
@@ -21,6 +24,10 @@ const longPress = 500
 
 interface CommitsPaneProps {
   commits: Commits
+  // filter is the filter row's state (decision 0114).
+  filter: CommitFilterState
+  // onFilterClosed runs after Escape closes the filter row.
+  onFilterClosed(): void
   // selection is the selected commit or range, null for none.
   selection: Compare | null
   // chips name the stack's branches at their commits.
@@ -39,9 +46,22 @@ interface CommitsPaneProps {
 // a commit and opens its diff, keeping focus; Shift-click extends a
 // contiguous run and opens the range's diff. Arrows, Home/End, and Space
 // only select; Enter opens the selection's diff and focuses it; Escape
-// narrows a range.
-export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen, onSelect, onShowAll }: CommitsPaneProps) {
+// narrows a range. With a path filter, opening a commit opens its review at
+// that file.
+export function CommitsPane({
+  allOnly, chips, commits, filter, mobile, selection, onFilterClosed, onOpen, onSelect, onShowAll,
+}: CommitsPaneProps) {
   const { error, files, loadFiles, loadMore, loadingMore, moreError, refresh, result } = commits
+  // at is the file a path-filtered list opens reviews at.
+  const at = result?.path || undefined
+  const filterInput = useRef<HTMLInputElement>(null)
+  const { focusPending, focused } = filter
+  const filterOpen = filter.filter.open
+  useEffect(() => {
+    if (!focusPending || !filterOpen || !filterInput.current) return
+    filterInput.current.focus()
+    focused()
+  }, [filterOpen, focusPending, focused])
   const list = useMemo(() => result?.commits ?? [], [result])
   const selected = useMemo(() => selectedHashes(list, selection), [list, selection])
   const container = useRef<HTMLDivElement>(null)
@@ -90,7 +110,7 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
   // open reviews what a row's diff glyph stands for.
   function open(hash: string, focusDocument: boolean) {
     const glyph = diffGlyph(hash, selection, selected)
-    onOpen(glyph ? glyph.compare : { kind: "commit", hash }, focusDocument)
+    onOpen(glyph ? glyph.compare : { kind: "commit", hash }, focusDocument, at)
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -126,7 +146,7 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
     } else if (event.key === "Enter") {
       if (!selected.includes(row.hash)) {
         select(row.hash, false)
-        onOpen({ kind: "commit", hash: row.hash }, true)
+        onOpen({ kind: "commit", hash: row.hash }, true, at)
       } else {
         open(row.hash, true)
       }
@@ -162,16 +182,54 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
       setPending("")
       if (compare) {
         onSelect(compare)
-        onOpen(compare, false)
+        onOpen(compare, false, at)
       }
       return
     }
     const compare = select(hash, event.shiftKey && !mobile)
-    if (compare) onOpen(compare, false)
+    if (compare) onOpen(compare, false, at)
   }
 
   return (
     <div className="compare-list">
+      {filter.filter.open && (
+        <div className="commit-filter" role="search" aria-label="Filter commits"
+          onKeyDown={(event) => {
+            if (event.key !== "Escape") return
+            event.preventDefault()
+            event.stopPropagation()
+            filter.close()
+            onFilterClosed()
+          }}>
+          <TextField inputRef={filterInput} icon={<SearchIcon />} type="text" aria-label="Filter commits by message, author, or hash"
+            placeholder="Message, author, or hash" value={filter.filter.query} spellCheck={false} autoComplete="off" autoCapitalize="off"
+            onChange={(event) => filter.setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowDown" && event.key !== "Enter") return
+              const first = list[0]
+              if (!first) return
+              event.preventDefault()
+              focusRow(tabKey || first.hash)
+            }}
+            trailing={filter.filter.query && <IconButton size="xs" label="Clear query" icon={<XIcon aria-hidden="true" />}
+              onClick={() => {
+                filter.setQuery("")
+                filterInput.current?.focus()
+              }} />} />
+          {filter.filter.path && (
+            <div className="commit-filter-path" title={`History of ${filter.filter.path}`}>
+              <FileIcon path={filter.filter.path} />
+              {/* Right-to-left flow truncates the start, keeping the file name. */}
+              <span className="commit-filter-path-text"><span dir="ltr">{filter.filter.path}</span></span>
+              <IconButton size="xs" label={`Remove path filter ${filter.filter.path}`} icon={<XIcon aria-hidden="true" />}
+                onClick={() => {
+                  filter.clearPath()
+                  filterInput.current?.focus()
+                }} />
+            </div>
+          )}
+        </div>
+      )}
       {error && <div className="source-control-message">
         <StatusMessage tone="error" role="alert">{error}</StatusMessage>
         {!result && <Button variant="outline" onClick={refresh}>Retry</Button>}
@@ -189,7 +247,7 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
             onFocus={() => setFocusedKey(commit.hash)}
             onPointerDown={(event) => onPointerDown(event, commit.hash)} onPointerEnd={endPress}
             onClick={(event) => onClick(event, commit.hash)}
-            onOpenFile={(path) => onOpen({ kind: "commit", hash: commit.hash }, false, path)} />)}
+            onOpenFile={(path) => onOpen({ kind: "commit", hash: commit.hash }, false, path || at)} />)}
         </div>
         {(result?.more || moreError) && (
           <div className="commit-more">
@@ -198,21 +256,21 @@ export function CommitsPane({ allOnly, chips, commits, mobile, selection, onOpen
               onClick={() => { if (!loadingMore) loadMore() }}>
               {moreError ? <RefreshCwIcon className="compare-row-icon" aria-hidden="true" />
                 : <ChevronsDownIcon className="compare-row-icon" aria-hidden="true" />}
-              <span className="compare-row-label">{loadingMore ? "Loading…" : moreError ? "Retry" : "Load more"}</span>
+              <span className="compare-row-label">{loadingMore ? "Loading…" : moreError ? "Retry" : result ? moreLabel(result) : "Load more"}</span>
             </ListButton>
           </div>
         )}
       </div>
       {result && list.length === 0 && (
         <div className="source-control-message">
-          <StatusMessage>{result.range === "all" ? "No commits yet."
-            : result.base ? `No commits ahead of ${result.base}.` : "No base branch found to compare with."}</StatusMessage>
+          <StatusMessage>{emptyHistoryMessage(result)}</StatusMessage>
           {result.range === "branch" && !allOnly && <Button variant="outline" onClick={onShowAll}>Show all history</Button>}
         </div>
       )}
       {mobile && pending && <StatusMessage className="compare-list-hint" role="status">Tap another commit to compare a range.</StatusMessage>}
       <div className="visually-hidden" aria-live="polite">
-        {hashCopy.status === "copied" ? "Commit hash copied." : hashCopy.status === "failed" ? "Couldn't copy the commit hash." : ""}
+        {hashCopy.status === "copied" ? "Commit hash copied." : hashCopy.status === "failed" ? "Couldn't copy the commit hash."
+          : result ? filterAnnouncement(result) : ""}
       </div>
     </div>
   )

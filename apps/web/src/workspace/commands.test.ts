@@ -46,3 +46,9 @@ test("title word-prefix matches rank first", () => {
 test("typing theme finds the Color Theme pick and the Theme setting", () => {
   assert.deepEqual(matchCommands(commands, "theme").map((match) => match.command.id), ["preferences.colorTheme", "settings.theme"])
 })
+
+test("Show File History is a Source Control command", () => {
+  const [match] = matchCommands(commands, "file history")
+  assert.equal(match?.command.id, "sourceControl.showFileHistory")
+  assert.deepEqual(match?.command.action, { kind: "show-file-history" })
+})

@@ -900,7 +900,7 @@ test("commit pagination recovers on Retry", async ({ page }) => {
     const response = await route.fetch()
     const body: unknown = await response.json()
     if (typeof body !== "object" || body === null || !("commits" in body) || !Array.isArray(body.commits)) throw new Error("unexpected commits response")
-    await route.fulfill({ response, json: { ...body, commits: body.commits.slice(0, 1), more: true } })
+    await route.fulfill({ response, json: { ...body, commits: body.commits.slice(0, 1), more: true, next: 1 } })
   })
   await openSourceControl(page)
   await pane(page, "Commits").getByRole("button", { name: "All", exact: true }).click()
@@ -1118,4 +1118,119 @@ test("closing the last review tab ends every diff worker", async ({ page }) => {
   await page.getByRole("menuitem", { name: "Close", exact: true }).click()
   await expect(tab).toHaveCount(0)
   await expect.poll(() => page.workers().length).toBe(0)
+})
+
+function commitFilter(page: Page) {
+  return pane(page, "Commits").getByRole("search", { name: "Filter commits" })
+}
+
+function commitQuery(page: Page) {
+  return commitFilter(page).getByRole("textbox", { name: "Filter commits by message, author, or hash" })
+}
+
+// commitsMessage is the Commits pane's visible status, not its live region.
+function commitsMessage(page: Page, text: string) {
+  return pane(page, "Commits").locator(".source-control-message").getByText(text, { exact: true })
+}
+
+function filterButton(page: Page) {
+  return pane(page, "Commits").getByRole("button", { name: "Filter Commits" })
+}
+
+test("the commit filter matches messages and hashes, and Escape clears and hides it", async ({ page }) => {
+  await openSourceControl(page)
+  await expect(commitRow(page, featureSubject)).toBeVisible()
+  await expect(commitFilter(page)).toHaveCount(0)
+  await filterButton(page).click()
+  await expect(filterButton(page)).toHaveAttribute("aria-pressed", "true")
+  await expect(commitQuery(page)).toBeFocused()
+
+  await commitQuery(page).fill("GUIDE index")
+  await expect(commitsList(page).getByRole("option")).toHaveCount(1)
+  await expect(commitRow(page, lowerSubject)).toBeVisible()
+  // Branch and All still apply to the filtered list.
+  await pane(page, "Commits").getByRole("button", { name: "All", exact: true }).click()
+  await commitQuery(page).fill("initial")
+  await expect(commitRow(page, "Initial")).toBeVisible()
+  await expect(commitsList(page).getByRole("option")).toHaveCount(1)
+  await commitQuery(page).fill("no such commit")
+  await expect(commitsMessage(page, "No commits match.")).toBeVisible()
+  // A live region announces filtered results.
+  await expect(pane(page, "Commits").locator('[aria-live="polite"]')).toHaveText("No commits match.")
+
+  await commitQuery(page).press("Escape")
+  await expect(commitFilter(page)).toHaveCount(0)
+  await expect(filterButton(page)).toBeFocused()
+  await expect(filterButton(page)).toHaveAttribute("aria-pressed", "false")
+  await expect(commitsList(page).getByRole("option")).toHaveCount(3)
+})
+
+test("Show File History in the Explorer menu filters commits to the file and opens reviews at it", async ({ page }) => {
+  await page.goto(`${gitApiOrigin}/?project=${project}`)
+  await page.keyboard.press("ControlOrMeta+Shift+e")
+  await page.getByRole("treeitem", { name: "clean.md", exact: true }).click({ button: "right" })
+  const menu = page.getByRole("menu", { name: "Actions for clean.md" })
+  await expect(menu.getByRole("menuitem")).toHaveText(["Show File History", "Copy Path", "Copy Relative Path"])
+  await menu.getByRole("menuitem", { name: "Show File History" }).click()
+
+  await expect(sourceControl(page)).toBeVisible()
+  await expect(commitQuery(page)).toBeFocused()
+  await expect(commitFilter(page).getByRole("button", { name: "Remove path filter clean.md" })).toBeVisible()
+  // The branch range holds one commit that touches clean.md; All adds the
+  // commit that created it.
+  await expect(commitsList(page).getByRole("option")).toHaveCount(1)
+  await expect(commitRow(page, featureSubject)).toBeVisible()
+  await pane(page, "Commits").getByRole("button", { name: "All", exact: true }).click()
+  await expect(commitsList(page).getByRole("option")).toHaveCount(2)
+  await expect(commitRow(page, "Initial")).toBeVisible()
+
+  await commitRow(page, featureSubject).click()
+  await expect(commitTab(page, featureSubject)).toHaveAttribute("aria-selected", "true")
+  await expect(page).toHaveURL(/[?&]commit=[0-9a-f]{40}#f=clean\.md$/)
+
+  await commitFilter(page).getByRole("button", { name: "Remove path filter clean.md" }).click()
+  await expect(commitsList(page).getByRole("option")).toHaveCount(3)
+  await expect(commitQuery(page)).toBeFocused()
+})
+
+test("the tab menu and the command palette show a working-tree document's history", async ({ page }) => {
+  await page.goto(`${gitApiOrigin}/view?project=${project}&path=clean.md`)
+  const tab = page.getByRole("tab", { name: "clean.md" })
+  await expect(tab).toHaveAttribute("aria-selected", "true")
+  await tab.click({ button: "right" })
+  await page.getByRole("menu", { name: "Tab actions for clean.md" }).getByRole("menuitem", { name: "Show File History" }).click()
+  await expect(commitFilter(page).getByRole("button", { name: "Remove path filter clean.md" })).toBeVisible()
+  await expect(commitQuery(page)).toBeFocused()
+  await commitQuery(page).press("Escape")
+  await expect(commitFilter(page)).toHaveCount(0)
+
+  await tab.click()
+  await page.keyboard.press("F1")
+  await page.keyboard.type("show file history")
+  await page.keyboard.press("Enter")
+  await expect(commitFilter(page).getByRole("button", { name: "Remove path filter clean.md" })).toBeVisible()
+  await expect(commitRow(page, featureSubject)).toBeVisible()
+})
+
+test("a filtered search that stops on the scan cap continues from its cursor", async ({ page }) => {
+  const skips: string[] = []
+  await page.route("**/api/commits?*", async (route) => {
+    const params = new URL(route.request().url()).searchParams
+    if (params.get("path") !== "clean.md") return route.continue()
+    skips.push(params.get("skip") ?? "")
+    const response = await route.fetch()
+    const body: unknown = await response.json()
+    if (typeof body !== "object" || body === null) throw new Error("unexpected commits response")
+    // The first page tests 10,000 commits and finds none.
+    if (!params.has("skip")) return route.fulfill({ response, json: { ...body, commits: [], more: true, next: 10000 } })
+    await route.fulfill({ response })
+  })
+  await page.goto(`${gitApiOrigin}/view?project=${project}&path=clean.md`)
+  await page.getByRole("tab", { name: "clean.md" }).click({ button: "right" })
+  await page.getByRole("menu", { name: "Tab actions for clean.md" }).getByRole("menuitem", { name: "Show File History" }).click()
+  await expect(commitsMessage(page, "No commits match in the 10,000 most recent commits.")).toBeVisible()
+  await pane(page, "Commits").getByRole("button", { name: "Search older commits" }).click()
+  // Load more continues from the cursor, not from the commits listed.
+  await expect.poll(() => skips.filter(Boolean)).toEqual(["10000"])
+  await expect(commitsMessage(page, "No commits match.")).toBeVisible()
 })

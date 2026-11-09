@@ -8,7 +8,7 @@
 Source Zero (`srcz`) is the code viewer for the agentic era: browse files and review
 what agents change. Read-only and lean: rendered Markdown, image previews, formatted
 JSON/YAML/HTML/CSS/JavaScript, highlighted source, commit, branch, and range diffs,
-agent walkthroughs, code navigation, and live updates. Desktop app, browser, or a
+commit search and file history, agent walkthroughs, code navigation, and live updates. Desktop app, browser, or a
 remote box served to your laptop.
 
 ## Install

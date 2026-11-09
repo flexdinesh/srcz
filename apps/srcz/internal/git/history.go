@@ -40,6 +40,9 @@ var (
 	// walkLimit caps the commits a branch walk visits, counting the base
 	// side's, so a head far behind its base still finishes.
 	walkLimit = 100_000
+	// scanLimit caps the commits one filtered page tests, so a rare match
+	// ends a page early instead of walking the whole history.
+	scanLimit = 10_000
 )
 
 var (
@@ -77,7 +80,18 @@ type LogOptions struct {
 	// Base names the base branch as Branches lists it; empty finds it as
 	// DefaultBase does.
 	Base string
+	// Query keeps commits whose message, author name, or author email holds
+	// it, ignoring case, or whose hash starts with it (4 or more hexadecimal
+	// digits, any case). Empty keeps all.
+	Query string
+	// Path keeps commits whose tree entry at this repository-relative path
+	// differs from their first parent's, in hash, mode, or presence, as git
+	// log -- path does without following renames. Empty keeps all.
+	Path string
 }
+
+// filtered reports whether options keep only some commits.
+func (o LogOptions) filtered() bool { return o.Query != "" || o.Path != "" }
 
 // Author is who wrote a commit.
 type Author struct {
@@ -108,6 +122,11 @@ type History struct {
 	Commits []Commit
 	// More reports that commits follow this page.
 	More bool
+	// Next is the Skip that reads the following page: the walk positions
+	// this page consumed. A filtered page counts the commits it tested, so a
+	// page that reached scanLimit with fewer matches than Limit continues
+	// from there.
+	Next int
 }
 
 // CommitChanges are a commit's changes against its first parent, sorted by
@@ -353,12 +372,18 @@ func (r *Repository) Branches(limit int) (BranchList, error) {
 
 // Log lists one page of history from options.Head. Commits are ordered like
 // git log: newest committer date first, from a priority queue, so a parent
-// can precede a child only under clock skew. It returns ErrUnavailable when a
-// given Head is not a commit, and ErrRangeTooLarge when the base..Head range
-// exceeds its bounds. RangeAll still lists a page then, with Ahead zero. An
-// options.Base Branches does not list is ErrUnknownBase.
+// can precede a child only under clock skew. Skip counts walk positions, so
+// with a Query or Path it skips tested commits rather than matches; a
+// filtered page tests at most scanLimit commits. It returns ErrUnavailable
+// when a given Head is not a commit or Path is not a valid path, and
+// ErrRangeTooLarge when the base..Head range exceeds its bounds. RangeAll
+// still lists a page then, with Ahead zero. An options.Base Branches does
+// not list is ErrUnknownBase.
 func (r *Repository) Log(ctx context.Context, options LogOptions) (History, error) {
 	history := History{Commits: []Commit{}}
+	if options.Path != "" && !validPath(options.Path) {
+		return History{}, ErrUnavailable
+	}
 	baseName, baseHash, err := r.base(options.Base)
 	if err != nil {
 		return History{}, err
@@ -397,24 +422,36 @@ func (r *Repository) Log(ctx context.Context, options LogOptions) (History, erro
 		}
 		history.Ahead = len(branch)
 	}
+	keep := w.filter(options)
 	if options.Range == RangeAll {
-		history.Commits, history.More, err = w.all(head, options.Skip, options.Limit)
+		history.Commits, history.More, history.Next, err = w.all(head, options.Skip, options.Limit, keep)
 		if err != nil {
 			return History{}, err
 		}
 		return history, nil
 	}
 
-	page := branch[min(options.Skip, len(branch)):]
-	if options.Limit > 0 && len(page) > options.Limit {
-		page, history.More = page[:options.Limit], true
-	}
-	for _, hash := range page {
+	history.Next = min(options.Skip, len(branch))
+	scanned := 0
+	for _, hash := range branch[history.Next:] {
+		if (options.Limit > 0 && len(history.Commits) >= options.Limit) || (keep != nil && scanned >= scanLimit) {
+			history.More = true
+			break
+		}
+		if err := w.step(); err != nil {
+			return History{}, err
+		}
 		commit, err := w.load(hash)
 		if err != nil {
 			return History{}, err
 		}
-		history.Commits = append(history.Commits, w.summary(commit))
+		history.Next++
+		scanned++
+		if ok, err := keep.test(commit); err != nil {
+			return History{}, err
+		} else if ok {
+			history.Commits = append(history.Commits, w.summary(commit))
+		}
 	}
 	return history, nil
 }
@@ -503,29 +540,38 @@ func (w *walker) summary(commit *object.Commit) Commit {
 	}
 }
 
-// all lists head's history, skipping skip commits and taking limit.
-func (w *walker) all(head plumbing.Hash, skip, limit int) ([]Commit, bool, error) {
+// all lists head's history: it skips skip walk positions, then takes the
+// commits keep keeps until it holds limit or, when filtering, has tested
+// scanLimit. It also returns the walk positions consumed.
+func (w *walker) all(head plumbing.Hash, skip, limit int, keep *filter) ([]Commit, bool, int, error) {
 	if err := w.ctx.Err(); err != nil {
-		return nil, false, err
+		return nil, false, 0, err
 	}
 	page := []Commit{}
 	queue := &commitQueue{}
 	seen := map[plumbing.Hash]bool{head: true}
 	first, err := w.load(head)
 	if err != nil {
-		return nil, false, err
+		return nil, false, 0, err
 	}
 	queue.add(first)
-	for taken := 0; queue.Len() > 0; taken++ {
+	taken := 0
+	for ; queue.Len() > 0; taken++ {
 		if err := w.step(); err != nil {
-			return nil, false, err
+			return nil, false, 0, err
 		}
-		if limit > 0 && taken >= skip+limit {
-			return page, true, nil
+		if taken >= skip && ((limit > 0 && len(page) >= limit) || (keep != nil && taken-skip >= scanLimit)) {
+			return page, true, taken, nil
 		}
 		commit := queue.pop()
 		if taken >= skip {
-			page = append(page, w.summary(commit))
+			ok, err := keep.test(commit)
+			if err != nil {
+				return nil, false, 0, err
+			}
+			if ok {
+				page = append(page, w.summary(commit))
+			}
 		}
 		for _, parent := range w.parents(commit) {
 			if seen[parent] {
@@ -534,12 +580,132 @@ func (w *walker) all(head plumbing.Hash, skip, limit int) ([]Commit, bool, error
 			seen[parent] = true
 			loaded, err := w.load(parent)
 			if err != nil {
-				return nil, false, err
+				return nil, false, 0, err
 			}
 			queue.add(loaded)
 		}
 	}
-	return page, false, nil
+	return page, false, taken, nil
+}
+
+// filter tests commits against a Log's Query and Path; a nil filter keeps
+// every commit.
+type filter struct {
+	w *walker
+	// query is lowercased; hash is set when it may be a hash prefix.
+	query string
+	hash  bool
+	// path is split into names; entries memoizes its entry per root tree.
+	path    []string
+	entries map[plumbing.Hash]object.TreeEntry
+}
+
+// minHashPrefix is the shortest query that matches hashes, as git's
+// shortest abbreviation.
+const minHashPrefix = 4
+
+func (w *walker) filter(options LogOptions) *filter {
+	if !options.filtered() {
+		return nil
+	}
+	f := &filter{w: w, query: strings.ToLower(options.Query)}
+	if len(f.query) >= minHashPrefix && len(f.query) <= 40 {
+		f.hash = strings.Trim(f.query, "0123456789abcdef") == ""
+	}
+	if options.Path != "" {
+		f.path = strings.Split(options.Path, "/")
+		f.entries = map[plumbing.Hash]object.TreeEntry{}
+	}
+	return f
+}
+
+// test reports whether the filter keeps commit.
+func (f *filter) test(commit *object.Commit) (bool, error) {
+	if f == nil {
+		return true, nil
+	}
+	if f.query != "" && !f.matches(commit) {
+		return false, nil
+	}
+	if f.path == nil {
+		return true, nil
+	}
+	return f.touches(commit)
+}
+
+func (f *filter) matches(commit *object.Commit) bool {
+	if f.hash && strings.HasPrefix(commit.Hash.String(), f.query) {
+		return true
+	}
+	for _, text := range []string{commit.Message, commit.Author.Name, commit.Author.Email} {
+		if strings.Contains(strings.ToLower(text), f.query) {
+			return true
+		}
+	}
+	return false
+}
+
+// touches reports whether commit's entry at the path differs from its first
+// parent's, an empty tree for a root or shallow commit.
+func (f *filter) touches(commit *object.Commit) (bool, error) {
+	var parentTree plumbing.Hash
+	if parents := f.w.parents(commit); len(parents) > 0 {
+		parent, err := f.w.load(parents[0])
+		if err != nil {
+			return false, err
+		}
+		parentTree = parent.TreeHash
+	}
+	if parentTree == commit.TreeHash {
+		return false, nil
+	}
+	before, err := f.entry(parentTree)
+	if err != nil {
+		return false, err
+	}
+	after, err := f.entry(commit.TreeHash)
+	if err != nil {
+		return false, err
+	}
+	return before.Hash != after.Hash || before.Mode != after.Mode, nil
+}
+
+// entry finds the path's entry under a root tree, zero when absent or the
+// tree is zero. Results are memoized per root tree, which a commit and its
+// child share, and dropped together past scanLimit.
+func (f *filter) entry(root plumbing.Hash) (object.TreeEntry, error) {
+	if root.IsZero() {
+		return object.TreeEntry{}, nil
+	}
+	if entry, ok := f.entries[root]; ok {
+		return entry, nil
+	}
+	if len(f.entries) >= scanLimit {
+		clear(f.entries)
+	}
+	var found object.TreeEntry
+	tree := root
+	for i, name := range f.path {
+		parsed, err := object.GetTree(f.w.repo.storage, tree)
+		if err != nil {
+			return object.TreeEntry{}, fmt.Errorf("read tree %s: %w", strings.Join(f.path[:i], "/"), err)
+		}
+		index := slices.IndexFunc(parsed.Entries, func(entry object.TreeEntry) bool { return entry.Name == name })
+		if index < 0 {
+			break
+		}
+		entry := parsed.Entries[index]
+		if i == len(f.path)-1 {
+			found = entry
+			break
+		}
+		if entry.Mode != filemode.Dir {
+			break
+		}
+		tree = entry.Hash
+	}
+	f.entries[root] = found
+	return found, nil
 }
 
 // branch lists the commits reachable from head and not from base, newest

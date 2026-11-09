@@ -49,6 +49,7 @@ import { onBaseBranch } from "./features/source-control/source-control-panes.ts"
 import { useBranchStack } from "./features/source-control/use-branch-stack.ts"
 import { useNarrowElement } from "./lib/use-narrow-element.ts"
 import { useChanges } from "./features/source-control/use-changes.ts"
+import { useCommitFilter } from "./features/source-control/use-commit-filter.ts"
 import { useCommits } from "./features/source-control/use-commits.ts"
 import { useCompareData } from "./features/source-control/use-compare-data.ts"
 import { useDiffOptions } from "./features/source-control/use-diff-options.ts"
@@ -224,8 +225,10 @@ export function App({ project }: AppProps) {
   const runNavigation = useRef<(kind: NavigationKind) => void>(() => {})
   const walkthroughCommands = useRef({ move: (_direction: 1 | -1) => {}, close: () => {}, present: () => {} })
   const openWelcomeCommand = useRef(() => {})
+  const fileHistoryCommand = useRef(() => {})
   const runCommand = useCallback((action: CommandAction) => {
     if (action.kind === "open-welcome") openWelcomeCommand.current()
+    else if (action.kind === "show-file-history") fileHistoryCommand.current()
     else if (action.kind === "walkthrough-step") walkthroughCommands.current.move(action.direction)
     else if (action.kind === "walkthrough-exit") walkthroughCommands.current.close()
     else if (action.kind === "walkthrough-present") walkthroughCommands.current.present()
@@ -246,7 +249,17 @@ export function App({ project }: AppProps) {
   const stack = useBranchStack(project, sourceControlActive, sourceControlLayout.base)
   // On the base branch itself, commits list all history (decision 0040).
   const allOnly = onBaseBranch(stack.result?.branch ?? "", stack.result?.base ?? "")
-  const commits = useCommits(project, sourceControlActive || reviewLive, allOnly ? "all" : sourceControlLayout.range, sourceControlLayout.base)
+  const commitFilter = useCommitFilter()
+  const commits = useCommits(project, sourceControlActive || reviewLive, allOnly ? "all" : sourceControlLayout.range,
+    sourceControlLayout.base, commitFilter.applied)
+  // showFileHistory filters Commits to a file and reveals them (decision 0114).
+  const { showFileHistory: filterToFile } = commitFilter
+  const { setPaneCollapsed } = sourceControlLayout
+  const showFileHistory = useCallback((path: string) => {
+    filterToFile(path, !sidebar.mobile)
+    setPaneCollapsed("commits", false)
+    revealSidebar("source-control")
+  }, [filterToFile, revealSidebar, setPaneCollapsed, sidebar.mobile])
   const refs = useRefs(project)
   const chooseProject = useCallback(() => openProjects.current(), [])
   const chooseWorktree = useCallback(() => openProjects.current({ worktrees: true }), [])
@@ -506,6 +519,17 @@ export function App({ project }: AppProps) {
   }, [navigate, prepareDocumentNavigation, project, welcomeRoute])
   useLayoutEffect(() => {
     openWelcomeCommand.current = openWelcome
+    // The palette command acts on the working-tree file in view; without one
+    // it opens the filter row.
+    fileHistoryCommand.current = () => {
+      if (activeDocument && !activeAt) {
+        showFileHistory(activeDocument)
+        return
+      }
+      commitFilter.show()
+      setPaneCollapsed("commits", false)
+      revealSidebar("source-control")
+    }
   })
   const selectTab = useCallback((tab: WorkspaceTab) => {
     if (tab.kind === "document") navigateToDocument(tab.path, tab.at)
@@ -732,6 +756,7 @@ export function App({ project }: AppProps) {
             onOpenProjects={chooseProject}
             onOpenWorktrees={chooseWorktree}
             onReveal={revealExplorer}
+            onShowHistory={showFileHistory}
             page={page}
             registerOpen={registerFiles}
           />}
@@ -740,7 +765,7 @@ export function App({ project }: AppProps) {
           unseenWalkthroughs={walkthroughs.unseen}
           walkthroughs={<WalkthroughsView project={project} session={walkthroughs} context={compareContext} mobile={sidebar.mobile} onPresent={present}
             onDismiss={sidebar.dismiss} />}
-          sourceControl={<SourceControlView changes={changes} commits={commits} stack={stack} layout={sourceControlLayout} refs={refs}
+          sourceControl={<SourceControlView changes={changes} commits={commits} commitFilter={commitFilter} stack={stack} layout={sourceControlLayout} refs={refs}
             working={workingData} workingPath={reviewCompare?.kind === "working" ? currentFile : ""}
             commitSelection={commitSelection} allOnly={allOnly} mobile={sidebar.mobile}
             onDismiss={sidebar.dismiss} onSelectCommits={setCommitSelection} onOpenReview={openReview} />}
@@ -763,6 +788,7 @@ export function App({ project }: AppProps) {
               onSelect={selectTab}
               preview={workspace.preview}
               onPin={workspace.pin}
+              onShowHistory={showFileHistory}
             />
             {reviewCompare ? (
               <DiffToolbar options={diffOptions.options} narrow={diffNarrow} onChange={diffOptions.change}

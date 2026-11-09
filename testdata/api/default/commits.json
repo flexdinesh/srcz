@@ -3,6 +3,8 @@
   "branch": "feature/commit-history",
   "base": "main",
   "range": "branch",
+  "query": "",
+  "path": "",
   "head": "3577ec6f1d2e4b8a9c0d7e6f5a4b3c2d1e0f9a8b",
   "ahead": 2,
   "commits": [
@@ -33,5 +35,6 @@
       "authorTime": "2026-10-19T09:30:00+11:00"
     }
   ],
-  "more": false
+  "more": false,
+  "next": 2
 }

@@ -14,7 +14,8 @@ import { Button } from "../../components/ui/button.tsx"
 import { treeCSS } from "../../lib/tree-css.ts"
 import { writeClipboard } from "../../lib/clipboard.ts"
 import { desktopBridge } from "../../lib/desktop-bridge.ts"
-import { absolutePath, isTreeMenuAction, treeMenuItems, treeRowPath } from "./tree-menu.ts"
+import { absolutePath, isTreeMenuAction, treeMenuItems, treeRowPath, type TreeMenuAction } from "./tree-menu.ts"
+import { TreeRowMenu } from "./TreeRowMenu.tsx"
 import { IconButton } from "../../components/ui/icon-button.tsx"
 import { TextField } from "../../components/ui/text-field.tsx"
 import { treeRowHeight } from "../../components/ui/tree-rows.ts"
@@ -43,6 +44,8 @@ interface FileTreeProps {
   onReveal(): void
   // onDismiss closes the mobile drawer after a file opens.
   onDismiss(): void
+  // onShowHistory filters Source Control's commits to a file (decision 0114).
+  onShowHistory(path: string): void
 }
 
 interface ExplorerState {
@@ -103,7 +106,7 @@ export function FileTree(props: FileTreeProps) {
     itemHeight={itemHeight} filter={filter} state={state} />
 }
 
-function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktrees, onReveal, onDismiss, page, registerOpen, mobile, itemHeight, state, filter }: FileTreeProps & {
+function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktrees, onReveal, onDismiss, onShowHistory, page, registerOpen, mobile, itemHeight, state, filter }: FileTreeProps & {
   mobile: boolean
   itemHeight: number
   filter: FilenameFilterState
@@ -125,9 +128,18 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
   const searchInput = useRef<HTMLInputElement>(null)
   const searchButton = useRef<HTMLButtonElement>(null)
   const syncing = useRef(false)
-  const current = useRef({ onNavigate, onDismiss, page })
+  const current = useRef({ onNavigate, onDismiss, onShowHistory, page })
+  // runMenuAction runs a row menu's action on a project-relative path.
+  const runMenuAction = useCallback((action: TreeMenuAction, path: string, reveal?: (project: string, path: string) => void) => {
+    const { page: shown, onShowHistory: showHistory } = current.current
+    const project = shown.project
+    if (!project) return
+    if (action === "file-history") showHistory(path)
+    else if (action === "reveal") reveal?.(project, path)
+    else writeClipboard(action === "copy-path" ? absolutePath(project, path) : path).catch(() => undefined)
+  }, [])
   // The desktop app gives rows a native menu with Reveal (decision 0081);
-  // browsers keep rows without a menu.
+  // browsers render the same items on the themed menu (decision 0114).
   const [rowMenu] = useState(() => {
     const bridge = desktopBridge()
     const show = bridge?.showContextMenu ?? null
@@ -139,14 +151,11 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
       composition: {
         // Right-click and the context-menu keys open it (Pierre's default).
         contextMenu: {
-          onOpen(item: { path: string }, context: { anchorRect: { x: number; y: number }; close(): void }) {
-            const project = current.current.page.project
+          onOpen(item: { kind: "directory" | "file"; path: string }, context: { anchorRect: { x: number; y: number }; close(options?: { restoreFocus?: boolean }): void }) {
             const path = treeRowPath(item.path)
-            void rowMenu.show(treeMenuItems(), context.anchorRect.x, context.anchorRect.y).then((id) => {
-              context.close()
-              if (!isTreeMenuAction(id) || !project) return
-              if (id === "reveal") rowMenu.reveal(project, path)
-              else writeClipboard(id === "copy-path" ? absolutePath(project, path) : path).catch(() => undefined)
+            void rowMenu.show(treeMenuItems({ file: item.kind === "file", reveal: true }), context.anchorRect.x, context.anchorRect.y).then((id) => {
+              context.close({ restoreFocus: id !== "file-history" })
+              if (isTreeMenuAction(id)) runMenuAction(id, path, rowMenu.reveal)
             })
           },
         },
@@ -197,7 +206,7 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
     setHasExpanded(directoryPaths.some((path) => expandedPaths.current.has(path)))
   }, [directories, directoryPaths, hasData, model, page.error, page.project, state])
 
-  useLayoutEffect(() => { current.current = { onNavigate, onDismiss, page } }, [onDismiss, onNavigate, page])
+  useLayoutEffect(() => { current.current = { onNavigate, onDismiss, onShowHistory, page } }, [onDismiss, onNavigate, onShowHistory, page])
 
   useLayoutEffect(() => { state.current.model = model }, [model, state])
 
@@ -380,7 +389,14 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
               searchInput.current?.focus()
             }}>Clear search</Button>
           </p>}
-          <PierreFileTree model={model} className="file-tree-host" aria-label="Files" hidden={searchUnmatched} onClick={() => {
+          <PierreFileTree model={model} className="file-tree-host" aria-label="Files" hidden={searchUnmatched}
+            renderContextMenu={rowMenu ? undefined : (item, context) => (
+              <TreeRowMenu anchor={context.anchorElement} name={item.name}
+                items={treeMenuItems({ file: item.kind === "file", reveal: false })}
+                onAction={(action) => runMenuAction(action, treeRowPath(item.path))}
+                onClose={(restoreFocus) => context.close({ restoreFocus })} />
+            )}
+            onClick={() => {
             const focused = model.getFocusedPath()
             if (focused && !model.getItem(focused)?.isDirectory() && model.getSelectedPaths().includes(focused)) onDismiss()
           }} />
