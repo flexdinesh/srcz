@@ -50,6 +50,8 @@ import { useBranchStack } from "./features/source-control/use-branch-stack.ts"
 import { useNarrowElement } from "./lib/use-narrow-element.ts"
 import { useChanges } from "./features/source-control/use-changes.ts"
 import { useCommitFilter } from "./features/source-control/use-commit-filter.ts"
+import { useChangeMarkers } from "./features/source-control/use-change-markers.ts"
+import { markerLine } from "./features/source-control/change-markers.ts"
 import { useCommits } from "./features/source-control/use-commits.ts"
 import { useCompareData } from "./features/source-control/use-compare-data.ts"
 import { useDiffOptions } from "./features/source-control/use-diff-options.ts"
@@ -73,7 +75,7 @@ import { CommandPalette } from "./workspace/CommandPalette.tsx"
 import { navigationEligibility, type NavigationKind } from "./features/navigation/code-navigation.ts"
 import type { CommandAction } from "./workspace/commands.ts"
 import { NavigationDialog } from "./features/navigation/NavigationDialog.tsx"
-import type { SourceNavigation } from "./features/documents/SourceDocument.tsx"
+import type { SourceChanges, SourceNavigation } from "./features/documents/SourceDocument.tsx"
 import type { SourceTarget } from "./features/navigation/source-position.ts"
 import { useCodeNavigation } from "./features/navigation/use-code-navigation.ts"
 import { useNavigationStatus } from "./features/navigation/use-navigation-status.ts"
@@ -453,7 +455,8 @@ export function App({ project }: AppProps) {
   const treeFiles = useMemo(() => new Set(filePaths(page.tree)), [page.tree])
 
   // openReview opens a compare's review tab; focusDocument moves focus to it.
-  const openReview = useCallback((compare: Compare, focusDocument: boolean, path = "") => {
+  // lines selects lines in path, as a change marker does (decision 0115).
+  const openReview = useCallback((compare: Compare, focusDocument: boolean, path = "", lines: Parameters<typeof reviewFragment>[1] = null) => {
     if (reviewCompare && sameCompare(compare, reviewCompare) && !path) {
       if (focusDocument) main.current?.focus({ preventScroll: true })
       return
@@ -461,7 +464,7 @@ export function App({ project }: AppProps) {
     if (focusDocument) prepareDocumentNavigation()
     // The kept review returns at the fragment it still shows.
     const keptHash = kept && sameCompare(compare, kept.compare) ? kept.hash : ""
-    void navigate({ to: "/view", search: { project, ...compareSearch(compare) }, hash: path ? reviewFragment(path) : keptHash,
+    void navigate({ to: "/view", search: { project, ...compareSearch(compare) }, hash: path ? reviewFragment(path, lines) : keptHash,
       replace: Boolean(reviewCompare && sameCompare(compare, reviewCompare)) })
     if (focusDocument && reviewCompare && sameCompare(compare, reviewCompare)) main.current?.focus({ preventScroll: true })
   }, [kept, main, navigate, prepareDocumentNavigation, project, reviewCompare])
@@ -567,6 +570,9 @@ export function App({ project }: AppProps) {
   const { refresh: refreshCommits } = commits
   const { refresh: refreshStack } = stack
   const { markStale: markSearchStale } = search
+  // gitVersion counts git state changes (HEAD may have moved); Source's
+  // change markers reread with it.
+  const [gitVersion, setGitVersion] = useState(0)
   const applyLiveChange = useCallback((change: LiveChange) => {
     const targets = liveTargets(change, liveDocument)
     if (targets.page) reread()
@@ -574,6 +580,7 @@ export function App({ project }: AppProps) {
     if (targets.history) {
       refreshCommits()
       refreshStack()
+      setGitVersion((version) => version + 1)
     }
     if (targets.search) markSearchStale(searchShown)
   }, [liveDocument, markSearchStale, refreshChanges, refreshCommits, refreshStack, reread, searchShown])
@@ -611,6 +618,16 @@ export function App({ project }: AppProps) {
   }, [explainNavigation, navigationReason, sourceNavigation])
   useEffect(() => { closeNavigation() }, [closeNavigation, page.selected, documentMode, languageServers])
   useEffect(() => { if (isLoading) closeNavigation() }, [closeNavigation, isLoading])
+  // Source marks the open file's uncommitted changes; a mark opens the
+  // Uncommitted review at its first line (decision 0115).
+  const changeMarkers = useChangeMarkers(project, page, changes.byPath.get(page.selected), gitVersion)
+  const sourceChanges = useMemo((): SourceChanges | undefined => changeMarkers.length > 0 ? {
+    markers: changeMarkers,
+    onOpen(marker) {
+      const line = markerLine(marker)
+      openReview(workingCompare, true, page.selected, { start: line, side: "additions", end: line, endSide: "additions" })
+    },
+  } : undefined, [changeMarkers, openReview, page.selected])
   const selectedLines = showSource && lineRange ? clampLineRange(lineRange, splitSourceLines(page.source).length) : null
 
   const switchProject = useCallback((next: string) => {
@@ -836,6 +853,7 @@ export function App({ project }: AppProps) {
             empty={<EmptyWorkspace state={empty} viewName={sidebarViewName(sidebar.view)}
               onAction={runEmptyAction} onWelcome={openWelcome} />}
             sourceAnnotation={sourceAnnotation}
+            sourceChanges={sourceChanges}
             hasData={hasData}
             image={image}
             isLoading={isLoading}

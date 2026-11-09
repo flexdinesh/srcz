@@ -165,6 +165,12 @@
   --source-gutter-start: 22px;
   --source-gutter-end: 14px;
   --source-line-end: 40px;
+  /* Change marks (decision 0115) fill the gutter's end inset. */
+  --change-mark-hit: var(--source-gutter-end);
+  --change-mark-width: 0.1875rem;
+  --change-mark-wedge: 0.25rem;
+  --change-mark-wedge-hover: 0.3125rem;
+  --change-mark-wedge-hit: 0.75rem;
   --checker-size: 16px;
   --separator-hit: 5px;
   --border-quote: 3px;
