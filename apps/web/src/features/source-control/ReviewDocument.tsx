@@ -195,14 +195,16 @@ function ReviewBody({
   const list = data?.list
   const files = useMemo(() => list?.kind === "ready" ? displayOrder(list.files) : [], [list])
   const stats = data?.stats ?? null
-  // open overrides a file's default: viewed files start closed, others open,
-  // as does the annotated file.
+  // open overrides a file's default: viewed files start closed, others open.
+  // A walkthrough step's file opens and leads; the others start closed
+  // (decision 0113).
   const [open, setOpen] = useState<ReadonlyMap<string, boolean>>(() => new Map())
   const annotatedPath = annotation?.path ?? ""
+  const focused = annotatedPath !== "" && files.some((file) => file.path === annotatedPath)
   const isOpen = useCallback((file: CompareFile) => {
     const blob = stats?.byPath.get(file.path)?.blob ?? ""
-    return open.get(file.path) ?? (file.path === annotatedPath || !viewed(file.path, blob))
-  }, [annotatedPath, open, stats, viewed])
+    return open.get(file.path) ?? (focused ? file.path === annotatedPath : !viewed(file.path, blob))
+  }, [annotatedPath, focused, open, stats, viewed])
 
   // The pane, not a nested scroller, scrolls, so keyboard scrolling and focus
   // keep working. A fresh load mounts the pane with this review, and layout

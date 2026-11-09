@@ -3,7 +3,7 @@ import test from "node:test"
 
 import type { WalkthroughStep } from "@srcz/contracts"
 import type { CompareContext } from "../source-control/compare.ts"
-import { coverRoute, lineDrift, parseStep, routeStep, routeWalkthrough, stepAfter, stepLabel, stepRoute, stepTarget } from "./walkthrough-steps.ts"
+import { coverRoute, lineDrift, parseStep, routeStep, routeWalkthrough, stepAfter, stepCheck, stepLabel, stepRoute, stepTarget } from "./walkthrough-steps.ts"
 
 const hash = "3577ec6f1d2e4b8a9c0d7e6f5a4b3c2d1e0f9a8b"
 const from = "4f76e9a2b3c4d5e6f708192a3b4c5d6e7f8091a2"
@@ -70,4 +70,11 @@ test("route parameters parse strictly", () => {
   assert.equal(routeWalkthrough("tour-1"), "tour-1")
   assert.equal(routeWalkthrough("../x"), undefined)
   assert.equal(routeWalkthrough(""), undefined)
+})
+
+test("a drifted step names the line it expected and the line there now", () => {
+  assert.deepEqual(stepCheck("FROM golang:1.22", "FROM golang:1.24 AS build  "), { drift: "changed", expected: "FROM golang:1.22", actual: "FROM golang:1.24 AS build" })
+  assert.deepEqual(stepCheck("FROM golang:1.22", undefined), { drift: "changed", expected: "FROM golang:1.22", actual: "" })
+  assert.equal(stepCheck("", "anything").drift, "unknown")
+  assert.equal(stepCheck("func run(", "func run() {").drift, "unchanged")
 })

@@ -25,7 +25,12 @@ test("Reveal shows only when offered and for working-tree documents", () => {
   assert.equal(revealablePath(documentTab("src/a.ts", HASH)), null)
 })
 
+test("the preview tab offers Keep Open first", () => {
+  assert.deepEqual(ids(tabMenuItems(documentTab("a.md"), 0, 1, false, true)).slice(0, 3), ["keep-open", "-", "close"])
+  assert.equal(ids(tabMenuItems(documentTab("a.md"), 0, 1, false)).includes("keep-open"), false)
+})
+
 test("isTabMenuAction accepts the menu's ids only", () => {
-  for (const id of ["close", "close-others", "close-right", "close-all", "reveal"]) assert.equal(isTabMenuAction(id), true)
+  for (const id of ["keep-open", "close", "close-others", "close-right", "close-all", "reveal"]) assert.equal(isTabMenuAction(id), true)
   for (const id of [null, "", "open", "Close"]) assert.equal(isTabMenuAction(id), false)
 })

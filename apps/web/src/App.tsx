@@ -103,7 +103,11 @@ import { WalkthroughsView } from "./features/walkthrough/WalkthroughsView.tsx"
 import { WalkthroughTab } from "./features/walkthrough/WalkthroughTab.tsx"
 import { WalkthroughStepBar } from "./features/walkthrough/WalkthroughStepBar.tsx"
 import { useWalkthroughSession } from "./features/walkthrough/use-walkthrough-session.ts"
-import { lineDrift, routeStep, routeWalkthrough, stepTarget, type Drift, type StepRoute } from "./features/walkthrough/walkthrough-steps.ts"
+import {
+  missingStep, routeStep, routeWalkthrough, stepCheck, stepLabel, stepRoute, stepTarget, uncheckedStep, type StepCheck, type StepRoute,
+} from "./features/walkthrough/walkthrough-steps.ts"
+import { stepPrompt } from "./features/walkthrough/agent-instructions.ts"
+import { shareableOrigin } from "./lib/shareable-origin.ts"
 import type { SourceAnnotation } from "./features/documents/SourceDocument.tsx"
 import type { ReviewAnnotation } from "./features/source-control/ReviewDocument.tsx"
 
@@ -261,7 +265,9 @@ export function App({ project }: AppProps) {
     [activeAt, activeDocument, reviewRoute, walkthroughRoute, welcomeRoute])
   // pageKey keys the document's mode, format, and scroll.
   const pageKey = documentKey(page.selected, page.at)
-  const workspace = useDocumentWorkspace(routedTab)
+  // A walkthrough step opens its document or review as the preview tab
+  // (decision 0113).
+  const workspace = useDocumentWorkspace(routedTab, searchWalkthrough !== "" && searchStep !== undefined && !walkthroughRoute)
   const { setDocumentMode } = workspace
   const previewPreference = usePreviewPreference(project)
   const { settings } = useSettings()
@@ -317,10 +323,22 @@ export function App({ project }: AppProps) {
     if (!walkthroughs.routed) goToStep(stepPosition)
   }, [goToStep, stepPosition, walkthroughs.routed, walkthroughs.walkthrough])
   const { close: closeSession } = walkthroughs
+  const { pin: pinTab } = workspace
   const closeWalkthrough = useCallback(() => {
     setPresentRequested(false)
+    pinTab()
     closeSession()
-  }, [closeSession])
+  }, [closeSession, pinTab])
+  // showWalkthroughList leaves the walkthrough for the list of them.
+  const showWalkthroughList = useCallback(() => {
+    closeWalkthrough()
+    revealSidebar("walkthroughs")
+  }, [closeWalkthrough, revealSidebar])
+  const { finish: finishSession } = walkthroughs
+  const finishWalkthrough = useCallback(() => {
+    setPresentRequested(false)
+    finishSession()
+  }, [finishSession])
   useEffect(() => {
     if (!presenting) return
     const stop = (event: KeyboardEvent) => {
@@ -332,8 +350,34 @@ export function App({ project }: AppProps) {
     document.addEventListener("keydown", stop, true)
     return () => document.removeEventListener("keydown", stop, true)
   }, [presenting])
+  // Presenting, plain arrows, Space, and Page Up/Down step as slides do
+  // (decision 0113); text fields and open dialogs keep their keys.
+  const presentKeys = useRef({ advance: walkthroughs.advance, move: walkthroughs.move })
+  useLayoutEffect(() => { presentKeys.current = { advance: walkthroughs.advance, move: walkthroughs.move } })
+  useEffect(() => {
+    if (!presenting) return
+    const step = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || document.querySelector("dialog[open]")) return
+      const target = event.target
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest("input, textarea, select, [role=tab], [role=option], [role=listbox]"))) return
+      // Space presses a focused control rather than stepping.
+      const space = event.key === " " && !(target instanceof HTMLElement && target.closest("button, a[href]"))
+      const forward = event.key === "ArrowRight" || event.key === "PageDown" || (space && !event.shiftKey)
+      const back = event.key === "ArrowLeft" || event.key === "PageUp" || (space && event.shiftKey)
+      if (!forward && !back) return
+      event.preventDefault()
+      if (forward) presentKeys.current.advance()
+      else presentKeys.current.move(-1)
+    }
+    document.addEventListener("keydown", step)
+    return () => document.removeEventListener("keydown", step)
+  }, [presenting])
   useLayoutEffect(() => {
-    walkthroughCommands.current = { move: walkthroughs.move, close: closeWalkthrough, present }
+    walkthroughCommands.current = {
+      move: (direction) => { if (direction === 1) walkthroughs.advance(); else walkthroughs.move(direction) },
+      close: closeWalkthrough,
+      present,
+    }
   })
   // Opening a walkthrough's link shows its steps beside the code on desktop;
   // phones keep the drawer closed.
@@ -623,16 +667,33 @@ export function App({ project }: AppProps) {
   const stepIndex = walkthroughs.position
   const narrationStep = stepWalkthrough && stepIndex !== null ? stepWalkthrough.steps[stepIndex] : undefined
   const narrationTarget = narrationStep ? stepTarget(narrationStep) : null
-  const narrate = (drift: Drift | "missing") => stepWalkthrough && narrationStep && stepIndex !== null
-    ? <Narration step={narrationStep} index={stepIndex} count={stepWalkthrough.steps.length} drift={drift}
-      canMove={walkthroughs.canMove} onMove={walkthroughs.move} onExit={closeWalkthrough} navigate={navigateToHref} />
+  const stepBarShown = walkthroughs.walkthrough !== null && (presenting || (sidebar.mobile && walkthroughs.routed))
+  const narrate = (check: StepCheck) => stepWalkthrough && narrationStep && stepIndex !== null
+    ? <Narration step={narrationStep} index={stepIndex} count={stepWalkthrough.steps.length} visited={walkthroughs.visited} check={check}
+      controls={!stepBarShown} canMove={walkthroughs.canMove} onMove={walkthroughs.move} onFinish={finishWalkthrough} onExit={closeWalkthrough}
+      prompt={() => stepPrompt({
+        origin: shareableOrigin(window.location.origin),
+        project,
+        walkthroughId: stepWalkthrough.id,
+        walkthroughTitle: stepWalkthrough.title,
+        index: stepIndex,
+        count: stepWalkthrough.steps.length,
+        stepTitle: narrationStep.title,
+        label: stepLabel(narrationStep, compareContext),
+        href: (() => {
+          const route = stepRoute(project, stepWalkthrough.id, stepIndex, narrationStep)
+          return router.buildLocation({ to: "/view", search: { ...route.search }, hash: route.hash }).href
+        })(),
+      })}
+      navigate={navigateToHref} />
     : null
   const sourceAnnotation: SourceAnnotation | undefined = narrationTarget?.kind === "file" && !reviewCompare
     && narrationTarget.path === page.selected && narrationTarget.at === page.at ? {
       line: narrationTarget.lines?.end ?? 0,
+      focus: narrationTarget.lines,
       render: (lineAt) => {
         const lines = narrationTarget.lines
-        return narrate(lines && lineAt ? lineDrift(narrationTarget.expect, lineAt(lines.start)) : "unknown")
+        return narrate(lines && lineAt ? stepCheck(narrationTarget.expect, lineAt(lines.start)) : uncheckedStep)
       },
     } : undefined
   const reviewAnnotation: ReviewAnnotation | undefined = narrationTarget?.kind === "diff" && reviewCompare
@@ -642,8 +703,8 @@ export function App({ project }: AppProps) {
       line: narrationTarget.lines?.end ?? 0,
       render: (lineAt) => {
         const lines = narrationTarget.lines
-        if (!lineAt) return narrate("missing")
-        return narrate(lines ? lineDrift(narrationTarget.expect, lineAt(lines.start)) : "unknown")
+        if (!lineAt) return narrate(missingStep)
+        return narrate(lines ? stepCheck(narrationTarget.expect, lineAt(lines.start)) : uncheckedStep)
       },
     } : undefined
 
@@ -700,6 +761,8 @@ export function App({ project }: AppProps) {
               onClose={closeTab}
               onCloseMany={closeTabs}
               onSelect={selectTab}
+              preview={workspace.preview}
+              onPin={workspace.pin}
             />
             {reviewCompare ? (
               <DiffToolbar options={diffOptions.options} narrow={diffNarrow} onChange={diffOptions.change}
@@ -730,8 +793,10 @@ export function App({ project }: AppProps) {
               scope={scope} marked={markedPaths} /> : undefined}
             diffShown={reviewCompare !== null}
             walkthrough={walkthroughRoute ? <WalkthroughTab detail={walkthroughs.detail} position={walkthroughs.position}
-              context={compareContext} canMove={walkthroughs.canMove} onMove={walkthroughs.move} onGoTo={walkthroughs.goTo}
-              onExit={closeWalkthrough} onRetry={walkthroughs.retry} navigate={navigateToHref} /> : undefined}
+              context={compareContext} note={narrationTarget?.kind === "note" ? narrate(uncheckedStep) : null}
+              visited={walkthroughs.visited} resume={walkthroughs.resume} finished={walkthroughs.finished}
+              justFinished={walkthroughs.justFinished} nextUnread={walkthroughs.nextUnread} onGoTo={walkthroughs.goTo}
+              onOpen={walkthroughs.open} onShowList={showWalkthroughList} onRetry={walkthroughs.retry} navigate={navigateToHref} /> : undefined}
             welcome={welcomeRoute ? <WelcomeTab project={project} roots={page.roots}
               facts={{
                 repository: changes.result?.repository ?? true,
@@ -773,9 +838,9 @@ export function App({ project }: AppProps) {
               onClose={() => setFilesSheet(false)}
               onOpen={(path, focusDocument) => openReview(reviewCompare, focusDocument, path)} />
           )}
-          {walkthroughs.walkthrough && (presenting || (sidebar.mobile && walkthroughs.routed)) && (
+          {walkthroughs.walkthrough && stepBarShown && (
             <WalkthroughStepBar walkthrough={walkthroughs.walkthrough} position={walkthroughs.position} presenting={presenting}
-              canMove={walkthroughs.canMove} onMove={walkthroughs.move}
+              visited={walkthroughs.visited} canMove={walkthroughs.canMove} onMove={walkthroughs.move} onFinish={finishWalkthrough}
               onSteps={sidebar.mobile ? () => revealSidebar("walkthroughs") : undefined}
               onStopPresenting={() => setPresentRequested(false)} />
           )}

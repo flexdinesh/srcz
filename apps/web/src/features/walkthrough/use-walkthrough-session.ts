@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import type { Walkthrough } from "@srcz/contracts"
 import {
-  readWalkthroughMemory, rememberSeen, rememberStep, unseenCount, writeWalkthroughMemory, type WalkthroughMemory,
+  isNew, progressOf, readWalkthroughMemory, rememberFinished, rememberOpened, rememberSeen, rememberStep, rememberVisited, unseenCount,
+  writeWalkthroughMemory, type WalkthroughMemory, type WalkthroughProgress,
 } from "./walkthrough-memory.ts"
 import { coverRoute, parseStep, stepAfter, stepRoute, type StepPosition, type StepRoute } from "./walkthrough-steps.ts"
 import { useWalkthrough, useWalkthroughs, type WalkthroughDetail } from "./use-walkthroughs.ts"
@@ -56,19 +57,21 @@ export function useWalkthroughSession({ project, routeId, routeStep, viewShown, 
     ? parseStep(routeStep, count)
     : remembered !== undefined && remembered < count ? remembered : null
 
-  // visited marks the steps opened this session, per walkthrough.
-  const [visited, setVisited] = useState<ReadonlyMap<string, ReadonlySet<number>>>(new Map())
+  // Opening a walkthrough clears its New mark; each step opened joins its
+  // read steps, kept per browser for this version (decision 0113).
+  const updatedAt = walkthrough?.updatedAt ?? ""
   useEffect(() => {
-    if (!routed || position === null) return
-    update((current) => rememberStep(current, project, selectedId, position))
-    setVisited((current) => {
-      const steps = current.get(selectedId)
-      if (steps?.has(position)) return current
-      const next = new Map(current)
-      next.set(selectedId, new Set([...(steps ?? []), position]))
-      return next
-    })
-  }, [position, project, routed, selectedId, update])
+    if (!updatedAt) return
+    update((current) => rememberOpened(current, project, selectedId, updatedAt))
+  }, [project, selectedId, update, updatedAt])
+  useEffect(() => {
+    if (!routed || position === null || !updatedAt) return
+    update((current) => rememberVisited(rememberStep(current, project, selectedId, position), project, selectedId, updatedAt, position))
+  }, [position, project, routed, selectedId, update, updatedAt])
+  const progress = progressOf(memory, project, selectedId, updatedAt)
+  const visited = useMemo(() => new Set(progress.visited), [progress.visited])
+  // resume is where an unfinished walkthrough was left, past its first step.
+  const resume: StepPosition = !progress.finished && remembered !== undefined && remembered > 0 && remembered < count ? remembered : null
 
   // The view marks every listed walkthrough seen while it shows.
   const newest = list.result?.[0]?.updatedAt
@@ -87,6 +90,22 @@ export function useWalkthroughSession({ project, routeId, routeStep, viewShown, 
     if (next !== undefined) goTo(next)
   }, [count, goTo, position])
 
+  // finish marks the walkthrough read and shows its cover's completion card
+  // (decision 0113).
+  const [finished, setFinished] = useState("")
+  const finish = useCallback(() => {
+    if (!walkthrough) return
+    update((current) => rememberFinished(current, project, walkthrough.id, walkthrough.updatedAt))
+    setFinished(walkthrough.id)
+    go(coverRoute(project, walkthrough.id), true)
+  }, [go, project, update, walkthrough])
+  // advance is Next, or Finish on the last step.
+  const advance = useCallback(() => {
+    if (stepAfter(position, count, 1) !== undefined) move(1)
+    else if (position !== null && position === count - 1) finish()
+  }, [count, finish, move, position])
+  const justFinished = finished !== "" && finished === selectedId && routed && position === null
+
   // open shows a walkthrough's cover, or resumes it where the user left off.
   const open = useCallback((id: string) => {
     setChosen(id)
@@ -98,23 +117,36 @@ export function useWalkthroughSession({ project, routeId, routeStep, viewShown, 
     if (routeId) leave()
   }, [leave, routeId])
 
-  const keys = useRef({ move, active: walkthrough !== null })
-  useEffect(() => { keys.current = { move, active: walkthrough !== null } })
+  const keys = useRef({ move, advance, active: walkthrough !== null })
+  useEffect(() => { keys.current = { move, advance, active: walkthrough !== null } })
   useEffect(() => {
     const step = (event: KeyboardEvent) => {
       if (!keys.current.active || event.defaultPrevented || event.altKey || event.shiftKey || !(event.metaKey || event.ctrlKey)) return
       if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return
       if (isTextField(event.target)) return
       event.preventDefault()
-      keys.current.move(event.key === "ArrowRight" ? 1 : -1)
+      if (event.key === "ArrowRight") keys.current.advance()
+      else keys.current.move(-1)
     }
     document.addEventListener("keydown", step)
     return () => document.removeEventListener("keydown", step)
   }, [])
 
+  const entries = list.result
+  // isNewEntry is whether a listed walkthrough's version was never opened;
+  // progressFor is what was read of it.
+  const isNewEntry = useCallback((id: string, at: string) => isNew(memory, project, id, at), [memory, project])
+  const progressFor = useCallback((id: string, at: string): WalkthroughProgress => progressOf(memory, project, id, at), [memory, project])
+  // nextUnread is the newest other walkthrough not yet opened, for the
+  // completion card.
+  const nextUnread = entries?.find((entry) => entry.id !== selectedId && isNew(memory, project, entry.id, entry.updatedAt)) ?? null
+
   return {
     list,
     unseen,
+    isNewEntry,
+    progressFor,
+    nextUnread,
     selectedId,
     detail: selectedId ? detail : { kind: "none" } satisfies WalkthroughDetail,
     retry,
@@ -122,10 +154,15 @@ export function useWalkthroughSession({ project, routeId, routeStep, viewShown, 
     // routed is set while the route follows the selected walkthrough.
     routed,
     position,
-    visited: visited.get(selectedId) ?? new Set<number>(),
+    visited,
+    finished: progress.finished,
+    justFinished,
+    resume,
     canMove: (direction: 1 | -1) => stepAfter(position, count, direction) !== undefined,
     goTo,
     move,
+    advance,
+    finish,
     open,
     close,
   }

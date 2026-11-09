@@ -1,26 +1,36 @@
 import { useCallback, useEffect, useState } from "react"
 
 import type { DocumentMode } from "../features/documents/DocumentModeToggle.tsx"
-import { documentKey, includesTab, sameTab, type WorkspaceTab } from "./workspace-tabs.ts"
+import { documentKey, includesTab, placeTab, sameTab, type WorkspaceTab } from "./workspace-tabs.ts"
 
 interface DocumentWorkspace {
   tabs: WorkspaceTab[]
+  // preview is the walkthrough step's tab the next step replaces (decision
+  // 0113), or null.
+  preview: WorkspaceTab | null
   // modes are keyed by documentKey.
   modes: ReadonlyMap<string, DocumentMode>
 }
 
-// useDocumentWorkspace owns open tabs; the routed active tab joins them.
-export function useDocumentWorkspace(active: WorkspaceTab | null) {
+// useDocumentWorkspace owns open tabs; the routed active tab joins them, as
+// the preview tab when asPreview (a walkthrough step's route).
+export function useDocumentWorkspace(active: WorkspaceTab | null, asPreview: boolean) {
   const [workspace, setWorkspace] = useState<DocumentWorkspace>(() => ({
-    tabs: active ? [active] : [],
+    ...(active ? placeTab({ tabs: [], preview: null }, active, asPreview) : { tabs: [], preview: null }),
     modes: new Map(),
   }))
   useEffect(() => {
     if (!active) return
-    setWorkspace((current) => includesTab(current.tabs, active)
-      ? current
-      : { ...current, tabs: [...current.tabs, active] })
-  }, [active])
+    setWorkspace((current) => {
+      const placed = placeTab(current, active, asPreview)
+      return placed === current ? current : { ...current, ...placed }
+    })
+  }, [active, asPreview])
+
+  // pin keeps the preview tab open as an ordinary tab.
+  const pin = useCallback((tab?: WorkspaceTab) => {
+    setWorkspace((current) => current.preview && (!tab || sameTab(tab, current.preview)) ? { ...current, preview: null } : current)
+  }, [])
 
   const setDocumentMode = useCallback((key: string, mode: DocumentMode) => {
     setWorkspace((current) => {
@@ -49,7 +59,7 @@ export function useDocumentWorkspace(active: WorkspaceTab | null) {
       const tabs = includesTab(current.tabs, next)
         ? current.tabs.filter((other) => !sameTab(other, tab))
         : current.tabs.map((other) => sameTab(other, tab) ? next : other)
-      return { ...current, tabs }
+      return { ...current, tabs, preview: sameTab(current.preview, tab) ? next : current.preview }
     })
   }, [])
 
@@ -63,10 +73,11 @@ export function useDocumentWorkspace(active: WorkspaceTab | null) {
       const modes = new Map(current.modes)
       // Modes belong to documents; a document's mode outlives its diff tab.
       for (const tab of closed) if (tab.kind === "document") modes.delete(documentKey(tab.path, tab.at))
-      return { tabs: current.tabs.filter((tab) => !includesTab(closed, tab)), modes }
+      const preview = current.preview && includesTab(closed, current.preview) ? null : current.preview
+      return { tabs: current.tabs.filter((tab) => !includesTab(closed, tab)), preview, modes }
     })
     return { tabs: closed, replacement: replacement ?? null }
   }
 
-  return { tabs: workspace.tabs, modes: workspace.modes, setDocumentMode, closeTabs, replaceTab, restore }
+  return { tabs: workspace.tabs, preview: workspace.preview, modes: workspace.modes, setDocumentMode, closeTabs, replaceTab, restore, pin }
 }

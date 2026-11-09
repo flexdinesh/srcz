@@ -7,12 +7,15 @@ import { Button } from "../components/ui/button.tsx"
 import { IconButton } from "../components/ui/icon-button.tsx"
 import { menuItemClass, menuPopupClass, menuPositionerClass, menuSeparatorClass } from "../components/ui/menu.ts"
 import { desktopBridge } from "../lib/desktop-bridge.ts"
-import { isTabMenuAction, REVEAL_LABEL, revealablePath, tabMenuItems, type TabMenuAction } from "./tab-menu.ts"
+import { isTabMenuAction, KEEP_OPEN_LABEL, REVEAL_LABEL, revealablePath, tabMenuItems, type TabMenuAction } from "./tab-menu.ts"
 import { includesTab, sameTab, tabKey, type TabName, type WorkspaceTab } from "./workspace-tabs.ts"
 
 interface TabBarProps {
   active: WorkspaceTab | null
   tabs: readonly WorkspaceTab[]
+  // preview is the walkthrough step's tab the next step replaces (decision
+  // 0113): its name is italic, and a double-click or Keep Open pins it.
+  preview: WorkspaceTab | null
   // name labels a tab; review tabs say what they compare.
   name(tab: WorkspaceTab): TabName
   // project is the tabs' project, for Reveal in File Manager.
@@ -20,9 +23,10 @@ interface TabBarProps {
   onClose(tab: WorkspaceTab): void
   onCloseMany(tabs: readonly WorkspaceTab[]): void
   onSelect(tab: WorkspaceTab): void
+  onPin(tab: WorkspaceTab): void
 }
 
-export function TabBar({ active, name: tabName, onClose, onCloseMany, onSelect, project, tabs }: TabBarProps) {
+export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onSelect, preview, project, tabs }: TabBarProps) {
   const tabList = useRef<HTMLDivElement>(null)
   const activeKey = active ? tabKey(active) : ""
   // The desktop app shows native tab menus and reveals files (decision 0081).
@@ -71,7 +75,8 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onSelect, 
   }
 
   function runMenuAction(action: TabMenuAction, tab: WorkspaceTab, index: number) {
-    if (action === "close") closeFromMenu([tab], tab)
+    if (action === "keep-open") onPin(tab)
+    else if (action === "close") closeFromMenu([tab], tab)
     else if (action === "close-others") closeFromMenu(tabs.filter((entry) => !sameTab(entry, tab)), tab)
     else if (action === "close-right") closeFromMenu(tabs.slice(index + 1), tab)
     else if (action === "close-all") closeFromMenu(tabs, tab)
@@ -81,7 +86,7 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onSelect, 
   function openNativeMenu(event: MouseEvent<HTMLDivElement>, tab: WorkspaceTab, index: number) {
     if (!showContextMenu) return
     event.preventDefault()
-    void showContextMenu(tabMenuItems(tab, index, tabs.length, revealPath !== null), event.clientX, event.clientY).then((id) => {
+    void showContextMenu(tabMenuItems(tab, index, tabs.length, revealPath !== null, sameTab(tab, preview)), event.clientX, event.clientY).then((id) => {
       if (isTabMenuAction(id)) runMenuAction(id, tab, index)
       else focusTab(tab)?.focus()
     })
@@ -114,6 +119,7 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onSelect, 
     <div className="buffer-tabs" role="tablist" aria-label="Open documents" ref={tabList}>
       {tabs.map((tab, index) => {
         const selected = sameTab(tab, active)
+        const previewing = sameTab(tab, preview)
         const { label: name, title } = tabName(tab)
         const className = `buffer-tab${selected ? " active" : ""}`
         const content = (
@@ -127,8 +133,10 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onSelect, 
               aria-haspopup="menu"
               aria-controls="document-pane"
               aria-selected={selected}
-              title={title}
+              title={previewing ? `${title}\nPreview: the next step replaces it. Double-click to keep it open.` : title}
+              data-preview={previewing || undefined}
               onClick={() => onSelect(tab)}
+              onDoubleClick={previewing ? () => onPin(tab) : undefined}
               onKeyDown={(event) => handleKeyDown(event, index)}
             >
               {tab.kind === "review" ? <GitCompareArrowsIcon className="file-icon" aria-hidden="true" />
@@ -162,6 +170,12 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onSelect, 
               <ContextMenu.Positioner className={menuPositionerClass} sideOffset={2}>
                 <ContextMenu.Popup className={menuPopupClass} aria-label={`Tab actions for ${name}`}
                   finalFocus={() => focusTab(tab)}>
+                  {previewing && <>
+                    <ContextMenu.Item className={menuItemClass} onClick={() => onPin(tab)}>
+                      {KEEP_OPEN_LABEL}
+                    </ContextMenu.Item>
+                    <ContextMenu.Separator className={menuSeparatorClass} />
+                  </>}
                   <ContextMenu.Item className={menuItemClass} onClick={() => closeFromMenu([tab], tab)}>
                     Close
                   </ContextMenu.Item>

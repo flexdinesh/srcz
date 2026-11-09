@@ -1,26 +1,49 @@
 import { isRecord } from "../../api/http.ts"
 
-// Per-browser walkthrough memory (decision 0047), under srcz-walkthroughs:
-// each project's newest walkthrough time the user has seen, for the activity
-// badge, and the last step opened in each walkthrough, to resume it. Pure
-// functions return new values; at most 50 projects and 100 walkthroughs each
-// are kept, newest first.
+// Per-browser walkthrough memory (decisions 0047, 0113), under
+// srcz-walkthroughs: each project's newest walkthrough time the user has
+// seen, for the activity badge; the last step opened in each walkthrough, to
+// resume it; and each walkthrough's progress (the steps read and whether it
+// was finished) at the version read. Pure functions return new values; at
+// most 50 projects and 100 walkthroughs each are kept, newest first.
 
 const storageKey = "srcz-walkthroughs"
 const maxProjects = 50
 const maxWalkthroughs = 100
+// maxSteps matches the server's step limit (decision 0047).
+const maxSteps = 200
+
+// WalkthroughProgress is what the user read of one version of a
+// walkthrough: updatedAt names the version, so republishing starts over.
+export interface WalkthroughProgress {
+  updatedAt: string
+  visited: number[]
+  finished: boolean
+}
 
 export interface WalkthroughMemory {
   // seen is the newest updatedAt seen per project.
   seen: Record<string, string>
   // steps is the last step index per project and walkthrough.
   steps: Record<string, Record<string, number>>
+  // progress is per project and walkthrough.
+  progress: Record<string, Record<string, WalkthroughProgress>>
 }
 
-export const emptyWalkthroughMemory: WalkthroughMemory = { seen: {}, steps: {} }
+export const emptyWalkthroughMemory: WalkthroughMemory = { seen: {}, steps: {}, progress: {} }
 
 function entries(value: unknown): [string, unknown][] {
   return isRecord(value) ? Object.entries(value) : []
+}
+
+function isStepIndex(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value < maxSteps
+}
+
+function parseProgress(value: unknown): WalkthroughProgress | null {
+  if (!isRecord(value) || typeof value.updatedAt !== "string") return null
+  const visited = Array.isArray(value.visited) ? [...new Set(value.visited.filter(isStepIndex))].sort((a, b) => a - b) : []
+  return { updatedAt: value.updatedAt, visited, finished: value.finished === true }
 }
 
 export function parseWalkthroughMemory(value: unknown): WalkthroughMemory {
@@ -37,7 +60,56 @@ export function parseWalkthroughMemory(value: unknown): WalkthroughMemory {
     }
     steps[project] = kept
   }
-  return { seen, steps }
+  const progress: Record<string, Record<string, WalkthroughProgress>> = {}
+  for (const [project, ids] of entries(value.progress).slice(0, maxProjects)) {
+    const kept: Record<string, WalkthroughProgress> = {}
+    for (const [id, entry] of entries(ids).slice(0, maxWalkthroughs)) {
+      const parsed = parseProgress(entry)
+      if (parsed) kept[id] = parsed
+    }
+    progress[project] = kept
+  }
+  return { seen, steps, progress }
+}
+
+// progressOf is a walkthrough's progress at version updatedAt; progress of
+// another version counts for nothing.
+export function progressOf(memory: WalkthroughMemory, project: string, id: string, updatedAt: string): WalkthroughProgress {
+  const entry = memory.progress[project]?.[id]
+  return entry && entry.updatedAt === updatedAt ? entry : { updatedAt, visited: [], finished: false }
+}
+
+function withProgress(memory: WalkthroughMemory, project: string, id: string, next: WalkthroughProgress): WalkthroughMemory {
+  const ids = memory.progress[project] ?? {}
+  return { ...memory, progress: withFirst(memory.progress, project, withFirst(ids, id, next, maxWalkthroughs), maxProjects) }
+}
+
+// rememberOpened records that version updatedAt was opened, so the list no
+// longer marks it new.
+export function rememberOpened(memory: WalkthroughMemory, project: string, id: string, updatedAt: string): WalkthroughMemory {
+  if (memory.progress[project]?.[id]?.updatedAt === updatedAt) return memory
+  return withProgress(memory, project, id, progressOf(memory, project, id, updatedAt))
+}
+
+// rememberVisited adds step to version updatedAt's read steps.
+export function rememberVisited(memory: WalkthroughMemory, project: string, id: string, updatedAt: string, step: number): WalkthroughMemory {
+  if (!isStepIndex(step)) return memory
+  const current = progressOf(memory, project, id, updatedAt)
+  if (memory.progress[project]?.[id] === current && current.visited.includes(step)) return memory
+  const visited = [...new Set([...current.visited, step])].sort((a, b) => a - b)
+  return withProgress(memory, project, id, { ...current, visited })
+}
+
+// rememberFinished marks version updatedAt finished.
+export function rememberFinished(memory: WalkthroughMemory, project: string, id: string, updatedAt: string): WalkthroughMemory {
+  const current = progressOf(memory, project, id, updatedAt)
+  if (memory.progress[project]?.[id] === current && current.finished) return memory
+  return withProgress(memory, project, id, { ...current, finished: true })
+}
+
+// isNew is whether the user has not opened this version of a walkthrough.
+export function isNew(memory: WalkthroughMemory, project: string, id: string, updatedAt: string): boolean {
+  return memory.progress[project]?.[id]?.updatedAt !== updatedAt
 }
 
 // withFirst puts key first in record, dropping entries past max.

@@ -13,28 +13,43 @@ works as a walkthrough; Source Zero shows it beside the code.
 
 Open the **Walkthroughs** view (the route icon in the activity bar), or the
 link the agent prints. The badge counts walkthroughs published since you last
-looked. Choose one to see its steps; **Overview** opens its cover, with the
-summary and an outline.
+looked, and a dot marks each one you haven't opened yet. Choose one to see its
+steps; **Overview** opens its cover, with the summary and an outline. If you
+stopped partway through, the cover offers **Resume at step N**.
 
 Each step opens an ordinary tab: the file in Source with the step's lines
 selected, a read-only snapshot at a commit, or a review of uncommitted work, a
-commit, a range, or a branch. The narration appears inside the code, right
-after the step's lines, with Previous, Next, and Close. Notes appear in the
-walkthrough's own tab.
+commit, a range, or a branch. Steps share one preview tab, its name in italics:
+the next step replaces it. Double-click it, or choose **Keep Open** from its
+menu, to keep it. In Source the code around the step's lines is dimmed; a
+review opens the step's file and folds the others. The narration appears
+inside the code, right after the step's lines, with a progress line,
+Previous, Next, and Close. Notes appear alone in the walkthrough's own tab.
+
+Steps you have read get a check in the step list, and Source Zero remembers
+them in this browser. On the last step, **Finish** marks the walkthrough done
+and suggests the next one you haven't opened. Publishing a walkthrough again
+starts its progress over.
+
+To ask your agent about a step, choose **Copy Step for Agent** in the
+narration: it copies the walkthrough, the step, what it points at, and a link,
+ending with “Question: ”.
 
 | Action | Keys |
 | --- | --- |
-| Next step | Ctrl+Right (Cmd+Right on macOS) |
+| Next step (Finish on the last) | Ctrl+Right (Cmd+Right on macOS) |
 | Previous step | Ctrl+Left (Cmd+Left on macOS) |
 | Present | **Present** in the view, or **Walkthrough: Present** in the command palette |
+| Step while presenting | Right or Left, Space or Shift+Space, Page Down or Page Up |
 | Stop presenting | Esc |
 
-Present hides the activity bar, sidebar, tabs, and status bar and floats a
-step bar over the document. On phones the step bar shows while you follow a
+Present hides the activity bar, sidebar, tabs, and status bar, sets the
+narration larger, and floats a step bar over the document. On phones the step bar shows while you follow a
 walkthrough; **Steps** opens the list.
 
 A step can record the start of its first line when it is written. If the code
-changes later, the step says so instead of guessing where the code moved.
+changes later, the step says so, showing the line it expected and the line
+there now, instead of guessing where the code moved.
 Steps pinned to a commit never change.
 
 Walkthroughs live in your user cache (`srcz/walkthroughs`), up to 100 per
