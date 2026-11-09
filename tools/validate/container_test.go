@@ -295,6 +295,21 @@ func TestComposeFileIsolatesRunner(t *testing.T) {
 	}
 }
 
+// Every group target carries the capture that writes status.json.
+func TestEveryTargetCopiesTheCapture(t *testing.T) {
+	raw, err := os.ReadFile("Dockerfile")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(raw)
+	for target := range targetContexts {
+		marker := " AS " + target + "\nCOPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture\n"
+		if !strings.Contains(text, marker) {
+			t.Fatalf("target %s does not start by copying the capture", target)
+		}
+	}
+}
+
 func findLast(d *fakeDocker, fragment string) (fakeCall, int, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()

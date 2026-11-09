@@ -11,6 +11,45 @@
 # Debian packages come from snapshot 20261031T000000Z, which also names the apt
 # caches; change every occurrence together.
 
+# The capture records the environment and the check's exit status, and fails a
+# check that changes tracked files or leaves untracked ones. It always exits 0:
+# the runner reads /out/status.json. Its own stage keeps edits from rebuilding
+# toolchain and dependency layers; every target copies it in.
+FROM scratch AS capture
+COPY --chmod=0755 <<'EOF' /usr/local/bin/srcz-check-capture
+#!/usr/bin/env bash
+set +e
+{
+  uname -sm
+  cat /etc/os-release
+  mise --version
+  mise exec -- go version
+  mise exec -- node --version
+  mise exec -- pnpm --version
+  # Not `pnpm exec`: its dependency check installs, which hangs offline.
+  if [ -x node_modules/.bin/playwright ]; then mise exec -- node_modules/.bin/playwright --version; fi
+  printf 'HOME=%s\nLANG=%s\nTZ=%s\nGOFLAGS=%s\nGOMAXPROCS=%s\nMISE_JOBS=%s\nGOCACHE=%s\n' "$HOME" "$LANG" "$TZ" "$GOFLAGS" "$GOMAXPROCS" "$MISE_JOBS" "$GOCACHE"
+} > /out/environment.txt 2>&1
+"$@" 2>&1 | tee /out/check.log
+codes=("${PIPESTATUS[@]}")
+status=${codes[0]}
+if [ "$status" -eq 0 ] && [ "${codes[1]}" -ne 0 ]; then
+  status=${codes[1]}
+fi
+if ! git diff --exit-code --quiet HEAD; then
+  printf '\nValidation changed tracked source files.\n' >> /out/check.log
+  git diff HEAD >> /out/check.log
+  status=1
+fi
+untracked=$(git ls-files --others --exclude-standard)
+if [ -n "$untracked" ]; then
+  printf '\nValidation created unexpected source files:\n%s\n' "$untracked" >> /out/check.log
+  status=1
+fi
+printf '{"exitCode":%s}\n' "$status" > /out/status.json
+exit 0
+EOF
+
 FROM debian:bookworm-slim@sha256:a3bba7dc7dbcc1f37c2856c51fc9a7fac96608f50cb87b1b4e4d8b8c85ae988e AS base
 ENV HOME=/home/runner \
     XDG_CACHE_HOME=/home/runner/.cache \
@@ -70,41 +109,6 @@ printf '%s\n' 'f4fbb6c4d89648f789b8d909e95ae52de941b085f7a8f14bab233dabf406ef02 
 tar -xJf /tmp/mise.tar.xz -C /tmp
 install /tmp/mise/bin/mise /usr/local/bin/mise
 rm -rf /tmp/mise /tmp/mise.tar.xz
-EOF
-# The capture records the environment and the check's exit status, and fails a
-# check that changes tracked files or leaves untracked ones. It always exits 0:
-# the runner reads /out/status.json.
-COPY --chmod=0755 <<'EOF' /usr/local/bin/srcz-check-capture
-#!/usr/bin/env bash
-set +e
-{
-  uname -sm
-  cat /etc/os-release
-  mise --version
-  mise exec -- go version
-  mise exec -- node --version
-  mise exec -- pnpm --version
-  mise exec -- pnpm exec playwright --version
-  printf 'HOME=%s\nLANG=%s\nTZ=%s\nGOFLAGS=%s\nGOMAXPROCS=%s\nMISE_JOBS=%s\nGOCACHE=%s\n' "$HOME" "$LANG" "$TZ" "$GOFLAGS" "$GOMAXPROCS" "$MISE_JOBS" "$GOCACHE"
-} > /out/environment.txt 2>&1
-"$@" 2>&1 | tee /out/check.log
-codes=("${PIPESTATUS[@]}")
-status=${codes[0]}
-if [ "$status" -eq 0 ] && [ "${codes[1]}" -ne 0 ]; then
-  status=${codes[1]}
-fi
-if ! git diff --exit-code --quiet HEAD; then
-  printf '\nValidation changed tracked source files.\n' >> /out/check.log
-  git diff HEAD >> /out/check.log
-  status=1
-fi
-untracked=$(git ls-files --others --exclude-standard)
-if [ -n "$untracked" ]; then
-  printf '\nValidation created unexpected source files:\n%s\n' "$untracked" >> /out/check.log
-  status=1
-fi
-printf '{"exitCode":%s}\n' "$status" > /out/status.json
-exit 0
 EOF
 WORKDIR /src
 ENTRYPOINT ["/usr/local/bin/srcz-check-capture"]
@@ -174,20 +178,25 @@ RUN --mount=type=cache,id=srcz-check-go-build,target=/home/runner/.cache/go-buil
 
 # Group targets. Runtime caches mount from compose.yaml.
 FROM node-deps AS go
+COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
 COPY --from=go-deps /home/runner/go/pkg/mod /home/runner/go/pkg/mod
 COPY --from=source /src /src
 COPY --from=web /src/apps/srcz/internal/web/dist /src/apps/srcz/internal/web/dist
 
 FROM node-deps AS frontend
+COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
 COPY --from=source /src /src
 
 FROM node-deps AS tooling
+COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
 COPY --from=source /src /src
 
 FROM node-deps AS docs
+COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
 COPY --from=source /src /src
 
 FROM browsers AS browser
+COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
 COPY --from=source /src /src
 COPY --from=web /src/apps/srcz/internal/web/dist /src/apps/srcz/internal/web/dist
 COPY --from=binary /out/srcz /opt/srcz
@@ -199,6 +208,7 @@ ENV SRCZ_BROWSER_BINARY=/opt/srcz \
     SRCZ_BROWSER_WEB_PORT=15183
 
 FROM desktop-deps AS desktop
+COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
 COPY --from=source /src /src
 COPY --from=binary /out/srcz /opt/srcz
 ENV SRCZ_DESKTOP_BINARY=/opt/srcz
