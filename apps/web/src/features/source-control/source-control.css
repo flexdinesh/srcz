@@ -280,29 +280,44 @@
   color: inherit;
 }
 
-/* Row actions replace the trailing age on hover and keyboard focus; the
-   selection's Diff stays shown. Touch shows them on the focused row. */
-.row-action,
+/* Row actions replace the trailing age on hover and keyboard focus. Touch
+   shows them on the focused row. */
 .row-actions {
   display: none;
   flex: none;
-}
-
-.row-actions {
   gap: var(--space-1);
 }
 
-/* Restore IconButton's grid so the glyph stays centered. */
-.compare-row:is(:hover, :focus-within, [data-diff-pinned]) .row-action {
-  display: inline-grid;
-}
-
-.compare-row:is(:hover, :focus-within, [data-diff-pinned]) .row-actions {
+.compare-row:is(:hover, :focus-within) .row-actions {
   display: inline-flex;
 }
 
-.compare-row:is(:hover, :focus-within, [data-diff-pinned]):has(.row-action) .compare-row-age,
 .branch-row:is(:hover, :focus-within) .branch-row-ahead {
+  display: none;
+}
+
+/* A commit's diff glyph replaces the age on hover and keyboard focus and
+   stays on the selection: it says a click opens the diff. It is not a
+   control; clicks reach the row. Pointer focus (a chevron click) does not
+   show it. */
+.commit-diff-glyph {
+  display: none;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: none;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.compare-row-commit[data-selected] .commit-diff-glyph {
+  color: inherit;
+}
+
+.compare-row-commit:is(:hover, :focus-visible, [data-diff-pinned]) .commit-diff-glyph {
+  display: block;
+}
+
+.compare-row-commit:is(:hover, :focus-visible, [data-diff-pinned]):has(.commit-diff-glyph) .compare-row-age {
   display: none;
 }
 
@@ -355,6 +370,27 @@
   width: var(--icon-xs);
   height: var(--icon-xs);
   flex: none;
+}
+
+/* A commit's files bleed to the pane's edges so their hover fill matches
+   other rows; names stay on the details' indent. */
+.commit-details-files {
+  display: grid;
+  justify-self: stretch;
+  margin: 0 calc(-1 * var(--space-2)) 0 calc(-1 * var(--space-5));
+}
+
+/* File rows read as Uncommitted's, not as the details' small lines. */
+.commit-details-file {
+  font-size: var(--text-label);
+}
+
+.commit-details-more .changes-row-folder {
+  color: var(--color-text-secondary);
+}
+
+.commit-details-more:hover .changes-row-folder {
+  color: var(--color-text-primary);
 }
 
 /* Branch names at a commit: bordered code chips; HEAD's branch in accent. */

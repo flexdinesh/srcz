@@ -3,7 +3,8 @@ import test from "node:test"
 
 import type { StackLayer, StackResponse } from "@srcz/contracts"
 import type { Compare } from "./compare.ts"
-import { fileParts, onBaseBranch, refChips, rowDiff, stackRows } from "./source-control-panes.ts"
+import type { CompareFile } from "./compare-files.ts"
+import { detailsFiles, diffGlyph, fileParts, moreFilesLabel, onBaseBranch, refChips, stackRows } from "./source-control-panes.ts"
 
 const a = "a".repeat(40)
 const b = "b".repeat(40)
@@ -25,13 +26,32 @@ test("HEAD on the base branch, or tracking origin's copy, lists all history", ()
   assert.equal(onBaseBranch("main", ""), false)
 })
 
-test("Diff sits on a range's newest commit, and on any other commit", () => {
+test("the diff glyph sits on a range's newest commit, and on any other commit", () => {
   const range: Compare = { kind: "range", from: c, to: a }
-  assert.deepEqual(rowDiff(a, range, [a, b, c]), { compare: range, pinned: true })
-  assert.equal(rowDiff(b, range, [a, b, c]), null)
-  assert.deepEqual(rowDiff("d".repeat(40), range, [a, b, c]), { compare: { kind: "commit", hash: "d".repeat(40) }, pinned: false })
-  assert.deepEqual(rowDiff(a, { kind: "commit", hash: a }, [a]), { compare: { kind: "commit", hash: a }, pinned: true })
-  assert.deepEqual(rowDiff(a, null, []), { compare: { kind: "commit", hash: a }, pinned: false })
+  assert.deepEqual(diffGlyph(a, range, [a, b, c]), { compare: range, pinned: true })
+  assert.equal(diffGlyph(b, range, [a, b, c]), null)
+  assert.deepEqual(diffGlyph("d".repeat(40), range, [a, b, c]), { compare: { kind: "commit", hash: "d".repeat(40) }, pinned: false })
+  assert.deepEqual(diffGlyph(a, { kind: "commit", hash: a }, [a]), { compare: { kind: "commit", hash: a }, pinned: true })
+  assert.deepEqual(diffGlyph(a, null, []), { compare: { kind: "commit", hash: a }, pinned: false })
+})
+
+function file(path: string): CompareFile {
+  return { path, status: "modified" }
+}
+
+test("commit details list the first files in review order, then how many more", () => {
+  const files = [file("b.ts"), file("src/a.ts"), file("a.ts")]
+  assert.deepEqual(detailsFiles(files, false, 2), { shown: [file("src/a.ts"), file("a.ts")], more: 1, truncated: false })
+  assert.deepEqual(detailsFiles(files, false), { shown: [file("src/a.ts"), file("a.ts"), file("b.ts")], more: 0, truncated: false })
+  assert.equal(detailsFiles(Array.from({ length: 25 }, (_, index) => file(`f${index}.ts`)), false).shown.length, 20)
+})
+
+test("the row after capped details names how many files remain", () => {
+  assert.equal(moreFilesLabel({ shown: [], more: 0, truncated: false }), "")
+  assert.equal(moreFilesLabel({ shown: [], more: 1, truncated: false }), "1 more file")
+  assert.equal(moreFilesLabel({ shown: [], more: 1200, truncated: false }), "1,200 more files")
+  assert.equal(moreFilesLabel({ shown: [], more: 1, truncated: true }), "1+ more files")
+  assert.equal(moreFilesLabel({ shown: [], more: 0, truncated: true }), "More files")
 })
 
 test("stack layers name their commits, current first", () => {

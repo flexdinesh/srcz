@@ -4,17 +4,12 @@ import { Button } from "../../components/ui/button.tsx"
 import { ListRow } from "../../components/ui/list-row.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
 import { FileIcon } from "../../components/FileIcon.tsx"
-import type { CompareFile, FileList } from "./compare-files.ts"
+import { statusLetters, statusNames, type CompareFile, type FileList } from "./compare-files.ts"
 import type { ChangesView } from "./source-control-layout.ts"
 import { fileParts } from "./source-control-panes.ts"
 import { FilesTree, type CollapseRequest } from "./FilesTree.tsx"
 import { FileStatsText } from "./DiffStatsText.tsx"
 import { statsLabel, type CompareStats } from "./use-compare-stats.ts"
-
-const statusLetters: Record<CompareFile["status"], string> = { modified: "M", added: "A", untracked: "U", deleted: "D", renamed: "R" }
-const statusNames: Record<CompareFile["status"], string> = {
-  modified: "Modified", added: "Added", untracked: "Untracked", deleted: "Deleted", renamed: "Renamed",
-}
 
 interface UncommittedPaneProps {
   list: FileList
