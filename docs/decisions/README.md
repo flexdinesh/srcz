@@ -40,7 +40,7 @@ rewriting history; update `Status` on the old record.
 | [0032](0032-browser-tests-before-push.md) | Browser tests run before push, not in CI | Accepted; check commands superseded by 0038 |
 | [0033](0033-design-tokens-and-ui-primitives.md) | Design tokens and UI primitives | Accepted; radius tokens removed by 0102; selection fill revised by 0109 |
 | [0034](0034-diff-anchor-reveal-and-hunk-navigation.md) | Diff anchor reveal and hunk navigation | Accepted; extended to review tabs by 0035 |
-| [0035](0035-compare-list-and-review-tab.md) | Compare list and review tab | Accepted; list and Files pane superseded by 0040; kept mounted by 0048 |
+| [0035](0035-compare-list-and-review-tab.md) | Compare list and review tab | Accepted; list and Files pane superseded by 0040; kept mounted by 0048; scroll anchor by 0111 |
 | [0036](0036-omarchy-themes.md) | Omarchy themes and the Color Theme quick pick | Accepted; built-in labels superseded by 0039 |
 | [0037](0037-dark-default-theme.md) | Dark is the default theme | Accepted; labels superseded by 0039 |
 | [0038](0038-mise-dev-tooling-and-env-ports.md) | mise owns dev tooling, tasks, and env-configured dev ports | Accepted |
@@ -114,3 +114,4 @@ rewriting history; update `Status` on the old record.
 | [0108](0108-wider-mark-and-macos-squircle-icon.md) | Wider mark and macOS squircle icon | Accepted; revises 0104 |
 | [0109](0109-neutral-selection-fill.md) | Neutral selection fill | Accepted; revises 0033 |
 | [0110](0110-compose-validation-runner.md) | Docker Compose validation runner | Accepted; supersedes Dagger execution in 0058, 0059, 0096 |
+| [0111](0111-review-pane-single-scroll-anchor.md) | One scroll anchor for the review pane | Accepted; extends 0035 |

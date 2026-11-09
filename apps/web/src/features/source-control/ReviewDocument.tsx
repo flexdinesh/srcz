@@ -212,12 +212,19 @@ function ReviewBody({
   // The pane, not a nested scroller, scrolls, so keyboard scrolling and focus
   // keep working. A fresh load mounts the pane with this review, and layout
   // effects run before the pane's ref is set, so set up in a passive effect;
-  // the virtualizer queues children that connect first.
+  // the virtualizer queues children that connect first. The virtualizer
+  // anchors the scroll itself as rows render, so the browser's own anchoring
+  // stays off while it runs: in WebKit the two disagree, and each scrolls back
+  // what the other moved (decision 0111).
   useEffect(() => {
     const root = scrollRoot.current
     if (!root) return
     virtualizer.setup(root)
-    return () => virtualizer.cleanUp()
+    root.style.overflowAnchor = "none"
+    return () => {
+      root.style.removeProperty("overflow-anchor")
+      virtualizer.cleanUp()
+    }
   }, [scrollRoot, virtualizer])
 
   // Workers render with pool-wide options, so inline emphasis goes there.
