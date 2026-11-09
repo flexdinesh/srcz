@@ -433,6 +433,13 @@ Beside Search files, a compact action toggles Collapse all/Expand all, including
 folders hidden by the filename filter. It is disabled during a nonempty filename search,
 which expands matching ancestors. Directory chevrons are 12px within existing row targets.
 
+Right-click or the context-menu keys on a row open its menu (decision 0114):
+Show File History (files only), Reveal in File Manager (desktop app only),
+then Copy Path and Copy Relative Path, in groups divided by separators. The
+desktop app shows it as a native menu; browsers show it on the shared menu
+surface anchored to the row, focused on open, with Base UI keyboard and
+dismissal; dismissal returns focus to the row.
+
 Changed files shown in the tree carry Source Control's status letter and color
 (Pierre git decorations). Only paths present in the tree are decorated; changes
 outside the tree (below `--depth` or in skipped directories) appear in Source
@@ -469,7 +476,7 @@ project's remembered tabs return. A project that no longer resolves shows
 
 ### Tabs and view mode
 
-Filenames truncate at 12.5rem maximum tab width; titles expose paths. Tabs fill the strip's height without gaps or an active accent rule (decision 0056), in 12px mono with a 1px `border` divider after each (decision 0102). The active tab is a flat, square block that cuts through the strip's hairline and joins the document surface; inactive tabs stay on workspace chrome and alone receive the chrome hover layer. With a precise hovering pointer, inactive close actions appear on hover or focus within the tab; their space stays reserved. Other devices keep all close actions visible, and the active close action is always visible. The strip reveals the whole active tab, including its close action, when it narrows. Keyboard focus retains an inset accent outline. Keyboard focus on the document draws a 2px accent ring around the visible pane, above the sticky gutter (decision 0046). Closing active selects nearest neighbour. Right-click or Shift+F10 on a tab opens a themed context menu: Close, Close Others, Close to the Right, and Close All. Unavailable actions are disabled. Right-click preserves the active document; dismissal returns focus to the tab, and closing returns focus to a surviving tab or the document pane. The Document view group follows declared capabilities: Markdown and SVG show [Preview][Source]; formattable types (JSON, YAML) show [Source][Format]; everything else shows no toggle. The mode group is an `md` `SegmentedControl` filling the 32px toolbar. Image zoom controls share the same `SegmentedControl`; icon-only items are 28px wide, so SVG view and zoom controls fit at 320px. View labels/defaults come from file-type metadata. Open tabs and the active document are remembered per project in browser storage and restored against the fresh tree; mode is remembered per open tab and resets on reload; URL/history remain authoritative for the document. Preview failures explain the problem and preserve access to Source.
+Filenames truncate at 12.5rem maximum tab width; titles expose paths. Tabs fill the strip's height without gaps or an active accent rule (decision 0056), in 12px mono with a 1px `border` divider after each (decision 0102). The active tab is a flat, square block that cuts through the strip's hairline and joins the document surface; inactive tabs stay on workspace chrome and alone receive the chrome hover layer. With a precise hovering pointer, inactive close actions appear on hover or focus within the tab; their space stays reserved. Other devices keep all close actions visible, and the active close action is always visible. The strip reveals the whole active tab, including its close action, when it narrows. Keyboard focus retains an inset accent outline. Keyboard focus on the document draws a 2px accent ring around the visible pane, above the sticky gutter (decision 0046). Closing active selects nearest neighbour. Right-click or Shift+F10 on a tab opens a themed context menu: Close, Close Others, Close to the Right, and Close All; working-tree document tabs add Show File History (and Reveal in File Manager in the desktop app) after a separator (decision 0114). Unavailable actions are disabled. Right-click preserves the active document; dismissal returns focus to the tab, and closing returns focus to a surviving tab or the document pane. The Document view group follows declared capabilities: Markdown and SVG show [Preview][Source]; formattable types (JSON, YAML) show [Source][Format]; everything else shows no toggle. The mode group is an `md` `SegmentedControl` filling the 32px toolbar. Image zoom controls share the same `SegmentedControl`; icon-only items are 28px wide, so SVG view and zoom controls fit at 320px. View labels/defaults come from file-type metadata. Open tabs and the active document are remembered per project in browser storage and restored against the fresh tree; mode is remembered per open tab and resets on reload; URL/history remain authoritative for the document. Preview failures explain the problem and preserve access to Source.
 
 Format runs on demand: Source stays visible until the result arrives (no blank flash), Format is `aria-busy`, and the footer shows Loading after 150ms. Results are cached per file for the session. Formatted output shares Source's full-width, line-numbered viewer. A failure keeps Source, un-presses Format, and shows a slim destructive notice, “Couldn't format: <reason>.”, above the source; pressing Format retries.
 
@@ -511,7 +518,7 @@ Opened at a setting (from the command palette), Settings clears its search, scro
 
 ### Command palette
 
-Ctrl/Cmd+Shift+P or F1 opens a VS Code-style command palette on the content-palette frame (40rem, 12vh from top, sized to its rows). The field shows a muted `>` prompt, “Type a command”, and an Esc hint. Rows are 32px picker rows (44px mobile), 13px: secondary category, a 12px chevron, then the primary title, e.g. “Settings › Font Size”, with the current value right-aligned in muted 12px (“13px”, “Auto”). Typed terms must each match the category or title; matches render in accent, 600 weight. Commands with a title word starting with the first term rank first. The first row is active; arrows wrap, hover activates, Enter or click runs, Escape or the backdrop closes and restores focus. No matches reads “No matching commands”. Each option is named “Category: Title, value”. First is “Preferences › Open Settings”, showing its shortcut (Ctrl+, / ⌘,) in place of a value; it opens Settings with search focused. “Preferences › Color Theme” follows, showing the current theme; then every setting as a command that opens Settings at that setting.
+Ctrl/Cmd+Shift+P or F1 opens a VS Code-style command palette on the content-palette frame (40rem, 12vh from top, sized to its rows). The field shows a muted `>` prompt, “Type a command”, and an Esc hint. Rows are 32px picker rows (44px mobile), 13px: secondary category, a 12px chevron, then the primary title, e.g. “Settings › Font Size”, with the current value right-aligned in muted 12px (“13px”, “Auto”). Typed terms must each match the category or title; matches render in accent, 600 weight. Commands with a title word starting with the first term rank first. The first row is active; arrows wrap, hover activates, Enter or click runs, Escape or the backdrop closes and restores focus. No matches reads “No matching commands”. Each option is named “Category: Title, value”. First is “Preferences › Open Settings”, showing its shortcut (Ctrl+, / ⌘,) in place of a value; it opens Settings with search focused. “Preferences › Color Theme” follows, showing the current theme; then every setting as a command that opens Settings at that setting. “Source Control › Show File History” filters Commits to the working-tree file in view, or opens the empty filter row without one (decision 0114).
 
 The Color Theme quick pick reuses the frame with the placeholder “Select Color Theme (Up/Down Keys to Preview)”: Auto, then lowercase “light themes” and “dark themes” separators, each A–Z. The current theme starts active. Arrows (wrapping) and typing preview the active theme live without storing it; no match restores the stored theme. Enter or click stores the theme and closes; Escape or the backdrop restores the stored theme and closes; focus returns. Hover does not move the active row, so pointer travel never flashes themes. No global shortcut: browsers reserve Ctrl/Cmd+T.
 
@@ -562,7 +569,8 @@ since last commit.”, “Showing the first 5,000 changes.”, the read error wi
 Retry, and unreadable paths under a “Some paths could not be read”
 disclosure.
 
-Commits' header adds a muted “2 ahead of main” in the branch range and a
+Commits' header adds a muted “2 ahead of main” in the branch range, a 20px
+Filter Commits search icon (`aria-pressed` while the filter row shows), and a
 [Branch][All] small `SegmentedControl` (12px, 20px tall, 28px narrow); when
 HEAD is the base branch both items are disabled, All shows pressed, and the
 title says “HEAD is the base branch, so all history shows”. A `role="listbox"`
@@ -595,6 +603,23 @@ file-diff glyph (secondary; selection ink when selected) replaces the age on
 hover and keyboard focus and stays on the selection; on a range it sits on
 the newest selected commit only. It is not a control: it says a click opens
 the diff.
+
+The filter row (decision 0114) sits above the list on the pane's surface
+(4px top, 8px bottom, 12px sides, 4px between its parts) and ends in a 1px
+`border` divider: a field with a search icon, placeholder “Message, author,
+or hash”, and a Clear query action, then, when a path filters the list, a
+removable chip: 1px `border`, 12px monospace path in `text-primary` truncated
+from the start so the file name stays visible, a 12px Pierre icon, and a 20px
+remove action (32px on phones). Typing applies after 200ms; Enter or
+ArrowDown moves to the list; Escape anywhere in the row clears the query and
+path, hides the row, and returns focus to the search icon. Show File History
+(Explorer and tab menus, command palette) opens the row on a path, opens
+the pane, and focuses the field except on phones. Branch/All and paging still
+apply. States: “No commits match.”, and “No commits match in the 10,000 most
+recent commits.” when a page stopped on the scan cap, whose more row reads
+“Search older commits”; a polite live region announces “3 commits match.”.
+With a path, opening a commit or range opens its review at that file. The
+row is never persisted.
 
 Click selects a commit and opens its review tab, keeping focus in the list;
 Shift-click extends a contiguous range from the anchor and opens the

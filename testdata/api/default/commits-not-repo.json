@@ -3,8 +3,11 @@
   "branch": "",
   "base": "",
   "range": "branch",
+  "query": "",
+  "path": "",
   "head": "",
   "ahead": 0,
   "commits": [],
-  "more": false
+  "more": false,
+  "next": 0
 }

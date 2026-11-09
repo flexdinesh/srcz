@@ -511,6 +511,10 @@ func (r *Repository) HeadBlob(name string) (Blob, error) {
 
 // validPath reports whether name is a clean, slash-separated relative path
 // outside any .git directory.
+// ValidPath reports whether name is a repository-relative path git could
+// record: clean, relative, and outside .git.
+func ValidPath(name string) bool { return validPath(name) }
+
 func validPath(name string) bool {
 	if name == "" || strings.HasPrefix(name, "/") || path.Clean(name) != name || name == ".." || strings.HasPrefix(name, "../") {
 		return false

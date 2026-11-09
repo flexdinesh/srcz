@@ -66,7 +66,11 @@ type DiffRequest struct {
 // CommitsRequest pages history (decision 0027). Range defaults to branch;
 // Skip below 0 is invalid; Limit 0 means 50, and otherwise must be from 1 to
 // 100; Head, a full hash, pins the walk (empty walks from HEAD); Base names
-// the base branch (empty finds the default).
+// the base branch (empty finds the default). Query (at most 256 characters,
+// trimmed) keeps commits whose message or author name or email holds it,
+// ignoring case, or whose hash starts with it; Path, repository-relative,
+// keeps commits that change it against their first parent (decision 0114).
+// With either, Skip is the previous page's next.
 type CommitsRequest struct {
 	Project string
 	Range   CommitRange
@@ -74,6 +78,8 @@ type CommitsRequest struct {
 	Limit   int
 	Head    string
 	Base    string
+	Query   string
+	Path    string
 }
 
 // BranchFilesRequest lists a branch's net changes: Base or else the default

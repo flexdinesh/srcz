@@ -7,7 +7,7 @@ import { Button } from "../components/ui/button.tsx"
 import { IconButton } from "../components/ui/icon-button.tsx"
 import { menuItemClass, menuPopupClass, menuPositionerClass, menuSeparatorClass } from "../components/ui/menu.ts"
 import { desktopBridge } from "../lib/desktop-bridge.ts"
-import { isTabMenuAction, KEEP_OPEN_LABEL, REVEAL_LABEL, revealablePath, tabMenuItems, type TabMenuAction } from "./tab-menu.ts"
+import { FILE_HISTORY_LABEL, isTabMenuAction, KEEP_OPEN_LABEL, REVEAL_LABEL, revealablePath, tabMenuItems, type TabMenuAction } from "./tab-menu.ts"
 import { includesTab, sameTab, tabKey, type TabName, type WorkspaceTab } from "./workspace-tabs.ts"
 
 interface TabBarProps {
@@ -24,10 +24,15 @@ interface TabBarProps {
   onCloseMany(tabs: readonly WorkspaceTab[]): void
   onSelect(tab: WorkspaceTab): void
   onPin(tab: WorkspaceTab): void
+  // onShowHistory filters Source Control's commits to a working-tree file.
+  onShowHistory(path: string): void
 }
 
-export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onSelect, preview, project, tabs }: TabBarProps) {
+export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onSelect, onShowHistory, preview, project, tabs }: TabBarProps) {
   const tabList = useRef<HTMLDivElement>(null)
+  // leaving is set when a menu action moves focus elsewhere, so the menu
+  // does not return it to the tab.
+  const leaving = useRef(false)
   const activeKey = active ? tabKey(active) : ""
   // The desktop app shows native tab menus and reveals files (decision 0081).
   const bridge = desktopBridge()
@@ -74,12 +79,20 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onS
     if (path !== null) revealPath?.(project, path)
   }
 
+  function showHistory(tab: WorkspaceTab) {
+    const path = revealablePath(tab)
+    if (path === null) return
+    leaving.current = true
+    onShowHistory(path)
+  }
+
   function runMenuAction(action: TabMenuAction, tab: WorkspaceTab, index: number) {
     if (action === "keep-open") onPin(tab)
     else if (action === "close") closeFromMenu([tab], tab)
     else if (action === "close-others") closeFromMenu(tabs.filter((entry) => !sameTab(entry, tab)), tab)
     else if (action === "close-right") closeFromMenu(tabs.slice(index + 1), tab)
     else if (action === "close-all") closeFromMenu(tabs, tab)
+    else if (action === "file-history") showHistory(tab)
     else reveal(tab)
   }
 
@@ -89,6 +102,8 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onS
     void showContextMenu(tabMenuItems(tab, index, tabs.length, revealPath !== null, sameTab(tab, preview)), event.clientX, event.clientY).then((id) => {
       if (isTabMenuAction(id)) runMenuAction(id, tab, index)
       else focusTab(tab)?.focus()
+      // A native menu has no final focus to skip.
+      leaving.current = false
     })
   }
 
@@ -169,7 +184,11 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onS
             <ContextMenu.Portal>
               <ContextMenu.Positioner className={menuPositionerClass} sideOffset={2}>
                 <ContextMenu.Popup className={menuPopupClass} aria-label={`Tab actions for ${name}`}
-                  finalFocus={() => focusTab(tab)}>
+                  finalFocus={() => {
+                    if (!leaving.current) return focusTab(tab)
+                    leaving.current = false
+                    return false
+                  }}>
                   {previewing && <>
                     <ContextMenu.Item className={menuItemClass} onClick={() => onPin(tab)}>
                       {KEEP_OPEN_LABEL}
@@ -191,11 +210,16 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onS
                   <ContextMenu.Item className={menuItemClass} onClick={() => closeFromMenu(tabs, tab)}>
                     Close All
                   </ContextMenu.Item>
-                  {revealPath && revealablePath(tab) !== null && <>
+                  {revealablePath(tab) !== null && <>
                     <ContextMenu.Separator className={menuSeparatorClass} />
-                    <ContextMenu.Item className={menuItemClass} onClick={() => reveal(tab)}>
-                      {REVEAL_LABEL}
+                    <ContextMenu.Item className={menuItemClass} onClick={() => showHistory(tab)}>
+                      {FILE_HISTORY_LABEL}
                     </ContextMenu.Item>
+                    {revealPath && (
+                      <ContextMenu.Item className={menuItemClass} onClick={() => reveal(tab)}>
+                        {REVEAL_LABEL}
+                      </ContextMenu.Item>
+                    )}
                   </>}
                 </ContextMenu.Popup>
               </ContextMenu.Positioner>

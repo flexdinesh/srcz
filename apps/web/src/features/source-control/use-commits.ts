@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { sameHistoryFilter, type HistoryFilter } from "./commit-filter.ts"
 import { appendedCommits, commitsUrl, refreshedCommits } from "./commit-pages.ts"
 import type { CompareFile, FileList } from "./compare-files.ts"
 import {
@@ -70,8 +71,10 @@ function sameBranch(left: BranchFilesResponse | null, right: BranchFilesResponse
 // read on project load, when Source Control or a live review opens, on window
 // focus or visibility (throttled), on refresh, and when the range or base
 // changes. It never polls. Commits never change, so commit and range file
-// lists are read once. base is the chosen base branch, "" for the default.
-export function useCommits(project: string, viewActive: boolean, range: CommitRange, base: string) {
+// lists are read once. base is the chosen base branch, "" for the default;
+// filter narrows the list to a query and a path (decision 0114).
+export function useCommits(project: string, viewActive: boolean, range: CommitRange, base: string, filter: HistoryFilter) {
+  const { query, path } = filter
   const [state, setState] = useState<CommitsState>({ result: null, error: "", loading: project !== "", loadingMore: false, moreError: "" })
   const [files, setFiles] = useState<ReadonlyMap<string, FileList>>(() => new Map())
   const controller = useRef<AbortController | null>(null)
@@ -127,7 +130,7 @@ export function useCommits(project: string, viewActive: boolean, range: CommitRa
     controller.current = current
     lastRead.current = Date.now()
     setState((previous) => ({ ...previous, loading: true, loadingMore: false, moreError: "" }))
-    fetchHistory(commitsUrl(project, range, "", 0, base), current.signal, isCommitsResponse).then((first) => {
+    fetchHistory(commitsUrl(project, range, "", 0, base, { query, path }), current.signal, isCommitsResponse).then((first) => {
       if (controller.current !== current) return
       setState((previous) => ({ ...previous, result: refreshedCommits(previous.result, first), error: "", loading: false }))
     }, (error: unknown) => {
@@ -138,7 +141,7 @@ export function useCommits(project: string, viewActive: boolean, range: CommitRa
     for (const [key, known] of knownBranches.current) {
       if (key !== branchKey(base, "")) loadBranch(known.base, known.head, true, known.uncommitted)
     }
-  }, [base, loadBranch, project, range])
+  }, [base, loadBranch, path, project, query, range])
 
   useEffect(() => {
     refresh()
@@ -150,16 +153,17 @@ export function useCommits(project: string, viewActive: boolean, range: CommitRa
 
   useRefreshOnReturn(refresh, { lastRead, viewActive })
 
-  // A list read for the other range or base is not this one's history, even
-  // while the switch reads or after it fails.
-  const loaded = state.result?.range === range ? state.result : null
+  // A list read for the other range or filter is not this one's history,
+  // even while the switch reads or after it fails.
+  const loaded = state.result?.range === range && sameHistoryFilter(state.result, { query, path }) ? state.result : null
   const loadMore = useCallback(() => {
     if (!project || !loaded?.more || !loaded.head) return
     moreController.current?.abort()
     const current = new AbortController()
     moreController.current = current
     setState((previous) => ({ ...previous, loadingMore: true, moreError: "" }))
-    fetchHistory(commitsUrl(project, loaded.range, loaded.head, loaded.commits.length, base), current.signal, isCommitsResponse).then((page) => {
+    const from = { query: loaded.query, path: loaded.path }
+    fetchHistory(commitsUrl(project, loaded.range, loaded.head, loaded.next, base, from), current.signal, isCommitsResponse).then((page) => {
       if (moreController.current !== current) return
       setState((previous) => ({
         ...previous,

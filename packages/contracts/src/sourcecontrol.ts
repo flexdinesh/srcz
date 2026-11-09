@@ -238,12 +238,20 @@ export interface CommitsResponse {
   // base is the branch the range compares with, "" when none was found.
   base: string
   range: CommitRange
+  // query and Path are the filters the page applied, "" for none
+  // (decision 0114).
+  query: string
+  path: string
   // head is the commit the walk started from; later pages pass it back.
   head: string
   // ahead counts base..head, 0 without a base.
   ahead: number
   commits: Commit[]
   more: boolean
+  // next is the skip that reads the following page. A filtered page
+  // counts the commits it tested, at most 10,000, so a page may stop on
+  // that cap with fewer matches than its limit, or none.
+  next: number
 }
 
 export function isCommitsResponse(value: unknown): value is CommitsResponse {
@@ -252,10 +260,13 @@ export function isCommitsResponse(value: unknown): value is CommitsResponse {
     && isString(value.branch)
     && isString(value.base)
     && isCommitRange(value.range)
+    && isString(value.query)
+    && isString(value.path)
     && isString(value.head)
     && isNumber(value.ahead)
     && isArrayOf(value.commits, isCommit)
     && isBoolean(value.more)
+    && isNumber(value.next)
 }
 
 // CommitFilesResponse is GET /api/commit-files: a commit's changes against

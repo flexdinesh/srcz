@@ -121,11 +121,16 @@ func TestCommitsListsBranchAndFullHistory(t *testing.T) {
 		query string
 		want  contract.CommitsResponse
 	}{
-		{"", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeBranch, Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit}}},
-		{"&range=all", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit, initialCommit}}},
-		{"&range=all&limit=1", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit}, More: true}},
-		{"&range=all&skip=1&head=" + change.String(), contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Head: change.String(), Ahead: 1, Commits: []contract.Commit{initialCommit}}},
+		{"", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeBranch, Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit}, Next: 1}},
+		{"&range=all", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit, initialCommit}, Next: 2}},
+		{"&range=all&limit=1", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit}, More: true, Next: 1}},
+		{"&range=all&skip=1&head=" + change.String(), contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Head: change.String(), Ahead: 1, Commits: []contract.Commit{initialCommit}, Next: 2}},
 		{"&range=branch&head=" + initial.String(), contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeBranch, Head: initial.String(), Commits: []contract.Commit{}}},
+		// q and path filter; the response names them and counts tested commits.
+		{"&range=all&q=+INITIAL+", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Query: "INITIAL", Head: change.String(), Ahead: 1, Commits: []contract.Commit{initialCommit}, Next: 2}},
+		{"&range=all&path=same.md", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Path: "same.md", Head: change.String(), Ahead: 1, Commits: []contract.Commit{initialCommit}, Next: 2}},
+		{"&range=all&path=scope", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeAll, Path: "scope", Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit, initialCommit}, Next: 2}},
+		{"&path=moved.md&q=body", contract.CommitsResponse{Repository: true, Branch: "feature", Base: "master", Range: contract.RangeBranch, Query: "body", Path: "moved.md", Head: change.String(), Ahead: 1, Commits: []contract.Commit{changeCommit}, Next: 1}},
 	} {
 		var got contract.CommitsResponse
 		if status := requestJSON(t, app, "/api/commits?project=."+test.query, &got); status != http.StatusOK {
@@ -157,6 +162,11 @@ func TestCommitsRejectsInvalidQueries(t *testing.T) {
 		"limit=ten",
 		"head=abc123",
 		"head=" + strings.Repeat("A", 40),
+		"q=" + strings.Repeat("x", 257),
+		"path=/doc.md",
+		"path=../doc.md",
+		"path=.git/HEAD",
+		"path=scope/",
 	} {
 		var failure errorResponse
 		if status := requestJSON(t, app, "/api/commits?project=.&"+query, &failure); status != http.StatusBadRequest || failure.Error == "" {
@@ -179,7 +189,7 @@ func TestCommitsReportsFolders(t *testing.T) {
 	app := newTestApp(t, root)
 
 	response := request(t, app, "/api/commits?project=.&range=all")
-	want := `{"repository":false,"branch":"","base":"","range":"all","head":"","ahead":0,"commits":[],"more":false}`
+	want := `{"repository":false,"branch":"","base":"","range":"all","query":"","path":"","head":"","ahead":0,"commits":[],"more":false,"next":0}`
 	if response.Code != http.StatusOK || strings.TrimSpace(response.Body.String()) != want {
 		t.Fatalf("folder commits = %d %s", response.Code, response.Body.String())
 	}

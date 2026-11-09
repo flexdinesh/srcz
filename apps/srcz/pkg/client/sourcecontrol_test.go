@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -117,6 +118,18 @@ func TestSourceControlParityAcrossTransports(t *testing.T) {
 		{"Commits on the branch", func(c client.Client) outcome {
 			return result(c.Commits(ctx, contract.CommitsRequest{Project: f.root, Base: "main", Limit: 1}))
 		}, "", ""},
+		{"Commits matching a query", func(c client.Client) outcome {
+			return result(c.Commits(ctx, contract.CommitsRequest{Project: f.root, Range: contract.RangeAll, Query: "feature"}))
+		}, "", ""},
+		{"Commits touching a path", func(c client.Client) outcome {
+			return result(c.Commits(ctx, contract.CommitsRequest{Project: f.root, Range: contract.RangeAll, Path: "README.md"}))
+		}, "", ""},
+		{"Commits touching a path from a cursor", func(c client.Client) outcome {
+			return result(c.Commits(ctx, contract.CommitsRequest{Project: f.root, Range: contract.RangeAll, Path: "lines.txt", Skip: 1, Head: f.feature}))
+		}, "", ""},
+		{"Commits with a bad path", func(c client.Client) outcome {
+			return result(c.Commits(ctx, contract.CommitsRequest{Project: f.root, Path: "../README.md"}))
+		}, contract.KindInvalid, ""},
 		{"Commits from a bad head", func(c client.Client) outcome {
 			return result(c.Commits(ctx, contract.CommitsRequest{Project: f.root, Head: "main"}))
 		}, contract.KindInvalid, ""},
@@ -165,6 +178,24 @@ func TestSourceControlParityAcrossTransports(t *testing.T) {
 		}
 		if code := codeOf(got.Err); code != tc.code {
 			t.Errorf("%s code = %q, want %q", tc.name, code, tc.code)
+		}
+	}
+
+	for name, want := range map[string][]string{
+		"Commits matching a query":              {f.feature},
+		"Commits touching a path":               {f.main},
+		"Commits touching a path from a cursor": {f.main},
+	} {
+		page, ok := outcomes[name].Value.(contract.CommitsResponse)
+		if !ok {
+			t.Fatalf("%s = %+v", name, outcomes[name])
+		}
+		got := []string{}
+		for _, commit := range page.Commits {
+			got = append(got, commit.Hash)
+		}
+		if !slices.Equal(got, want) || page.Next != 2 || page.More {
+			t.Errorf("%s = %v, next %d, more %v; want %v, next 2", name, got, page.Next, page.More, want)
 		}
 	}
 

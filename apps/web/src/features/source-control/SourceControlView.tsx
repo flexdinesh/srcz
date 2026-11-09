@@ -1,4 +1,4 @@
-import { FileDiffIcon, FoldVerticalIcon, ListIcon, ListTreeIcon, RefreshCwIcon, UnfoldVerticalIcon, XIcon } from "lucide-react"
+import { FileDiffIcon, FoldVerticalIcon, ListIcon, ListTreeIcon, RefreshCwIcon, SearchIcon, UnfoldVerticalIcon, XIcon } from "lucide-react"
 import { Fragment, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { Badge } from "../../components/ui/badge.tsx"
@@ -12,6 +12,7 @@ import { useSettings } from "../../settings/SettingsProvider.tsx"
 import { uiScale } from "../../settings/settings.ts"
 import { BasePicker } from "./BasePicker.tsx"
 import { BranchesPane } from "./BranchesPane.tsx"
+import { isFiltered } from "./commit-filter.ts"
 import { CommitsPane } from "./CommitsPane.tsx"
 import { workingCompare, type Compare } from "./compare.ts"
 import type { CollapseRequest } from "./FilesTree.tsx"
@@ -21,6 +22,7 @@ import { refChips } from "./source-control-panes.ts"
 import { UncommittedPane } from "./UncommittedPane.tsx"
 import type { BranchStack } from "./use-branch-stack.ts"
 import type { Changes } from "./use-changes.ts"
+import type { CommitFilterState } from "./use-commit-filter.ts"
 import type { Commits } from "./use-commits.ts"
 import type { CompareData } from "./use-compare-data.ts"
 import type { Refs } from "./use-refs.ts"
@@ -29,6 +31,8 @@ import type { SourceControlLayoutState } from "./use-source-control-layout.ts"
 interface SourceControlViewProps {
   changes: Changes
   commits: Commits
+  // commitFilter is the Commits filter row (decision 0114).
+  commitFilter: CommitFilterState
   stack: BranchStack
   layout: SourceControlLayoutState
   refs: Refs
@@ -55,9 +59,10 @@ const paneLabels: Record<PaneId, string> = { working: "Uncommitted", commits: "C
 // choice wins. On desktop open panes split the height with sashes between
 // them; phones stack them and the view scrolls.
 export function SourceControlView({
-  allOnly, changes, commitSelection, commits, layout, mobile, refs, stack, working, workingPath,
+  allOnly, changes, commitFilter, commitSelection, commits, layout, mobile, refs, stack, working, workingPath,
   onDismiss, onOpenReview, onSelectCommits,
 }: SourceControlViewProps) {
+  const filterButton = useRef<HTMLButtonElement>(null)
   const scale = uiScale(useSettings().settings)
   const itemHeight = treeRowHeight(mobile, scale)
   const panes = useRef<HTMLDivElement>(null)
@@ -69,7 +74,8 @@ export function SourceControlView({
   const changeCount = changes.result ? changes.result.files.length : null
   const empty: Record<PaneId, boolean | null> = {
     working: changeCount === null ? null : changeCount === 0,
-    commits: history ? history.commits.length === 0 : null,
+    // A filtered list that matched nothing still shows, to say so.
+    commits: history ? history.commits.length === 0 && !isFiltered(history) : null,
     branches: stack.result ? stack.result.layers.length === 0 : null,
   }
   const open = paneIds.filter((id) => paneOpen(layout.collapsed[id], empty[id]))
@@ -123,7 +129,18 @@ export function SourceControlView({
           {history.ahead.toLocaleString()} ahead of {history.base}
         </span>
       ),
-      actions: (
+      actions: <>
+        <IconButton ref={filterButton} size="xs" label="Filter Commits" title="Filter commits by message, author, or hash"
+          aria-pressed={commitFilter.filter.open} icon={<SearchIcon aria-hidden="true" />}
+          onClick={() => {
+            if (commitFilter.filter.open) {
+              commitFilter.close()
+              return
+            }
+            commitFilter.show()
+            layout.setPaneCollapsed("commits", false)
+            commitFilter.requestFocus()
+          }} />
         <SegmentedControl size="sm" className="source-control-range" aria-label="Commit range">
           <SegmentedItem pressed={!allOnly && layout.range === "branch"} disabled={allOnly}
             title={allOnly ? "HEAD is the base branch, so all history shows" : "Commits on this branch only"}
@@ -132,8 +149,10 @@ export function SourceControlView({
             title={allOnly ? "HEAD is the base branch, so all history shows" : "All history of HEAD"}
             onClick={() => setRange("all")}>All</SegmentedItem>
         </SegmentedControl>
-      ),
-      body: <CommitsPane commits={commits} selection={commitSelection} chips={chips} allOnly={allOnly} mobile={mobile}
+      </>,
+      body: <CommitsPane commits={commits} filter={commitFilter}
+        onFilterClosed={() => filterButton.current?.focus()}
+        selection={commitSelection} chips={chips} allOnly={allOnly} mobile={mobile}
         onSelect={onSelectCommits} onOpen={review} onShowAll={() => setRange("all")} />,
     },
     branches: {

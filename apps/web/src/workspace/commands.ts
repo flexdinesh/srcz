@@ -13,6 +13,7 @@ export type CommandAction =
   | { kind: "walkthrough-exit" }
   | { kind: "walkthrough-present" }
   | { kind: "open-welcome" }
+  | { kind: "show-file-history" }
 
 export interface Command {
   id: string
@@ -32,7 +33,8 @@ export interface CommandMatch {
 // Open Settings and the Color Theme pick come first; then each setting is a
 // command that opens Settings at that setting; then code navigation, which
 // acts on the name last clicked in Source; then walkthrough stepping, which
-// acts on the walkthrough last opened; then Help.
+// acts on the walkthrough last opened; then Source Control's file history,
+// which acts on the working-tree file in view; then Help.
 export const commands: readonly Command[] = [
   { id: "preferences.openSettings", category: "Preferences", title: "Open Settings", action: { kind: "open-settings" } },
   { id: "preferences.colorTheme", category: "Preferences", title: "Color Theme", action: { kind: "select-color-theme" } },
@@ -48,6 +50,7 @@ export const commands: readonly Command[] = [
   { id: "walkthrough.previous", category: "Walkthrough", title: "Previous Step", action: { kind: "walkthrough-step", direction: -1 }, shortcut: mac ? "⌘←" : "Ctrl+Left" },
   { id: "walkthrough.present", category: "Walkthrough", title: "Present", action: { kind: "walkthrough-present" } },
   { id: "walkthrough.exit", category: "Walkthrough", title: "Close Walkthrough", action: { kind: "walkthrough-exit" } },
+  { id: "sourceControl.showFileHistory", category: "Source Control", title: "Show File History", action: { kind: "show-file-history" } },
   { id: "help.welcome", category: "Help", title: "Welcome", action: { kind: "open-welcome" } },
 ]
 

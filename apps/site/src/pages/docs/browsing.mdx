@@ -52,7 +52,9 @@ stays visible; comment syntax inside code stays literal.
 - Keep visited documents in a borderless editor-style tab bar. The active tab
   joins the document surface. Inactive close buttons appear on hover or keyboard
   focus; touch devices keep them visible. Right-click a tab to close it, other
-  tabs, tabs to its right, or all tabs.
+  tabs, tabs to its right, or all tabs, or to show a file's history.
+- Right-click a file or folder in the Explorer to copy its full or relative
+  path; a file's menu also has **Show File History**.
 
 ## Line links and paths
 
@@ -87,7 +89,8 @@ Source Control stacks three panes, always in this order:
 - **Commits** lists your branch's commits since it left its base, or the whole
   history with All, 50 at a time. On the base branch itself it always shows
   the whole history. Click a commit's chevron, or press Right, to show its
-  message, author, date, hash, and the stacked branches it tips.
+  message, author, date, hash, and the stacked branches it tips. The search
+  icon in its header filters commits by message, author, or hash prefix.
 - **Branches** shows your branch stack: the branches between the base and
   your checkout, any built on top of it, and the base at the merge-base.
 
@@ -96,6 +99,23 @@ Drag between open panes to resize them. The base defaults to `origin/HEAD`,
 `main`, or `master`; pick another from the Branches header, and Source Zero
 remembers it per project. Source Zero reads git data directly; `git` need not be
 installed.
+
+### File history and commit search
+
+**Show File History**, in a file's Explorer or tab menu or the command palette
+(**Source Control › Show File History**, for the file in view), filters Commits
+to the commits that changed that file and shows it as a chip under the search
+field; remove the chip with its ×. Type in the field to also match a commit's
+message, author name or email, or the start of its hash (4 or more digits).
+Branch and All still apply, so switch to All for a file's whole history.
+Clicking a commit in a file's history opens its diff at that file. Press
+Escape in the field to clear the filter and hide it.
+
+A file's history compares each commit with its first parent, so a merge shows
+when it brought changes to the file into the branch. It does not follow
+renames: commits from before a rename don't show. Each page searches at most 10,000
+commits; when a rare match leaves a page short, **Load more** (or **Search
+older commits** when nothing matched yet) continues where it stopped.
 
 Click a commit to open its diff. Shift-click another to review the combined
 changes of every commit between them. Arrow keys move through commits without
