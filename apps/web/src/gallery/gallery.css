@@ -71,3 +71,10 @@
 .gallery .ui-menu {
   justify-self: start;
 }
+
+.gallery-gutter {
+  position: relative;
+  width: var(--change-mark-hit);
+  height: var(--source-line-height);
+  background: var(--color-surface);
+}

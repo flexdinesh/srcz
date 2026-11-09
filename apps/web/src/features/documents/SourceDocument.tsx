@@ -1,10 +1,12 @@
-import { Fragment, memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react"
+import { Fragment, memo, useCallback, useMemo, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react"
 
+import { ChangeMark } from "../../components/ui/change-mark.tsx"
 import { CopyButton } from "../../components/ui/copy-button.tsx"
 import type { ColumnRange, NavigationKind } from "../navigation/code-navigation.ts"
 import { clampLineRange, lineReference, spanLines, splitSourceLines, startLineSelection, type LineRange } from "../../lib/line-selection.ts"
 import { showLink, targetAt, wordRange, type SourceTarget } from "../navigation/source-position.ts"
 import { useHighlightedLines } from "../../highlighting/use-highlighted-lines.ts"
+import { markerLabel, markerRows, type ChangeMarker } from "../source-control/change-markers.ts"
 
 // LineSelection connects gutter selection to its owner (the URL fragment).
 export interface LineSelection {
@@ -32,6 +34,13 @@ export interface SourceAnnotation {
   render(lineAt: ((line: number) => string | undefined) | null): ReactNode
 }
 
+// SourceChanges marks where the file differs from HEAD in the gutter
+// (decision 0115); onOpen opens a marker's change in its review.
+export interface SourceChanges {
+  markers: readonly ChangeMarker[]
+  onOpen(marker: ChangeMarker): void
+}
+
 // LineDrag previews a gutter selection until pointer release commits it.
 interface LineDrag {
   anchor: number
@@ -51,6 +60,7 @@ interface SourceDocumentProps {
   selection?: LineSelection
   navigation?: SourceNavigation
   annotation?: SourceAnnotation
+  changes?: SourceChanges
 }
 
 // LineCopyButton copies a line reference from the gutter. Its presses stay
@@ -76,7 +86,7 @@ const SourceLineContent = memo(function SourceLineContent({ line, highlighted }:
     : <span className="source-document-line-content">{line}</span>
 })
 
-export function SourceDocument({ source, language, label, selection, navigation, annotation }: SourceDocumentProps) {
+export function SourceDocument({ source, language, label, selection, navigation, annotation, changes }: SourceDocumentProps) {
   const lines = splitSourceLines(source)
   // Rows show plain text until highlighting arrives.
   const highlightedLines = useHighlightedLines(source, language)
@@ -94,6 +104,8 @@ export function SourceDocument({ source, language, label, selection, navigation,
   }
   const shown = drag?.range ?? range
   const pointer = useRef<{ x: number; y: number } | null>(null)
+  const markers = changes?.markers
+  const marks = useMemo(() => markerRows(markers ?? [], lines.length), [lines.length, markers])
   const [linked, setLinked] = useState<{ line: number; word: ColumnRange } | null>(null)
 
   // link marks the name under the pointer while Ctrl/Cmd is held.
@@ -228,6 +240,7 @@ export function SourceDocument({ source, language, label, selection, navigation,
           const lineNumber = index + 1
           const selected = shown !== null && lineNumber >= shown.start && lineNumber <= shown.end
           const unfocused = focus ? lineNumber < focus.start || lineNumber > focus.end : false
+          const mark = changes ? marks.get(lineNumber) : undefined
           return (
             <Fragment key={lineNumber}>
             <span
@@ -247,6 +260,14 @@ export function SourceDocument({ source, language, label, selection, navigation,
                 <span aria-hidden="true">{lineNumber}</span>
                 {selection && !drag?.active && shown?.start === lineNumber && (
                   <LineCopyButton reference={lineReference(selection.path, shown)} />
+                )}
+                {changes && mark?.bar && (
+                  <ChangeMark kind={mark.bar.marker.kind} label={markerLabel(mark.bar.marker)} named={mark.bar.first}
+                    onActivate={() => mark.bar && changes.onOpen(mark.bar.marker)} />
+                )}
+                {changes && mark?.wedge && (
+                  <ChangeMark kind="deleted" edge={mark.wedge.edge} label={markerLabel(mark.wedge.marker)}
+                    onActivate={() => mark.wedge && changes.onOpen(mark.wedge.marker)} />
                 )}
               </span>
               <SourceLineContent line={line} highlighted={highlightedLines[index]} />

@@ -1,0 +1,82 @@
+.ui-change-mark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--change-mark-hit);
+  height: 100%;
+  padding: 0;
+  border: 0;
+  color: var(--color-accent);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ui-change-mark[data-kind="added"] {
+  color: var(--color-success);
+}
+
+.ui-change-mark[data-kind="deleted"] {
+  z-index: var(--z-raised);
+  height: var(--change-mark-wedge-hit);
+  color: var(--color-destructive);
+  transform: translateY(-50%);
+}
+
+.ui-change-mark[data-edge="start"] {
+  transform: none;
+}
+
+.ui-change-mark[data-edge="end"] {
+  top: auto;
+  bottom: 0;
+  transform: none;
+}
+
+/* The bar: centered in the inset. */
+.ui-change-mark::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--change-mark-width);
+  background: currentColor;
+  content: "";
+  transform: translateX(-50%);
+}
+
+/* The wedge: a right-pointing triangle on the row edge. */
+.ui-change-mark[data-kind="deleted"]::before {
+  top: 50%;
+  bottom: auto;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-block: var(--change-mark-wedge) solid transparent;
+  border-inline-start: calc(var(--change-mark-wedge) * 1.5) solid currentColor;
+  background: none;
+  transform: translate(-50%, -50%);
+  transition: border-width var(--duration-fast) ease-out;
+}
+
+.ui-change-mark[data-edge="start"]::before {
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.ui-change-mark[data-edge="end"]::before {
+  top: auto;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+/* Bars keep their width: a range spans rows, and widening one row would
+   break it. The wedge grows under the pointer. */
+.ui-change-mark[data-kind="deleted"]:hover::before {
+  border-block-width: var(--change-mark-wedge-hover);
+  border-inline-start-width: calc(var(--change-mark-wedge-hover) * 1.5);
+}
+
+.ui-change-mark:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}

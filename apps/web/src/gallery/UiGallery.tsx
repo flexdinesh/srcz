@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode } from "react"
 import { Badge } from "../components/ui/badge.tsx"
 import { BrandMark } from "../components/ui/brand-mark.tsx"
 import { Button, type ButtonSize, type ButtonVariant } from "../components/ui/button.tsx"
+import { ChangeMark } from "../components/ui/change-mark.tsx"
 import { CopyButton } from "../components/ui/copy-button.tsx"
 import { DialogShell } from "../components/ui/dialog-shell.tsx"
 import { IconButton, type IconButtonSize } from "../components/ui/icon-button.tsx"
@@ -142,6 +143,14 @@ export default function UiGallery() {
           <CopyButton text="plain" label="Copy path" />
           <CopyButton text="raised" label="Copy code" variant="raised" />
           <CopyButton text="chip" label="Copy typescript code" variant="chip">typescript</CopyButton>
+        </Row>
+      </Section>
+
+      <Section title="ChangeMark">
+        <Row>
+          <span className="gallery-gutter"><ChangeMark kind="added" label="Added line 3" onActivate={() => {}} /></span>
+          <span className="gallery-gutter"><ChangeMark kind="modified" label="Modified line 8" onActivate={() => {}} /></span>
+          <span className="gallery-gutter"><ChangeMark kind="deleted" edge="start" label="Deleted 2 lines before line 1" onActivate={() => {}} /></span>
         </Row>
       </Section>
 

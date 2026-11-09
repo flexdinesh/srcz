@@ -396,6 +396,7 @@ Every view composes these from `apps/web/src/components/ui/`; a missing capabili
 - **ListRow** / **ListButton**: list density 22px, pick 32px, menu, and drawer. Hover adds the state layer; active and selected rows use the selection fill and ink; disabled (`aria-disabled`) rows take no hover.
 - **SectionToggle** and **Chevron**: 22px disclosure rows; the chevron rotates inside any `aria-expanded="true"` row.
 - **ViewHeader**: the 32px band naming a view or dialog: 12px 600 monospace title, actions at the end.
+- **ChangeMark**: a line gutter's change marker filling the gutter's end inset: a 3px bar (`success` added, `accent` modified) or a `destructive` wedge between rows (deleted). It needs a label (title and accessible name), is no Tab stop, and keeps its presses out of the gutter.
 - **Badge** (neutral counts, accent activity), **Kbd**, **Notice** (info, warning, error; bar or block; errors are alerts), **StatusMessage**, **ProgressBar** (2px sweep, edge or page), **CopyButton** (plain, raised, chip, gutter; check or X feedback for 1.6s, announced), **DialogShell** (palette, panel, viewer, drawer), and the Menu class names for Base UI menus.
 
 Activity bar, tab strip, Pierre trees and diffs, prose, and the Mermaid canvas are feature CSS on tokens; they use the same state roles.
@@ -484,6 +485,8 @@ Format runs on demand: Source stays visible until the result arrives (no blank f
 
 Source works like GitHub and VS Code line links. Clicking a line number selects that line; dragging across line numbers (or on into the code) previews a range and commits it on release; Shift-click extends from the last pressed line in either direction; Escape in the source clears. Touch selects on tap only, keeping scroll. The URL fragment owns the selection (`#L12`, `#L12-L20`, replace history, no refetch), so loading an anchor highlights the range, clamps it to the file, and scrolls its first line to the upper third unless visible. A line anchor opens Markdown/SVG in Source; switching to Preview or Format clears it, since line numbers address the original file only. Selected rows use `accent-subtle` with accent, 600-weight line numbers. A 20px gutter `CopyButton` sits in the gutter's 22px left inset on the first selected line and copies the project-relative `path:12` or `path:12-20`; its icon checks once copied and a status announces it.
 
+Change marks (decision 0115): a file in the Uncommitted change set marks where it differs from HEAD in the gutter's 14px end inset, between the line numbers and the code. Added lines take a 3px `success` bar, modified lines a 3px `accent` bar, and deleted lines a small `destructive` wedge on the edge between the lines around them (inside the first row's top or the last row's bottom at the file's ends). Every mark carries a title and accessible name (“Added lines 3–5”, “Modified line 8”, “Deleted 2 lines after line 7”); a range's later rows repeat it as hidden segments. Bars keep their width on hover, so a range never breaks; the wedge grows a step. A click opens the Uncommitted review at the change's first new-side line (`#f=path&R12`); marks are not Tab stops and never select lines. Untracked and added files show one added range; snapshots, binary files, files over 4 MiB, Format, and folders outside a repository show none. `ChangeMark` in `components/ui/` draws them.
+
 Unregistered text files open as Source and the footer names the type (“Plain text”). Files over 4 MiB show a slim warning-subtle bar above Source, “Large file (6.2 MB): preview and formatting are off.”, adding “Not included in search.” past 8 MiB; Preview/Format stay visible but `aria-disabled` with the reason as a tooltip.
 
 ### Images and binary files
@@ -550,6 +553,8 @@ default split. Phones stack panes at their natural height and the view
 scrolls. Pane state, weights, the list view, the commit range, the review
 rail, and each project's base branch persist under `srcz-source-control`.
 Outside a repository the view reads “This folder isn't a git repository.”
+
+Each Uncommitted file's Source marks its changes in the gutter, and a mark opens this review at the change (see Line selection; decision 0115).
 
 Uncommitted carries the Search count badge (named “4 files”) and actions View
 as Tree / View as List (persisted; list by default), Collapse/Expand All

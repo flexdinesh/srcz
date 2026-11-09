@@ -1234,3 +1234,49 @@ test("a filtered search that stops on the scan cap continues from its cursor", a
   await expect.poll(() => skips.filter(Boolean)).toEqual(["10000"])
   await expect(commitsMessage(page, "No commits match.")).toBeVisible()
 })
+
+// changeMarks are Source's gutter change markers (decision 0115).
+function changeMarks(page: Page) {
+  return page.getByRole("textbox", { name: /source$/ }).getByRole("button", { name: /^(Added|Modified|Deleted) / })
+}
+
+test("Source marks a changed file's lines and opens the review at a mark", async ({ page }) => {
+  await page.goto(`${gitApiOrigin}/view?project=${project}&path=src/app.ts`)
+  await expect(changeMarks(page)).toHaveCount(2)
+  const first = changeMarks(page).first()
+  await expect(first).toHaveAccessibleName("Modified line 1")
+  await expect(first).toHaveAttribute("title", "Modified line 1")
+  await expect(changeMarks(page).nth(1)).toHaveAccessibleName("Modified line 4")
+  // A mark is part of the gutter but never selects lines.
+  await changeMarks(page).nth(1).click()
+  await expect(page).toHaveURL(/[?&]review=working#f=src\/app\.ts&R4$/)
+  await expect(page.getByRole("tab", { name: "Uncommitted", exact: true })).toHaveAttribute("aria-selected", "true")
+  await expect(page.locator(".status-lines")).toHaveText("Ln 4")
+  await expect(reviewFile(page, "src/app.ts").locator(".diff-view [data-line][data-selected-line]").first()).toBeVisible()
+
+  // Untracked files are added whole; unchanged files and snapshots show none.
+  await page.goto(`${gitApiOrigin}/view?project=${project}&path=untracked.txt`)
+  await expect(changeMarks(page)).toHaveCount(1)
+  await expect(changeMarks(page).first()).toHaveAccessibleName(/^Added line/)
+  await page.goto(`${gitApiOrigin}/view?project=${project}&path=clean.md#L1`)
+  await expect(page.getByRole("textbox", { name: /source$/ })).toContainText("Edited on the feature branch.")
+  await expect(changeMarks(page)).toHaveCount(0)
+})
+
+test("Source change marks follow live edits and leave with the change", async ({ page, live }) => {
+  const file = path.join(live.root, "src/app.ts")
+  const original = readFileSync(file, "utf8")
+  try {
+    await page.goto(`${live.origin}/view?project=${encodeURIComponent(live.root)}&path=src/app.ts`)
+    await expect(changeMarks(page)).toHaveCount(2)
+    writeFileSync(file, `${original}// tail\n\n`)
+    await expect(page.getByRole("button", { name: "Added lines 6–7" })).toBeVisible()
+    await expect(changeMarks(page)).toHaveCount(3)
+    // Back at HEAD's text the file leaves the change set.
+    writeFileSync(file, "export const answer = 1\n\nexport function run() {\n  return answer\n}\n")
+    await expect(page.getByRole("textbox", { name: /source$/ })).toContainText("answer = 1")
+    await expect(changeMarks(page)).toHaveCount(0)
+  } finally {
+    writeFileSync(file, original)
+  }
+})
