@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PointerEvent, type ReactNode } from "react"
 
-import type { DiffResponse } from "@srcz/contracts"
+import type { DiffResponse } from "@zero/contracts"
 import { StatusMessage } from "@/components/ui/notice"
 
 import { SegmentedControl, SegmentedItem } from "../../components/ui/segmented-control.tsx"

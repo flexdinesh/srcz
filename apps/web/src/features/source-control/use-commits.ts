@@ -6,7 +6,7 @@ import type { CompareFile, FileList } from "./compare-files.ts"
 import {
   isBranchFilesResponse, isCommitFilesResponse, isCommitsResponse, isRangeFilesResponse,
   type BranchFilesResponse, type CommitRange, type CommitsResponse,
-} from "@srcz/contracts"
+} from "@zero/contracts"
 import { historyError } from "../../api/source-control-messages.ts"
 import { failureReason, fetchJSON, isAbort } from "../../api/http.ts"
 import { useRefreshOnReturn } from "./use-refresh-on-return.ts"

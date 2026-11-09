@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { ChangedFile, DiffResponse, FileType, PageData } from "@srcz/contracts"
+import type { ChangedFile, DiffResponse, FileType, PageData } from "@zero/contracts"
 import {
   changeMarkers, diffMarkers, markerLabel, markerLine, markerRows, markerSizeLimit, markerSource, wholeMarkers, type ChangeMarker,
 } from "./change-markers.ts"

@@ -37,15 +37,15 @@ run = [{ tasks = ["dev:server", "dev:web", "dev:walkthroughs"] }]
 # stored in .dev/cache, not the user cache; Go keeps its own build cache.
 [tasks."dev:server"]
 description = "Run only the Go server"
-env = { SRCZ_BROWSER_GIT_ROOT = "{{config_root}}/.dev/git-fixture" }
+env = { ZERO_BROWSER_GIT_ROOT = "{{config_root}}/.dev/git-fixture" }
 run = [
   "node tests/browser/git-fixture.ts",
-  "GOCACHE=\"$(go env GOCACHE)\" XDG_CACHE_HOME=\"{{config_root}}/.dev/cache\" go run ./apps/srcz testdata/markdown --path \"$SRCZ_BROWSER_GIT_ROOT\" --port ${SRCZ_DEV_SERVER_PORT:-8080} --no-open",
+  "GOCACHE=\"$(go env GOCACHE)\" XDG_CACHE_HOME=\"{{config_root}}/.dev/cache\" go run ./apps/zero testdata/markdown --path \"$ZERO_BROWSER_GIT_ROOT\" --port ${ZERO_DEV_SERVER_PORT:-8080} --no-open",
 ]
 
 [tasks."dev:walkthroughs"]
 description = "Publish sample walkthroughs once the Go server is up"
-env = { SRCZ_BROWSER_GIT_ROOT = "{{config_root}}/.dev/git-fixture" }
+env = { ZERO_BROWSER_GIT_ROOT = "{{config_root}}/.dev/git-fixture" }
 run = "node scripts/dev-walkthroughs.ts"
 
 [tasks."dev:web"]
@@ -59,11 +59,11 @@ run = "pnpm dev:web"
 [tasks."dev:desktop"]
 description = "Run the desktop app against a private dev daemon"
 depends = ["build:web"]
-env = { SRCZ_DESKTOP_BINARY = "{{config_root}}/.dev/desktop/srcz", SRCZ_DESKTOP_SOCKET = "{{config_root}}/.dev/desktop/daemon.sock", SRCZ_DESKTOP_ROOTS_FILE = "{{config_root}}/.dev/desktop/roots.json", MYGO_ENV = "production" }
+env = { ZERO_DESKTOP_BINARY = "{{config_root}}/.dev/desktop/zero", ZERO_DESKTOP_SOCKET = "{{config_root}}/.dev/desktop/daemon.sock", ZERO_DESKTOP_ROOTS_FILE = "{{config_root}}/.dev/desktop/roots.json", MYGO_ENV = "production" }
 run = [
-  "go build -o .dev/desktop/srcz ./apps/srcz",
-  "GOWORK=off GOTOOLCHAIN=go1.27.3 go -C apps/desktop build -o \"{{config_root}}/.dev/desktop/srcz-desktop\" .",
-  "XDG_DATA_HOME=\"{{config_root}}/.dev/desktop/data\" XDG_CACHE_HOME=\"{{config_root}}/.dev/cache\" .dev/desktop/srcz-desktop",
+  "go build -o .dev/desktop/zero ./apps/zero",
+  "GOWORK=off GOTOOLCHAIN=go1.27.3 go -C apps/desktop build -o \"{{config_root}}/.dev/desktop/zero-desktop\" .",
+  "XDG_DATA_HOME=\"{{config_root}}/.dev/desktop/data\" XDG_CACHE_HOME=\"{{config_root}}/.dev/cache\" .dev/desktop/zero-desktop",
 ]
 
 [tasks."dev:mock"]
@@ -92,12 +92,12 @@ sources = [
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
 ]
-outputs = ["apps/srcz/internal/web/dist/**/*"]
+outputs = ["apps/zero/internal/web/dist/**/*"]
 
 [tasks."build:go"]
 description = "Build all Go packages"
 depends = ["build:web"]
-run = "go build ./apps/srcz/... ./tools/..."
+run = "go build ./apps/zero/... ./tools/..."
 
 [tasks."build:site"]
 description = "Build the docs site; skipped when inputs are unchanged"
@@ -116,7 +116,7 @@ outputs = ["apps/site/dist/**/*"]
 [tasks.install]
 description = "Install the local CLI with go install"
 depends = ["build:web"]
-run = "go install ./apps/srcz"
+run = "go install ./apps/zero"
 
 # Public checks snapshot current edits. Container leaves never call these wrappers.
 
@@ -136,10 +136,10 @@ run = "go run ./tools/validate working --group repo --task _host:mise:check"
 description = "Run contracts:check against a private current-edit snapshot"
 run = "go run ./tools/validate working --group repo --task _host:contracts:check"
 
-# Writes packages/contracts from apps/srcz/pkg/contract (decision 0080); a
+# Writes packages/contracts from apps/zero/pkg/contract (decision 0080); a
 # host operation like formatting.
 [tasks."contracts:generate"]
-description = "Generate packages/contracts from apps/srcz/pkg/contract"
+description = "Generate packages/contracts from apps/zero/pkg/contract"
 run = "go run ./tools/contracts"
 
 [tasks."vet"]
@@ -250,7 +250,7 @@ run = "pnpm exec tsc --noEmit"
 
 [tasks."_host:site-static"]
 hide = true
-run = "pnpm --filter @srcz/site typecheck"
+run = "pnpm --filter @zero/site typecheck"
 
 [tasks."_container:go"]
 hide = true
@@ -274,7 +274,7 @@ run = "pnpm exec node scripts/test-browser.ts --project=chromium --grep-invert @
 
 [tasks."_container:browser-extended"]
 hide = true
-env = { SRCZ_BROWSER_EXTENDED = "1" }
+env = { ZERO_BROWSER_EXTENDED = "1" }
 run = "pnpm exec node scripts/test-browser.ts --project=chromium --grep @extended"
 
 [tasks."_container:webkit"]
@@ -283,15 +283,15 @@ run = "pnpm exec node scripts/test-browser.ts --project=webkit --grep-invert @ex
 
 [tasks."_container:binary"]
 hide = true
-run = "go build -buildvcs=false -o /out/srcz ./apps/srcz"
+run = "go build -buildvcs=false -o /out/zero ./apps/zero"
 
 [tasks."_host:tidy:check"]
 hide = true
-run = "go -C apps/srcz mod tidy -diff && go -C tools mod tidy -diff"
+run = "go -C apps/zero mod tidy -diff && go -C tools mod tidy -diff"
 
 [tasks."_container:vet"]
 hide = true
-run = "go vet ./apps/srcz/... ./tools/..."
+run = "go vet ./apps/zero/... ./tools/..."
 
 [tasks."_container:test:web"]
 hide = true
@@ -307,7 +307,7 @@ run = "pnpm exec node scripts/test-browser.ts --project=chromium --grep-invert @
 
 [tasks."_container:test:browser:extended"]
 hide = true
-env = { SRCZ_BROWSER_EXTENDED = "1" }
+env = { ZERO_BROWSER_EXTENDED = "1" }
 run = "pnpm exec node scripts/test-browser.ts --project=chromium --grep @extended"
 
 # Opt-in WebKit compatibility run; never part of check:pr.
@@ -316,30 +316,30 @@ hide = true
 run = "pnpm exec node scripts/test-browser.ts --project=webkit --grep-invert @extended"
 
 # The desktop app (decision 0095): its own Go 1.27 module outside go.work.
-# SRCZ_DESKTOP_GOROOT is the container's Go 1.27; mise's GOROOT points at the
+# ZERO_DESKTOP_GOROOT is the container's Go 1.27; mise's GOROOT points at the
 # locked Go. The group runs the unit tests, then the built app on Xvfb, Mesa,
 # GTK, and WebKitGTK; artifacts in /out/desktop-e2e.
 [tasks."_container:desktop"]
 hide = true
-run = "bash -ec 'shellcheck -s sh apps/desktop/scripts/*.sh; export GOROOT=$SRCZ_DESKTOP_GOROOT PATH=$SRCZ_DESKTOP_GOROOT/bin:$PATH; go -C apps/desktop mod tidy -diff; go -C apps/desktop vet ./...; go -C apps/desktop vet -tags e2e ./...; go -C apps/desktop test -race -count=1 ./...; SRCZ_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
+run = "bash -ec 'shellcheck -s sh apps/desktop/scripts/*.sh; export GOROOT=$ZERO_DESKTOP_GOROOT PATH=$ZERO_DESKTOP_GOROOT/bin:$PATH; go -C apps/desktop mod tidy -diff; go -C apps/desktop vet ./...; go -C apps/desktop vet -tags e2e ./...; go -C apps/desktop test -race -count=1 ./...; ZERO_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
 
 [tasks."_container:test:desktop"]
 hide = true
-run = "bash -ec 'shellcheck -s sh apps/desktop/scripts/*.sh; export GOROOT=$SRCZ_DESKTOP_GOROOT PATH=$SRCZ_DESKTOP_GOROOT/bin:$PATH; go -C apps/desktop mod tidy -diff; go -C apps/desktop vet ./...; go -C apps/desktop vet -tags e2e ./...; go -C apps/desktop test -race -count=1 ./...'"
+run = "bash -ec 'shellcheck -s sh apps/desktop/scripts/*.sh; export GOROOT=$ZERO_DESKTOP_GOROOT PATH=$ZERO_DESKTOP_GOROOT/bin:$PATH; go -C apps/desktop mod tidy -diff; go -C apps/desktop vet ./...; go -C apps/desktop vet -tags e2e ./...; go -C apps/desktop test -race -count=1 ./...'"
 
 [tasks."_container:test:desktop:e2e"]
 hide = true
-run = "bash -ec 'export GOROOT=$SRCZ_DESKTOP_GOROOT PATH=$SRCZ_DESKTOP_GOROOT/bin:$PATH; SRCZ_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
+run = "bash -ec 'export GOROOT=$ZERO_DESKTOP_GOROOT PATH=$ZERO_DESKTOP_GOROOT/bin:$PATH; ZERO_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
 
 [tasks."_container:desktop-extended"]
 hide = true
-env = { SRCZ_DESKTOP_EXTENDED = "1" }
-run = "bash -ec 'export GOROOT=$SRCZ_DESKTOP_GOROOT PATH=$SRCZ_DESKTOP_GOROOT/bin:$PATH; SRCZ_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
+env = { ZERO_DESKTOP_EXTENDED = "1" }
+run = "bash -ec 'export GOROOT=$ZERO_DESKTOP_GOROOT PATH=$ZERO_DESKTOP_GOROOT/bin:$PATH; ZERO_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
 
 [tasks."_container:test:desktop:extended"]
 hide = true
-env = { SRCZ_DESKTOP_EXTENDED = "1" }
-run = "bash -ec 'export GOROOT=$SRCZ_DESKTOP_GOROOT PATH=$SRCZ_DESKTOP_GOROOT/bin:$PATH; SRCZ_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
+env = { ZERO_DESKTOP_EXTENDED = "1" }
+run = "bash -ec 'export GOROOT=$ZERO_DESKTOP_GOROOT PATH=$ZERO_DESKTOP_GOROOT/bin:$PATH; ZERO_DESKTOP_E2E_OUT=/out/desktop-e2e xvfb-run -a --server-args=\"-screen 0 1280x800x24\" dbus-run-session -- sh apps/desktop/scripts/e2e.sh'"
 
 [tasks."_container:build:site"]
 hide = true
@@ -347,7 +347,7 @@ run = "pnpm build:site"
 
 [tasks."_host:typecheck:web"]
 hide = true
-run = "pnpm --filter @srcz/web typecheck"
+run = "pnpm --filter @zero/web typecheck"
 
 [tasks."_host:typecheck:root"]
 hide = true
@@ -355,11 +355,11 @@ run = "pnpm exec tsc --noEmit"
 
 [tasks."_host:typecheck:site"]
 hide = true
-run = "pnpm --filter @srcz/site typecheck"
+run = "pnpm --filter @zero/site typecheck"
 
 [tasks."_host:lint"]
 hide = true
-run = "pnpm --filter @srcz/web lint"
+run = "pnpm --filter @zero/web lint"
 
 [tasks."_host:fmt:check"]
 hide = true
@@ -382,8 +382,8 @@ run = "go run ./tools/contracts -check"
 
 [tasks."_container:test:go"]
 hide = true
-run = "node -e 'const p=require(\"./node_modules/typescript/package.json\"); if(p.name !== \"typescript\" || Number(p.version.split(\".\")[0]) < 7) throw new Error(\"native TypeScript is required for Go navigation tests\")' && test -x node_modules/typescript/bin/tsc && node_modules/typescript/bin/tsc --version && bash -c 'if [ \"$#\" -eq 0 ]; then set -- ./apps/srcz/... ./tools/...; fi; exec go test -count=1 \"$@\"' go-test"
+run = "node -e 'const p=require(\"./node_modules/typescript/package.json\"); if(p.name !== \"typescript\" || Number(p.version.split(\".\")[0]) < 7) throw new Error(\"native TypeScript is required for Go navigation tests\")' && test -x node_modules/typescript/bin/tsc && node_modules/typescript/bin/tsc --version && bash -c 'if [ \"$#\" -eq 0 ]; then set -- ./apps/zero/... ./tools/...; fi; exec go test -count=1 \"$@\"' go-test"
 
 [tasks."_container:test:race"]
 hide = true
-run = "node -e 'const p=require(\"./node_modules/typescript/package.json\"); if(p.name !== \"typescript\" || Number(p.version.split(\".\")[0]) < 7) throw new Error(\"native TypeScript is required for Go navigation tests\")' && test -x node_modules/typescript/bin/tsc && node_modules/typescript/bin/tsc --version && bash -c 'if [ \"$#\" -eq 0 ]; then set -- ./apps/srcz/... ./tools/...; fi; exec go test -race -count=1 \"$@\"' go-test"
+run = "node -e 'const p=require(\"./node_modules/typescript/package.json\"); if(p.name !== \"typescript\" || Number(p.version.split(\".\")[0]) < 7) throw new Error(\"native TypeScript is required for Go navigation tests\")' && test -x node_modules/typescript/bin/tsc && node_modules/typescript/bin/tsc --version && bash -c 'if [ \"$#\" -eq 0 ]; then set -- ./apps/zero/... ./tools/...; fi; exec go test -race -count=1 \"$@\"' go-test"

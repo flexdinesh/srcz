@@ -1,18 +1,11 @@
 #!/bin/sh
-# Removes srcz from this machine: the CLI the user can write in ~/.local/bin,
-# ~/bin, or Go's install directory; the desktop app, its desktop entry and icon.
-# Prints how to remove package-managed copies (Homebrew, mise). Never deletes user data
-# (app data, page state, roots.json, caches). Decision 0073.
-#
-#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/uninstall.sh | sh
-
-# The shared blocks define REPO and ARCH, which uninstalling never needs.
+# Removes only fingerprint-verified installer-owned files. Retains user data.
 # shellcheck disable=SC2034
 
 # shared:base:begin
 set -eu
 
-REPO="flexdinesh/srcz"
+REPO="flexdinesh/zero"
 
 if [ -t 1 ]; then
   BOLD="$(printf '\033[1m')"
@@ -44,12 +37,12 @@ detect_platform() {
   case "$(uname -s)" in
     Linux) OS=linux ;;
     Darwin) OS=darwin ;;
-    *) fail "unsupported OS $(uname -s): srcz supports macOS and Linux" ;;
+    *) fail "unsupported OS $(uname -s): zero supports macOS and Linux" ;;
   esac
   case "$(uname -m)" in
     x86_64 | amd64) ARCH=amd64 ;;
     aarch64 | arm64) ARCH=arm64 ;;
-    *) fail "unsupported architecture $(uname -m): srcz supports amd64 and arm64" ;;
+    *) fail "unsupported architecture $(uname -m): zero supports amd64 and arm64" ;;
   esac
 }
 
@@ -69,7 +62,7 @@ cleanup() {
   if [ -n "$TMP" ]; then rm -rf "$TMP"; fi
 }
 make_tmp() {
-  TMP="$(mktemp -d 2>/dev/null || mktemp -d -t srcz)"
+  TMP="$(mktemp -d 2>/dev/null || mktemp -d -t zero)"
   trap cleanup EXIT
   trap 'exit 130' INT TERM
 }
@@ -87,134 +80,216 @@ case "$DESKTOP_CONFIG" in
   *) DESKTOP_CONFIG="$HOME/.config" ;;
 esac
 # The app has a directory of its own: WebKit keeps the page's localStorage
-# beside it in srcz-desktop/, which updates and uninstall leave alone.
-DESKTOP_HOME="$DESKTOP_DATA/srcz-desktop/app"
-DESKTOP_ID="srcz-desktop.desktop"
-DESKTOP_ICON="$DESKTOP_DATA/icons/hicolor/512x512/apps/srcz-desktop.png"
+# beside it in zero-desktop/, which updates and uninstall leave alone.
+DESKTOP_HOME="$DESKTOP_DATA/zero-desktop/app"
+DESKTOP_ID="zero-desktop.desktop"
+DESKTOP_ICON="$DESKTOP_DATA/icons/hicolor/512x512/apps/zero-desktop.png"
 
 desktop_running() {
   has pgrep || return 1
   if [ "$OS" = darwin ]; then
-    pgrep -f 'srcz-desktop\.app/Contents/MacOS/srcz-desktop' >/dev/null 2>&1
+    pgrep -f 'zero-desktop\.app/Contents/MacOS/zero-desktop' >/dev/null 2>&1
   else
-    pgrep -x -u "$(id -u)" srcz-desktop >/dev/null 2>&1
+    pgrep -x -u "$(id -u)" zero-desktop >/dev/null 2>&1
   fi
 }
 # shared:desktop:end
 
-REMOVED=0
-
-# remove PATH... deletes each existing PATH.
-remove() {
-  for path in "$@"; do
-    if [ -e "$path" ] || [ -L "$path" ]; then
-      rm -rf "$path"
-      ok "removed $path"
-      REMOVED=$((REMOVED + 1))
-    fi
-  done
+# shared:ownership:begin
+# Data only: header, name<TAB>basename, then role<TAB>absolute-path<TAB>fingerprint.
+# Never source this file or use unverified programs to identify an installation.
+occupied() { [ -e "$1" ] || [ -L "$1" ]; }
+valid_name() {
+  case "$1" in
+    '' | [!A-Za-z0-9_]* | *[!A-Za-z0-9_.+-]* | zero-desktop) return 1 ;;
+  esac
 }
 
-# report_kept PATH... lists the user data directories that exist.
-report_kept() {
-  heading=1
-  for path in "$@"; do
-    [ -e "$path" ] || continue
-    if [ "$heading" = 1 ]; then
-      step "kept your data (delete it yourself if you no longer need it):"
-      heading=0
-    fi
-    note "$path"
-  done
-}
-
-# go_bin prints the directory go install writes to.
-go_bin() {
-  dir=""
-  if has go; then
-    dir="$(GOTOOLCHAIN=local go env GOBIN 2>/dev/null || true)"
-    if [ -z "$dir" ]; then
-      gopath="$(GOTOOLCHAIN=local go env GOPATH 2>/dev/null | cut -d: -f1 || true)"
-      if [ -n "$gopath" ]; then dir="$gopath/bin"; fi
-    fi
+hash() {
+  if has sha256sum; then sum="$(sha256sum)" || return 1
+  elif has shasum; then sum="$(shasum -a 256)" || return 1
+  else fail "sha256sum or shasum is required"
   fi
-  printf '%s' "${dir:-$HOME/go/bin}"
+  printf '%s\n' "${sum%% *}"
 }
+
+# Includes names, empty directories, executable bits, link targets, and bytes.
+# Directory traversal never follows symlinks.
+fingerprint() (
+  if [ -L "$1" ]; then
+    link="$(readlink "$1")" || exit 1
+    content="$(printf '%s\n' "$link" | hash)" || exit 1
+    printf 'l:%s\n' "$content"
+  elif [ -f "$1" ]; then
+    executable=0
+    if [ -x "$1" ]; then executable=1; fi
+    content="$(hash <"$1")" || exit 1
+    printf 'f:%s:%s\n' "$content" "$executable"
+  elif [ -d "$1" ]; then
+    cd "$1" || exit 1
+    listing="$(mktemp "$TMP/tree.XXXXXX")"
+    entries="$(mktemp "$TMP/entries.XXXXXX")"
+    find . -print >"$listing" || exit 1
+    LC_ALL=C sort "$listing" >"$entries"
+    while IFS= read -r entry; do
+      case "$entry" in *"$TAB"*) exit 1 ;; esac
+      printf '%s\t' "$entry"
+      if [ -L "$entry" ]; then
+        link="$(readlink "$entry")" || exit 1
+        content="$(printf '%s\n' "$link" | hash)" || exit 1
+        printf 'l:%s\n' "$content"
+      elif [ -f "$entry" ]; then
+        executable=0
+        if [ -x "$entry" ]; then executable=1; fi
+        content="$(hash <"$entry")" || exit 1
+        printf 'f:%s:%s\n' "$content" "$executable"
+      elif [ -d "$entry" ]; then printf 'd\n'
+      else exit 1
+      fi
+    done <"$entries" >"$listing" || exit 1
+    content="$(hash <"$listing")" || exit 1
+    printf 'd:%s\n' "$content"
+  else return 1
+  fi
+)
+
+init_records() {
+  has sha256sum || has shasum || fail "sha256sum or shasum is required"
+  TAB="$(printf '\t')"
+  if [ "$OS" = darwin ]; then
+    ZERO_CONFIG="$HOME/Library/Application Support/zero"
+  else
+    ZERO_CONFIG="$DESKTOP_CONFIG/zero"
+  fi
+  RECORD="$ZERO_CONFIG/install.tsv"
+  OLD_RECORD="$TMP/old-record"
+  : >"$OLD_RECORD"
+  OLD_NAME=""
+  # Line-oriented records cannot represent tabs/newlines. Refuse, never truncate.
+  case "$HOME$ZERO_CONFIG$DESKTOP_DATA${PATH:-}" in
+    *"$TAB"* | *'
+'*) fail "installation paths cannot contain tabs or newlines" ;;
+  esac
+  [ ! -L "$ZERO_CONFIG" ] || fail "refusing symlink configuration directory $ZERO_CONFIG"
+  if occupied "$ZERO_CONFIG" && [ ! -d "$ZERO_CONFIG" ]; then fail "configuration path is not a directory: $ZERO_CONFIG"; fi
+  if occupied "$RECORD"; then
+    [ -f "$RECORD" ] && [ ! -L "$RECORD" ] || fail "invalid ownership record $RECORD"
+    {
+      IFS= read -r header || fail "invalid ownership record $RECORD"
+      [ "$header" = zero-install-v1 ] || fail "invalid ownership record $RECORD"
+      IFS="$TAB" read -r kind OLD_NAME extra || fail "invalid ownership record $RECORD"
+      if [ "$kind" != name ] || [ -n "$extra" ] || ! valid_name "$OLD_NAME"; then
+        fail "invalid ownership name in $RECORD"
+      fi
+      seen=' '
+      while IFS="$TAB" read -r role path digest extra; do
+        [ -n "$digest" ] && [ -z "$extra" ] || fail "invalid ownership row in $RECORD"
+        case "$seen" in *" $role "*) fail "duplicate ownership role in $RECORD" ;; esac
+        seen="$seen$role "
+        case "$role:$path" in
+          "cli:$HOME/.local/bin/$OLD_NAME" | "cli:$HOME/bin/$OLD_NAME" | \
+          "link:$HOME/.local/bin/zero-desktop" | "link:$HOME/bin/zero-desktop" | \
+          "app:$DESKTOP_HOME" | 'app:/Applications/zero-desktop.app' | "app:$HOME/Applications/zero-desktop.app" | \
+          "entry:$DESKTOP_DATA/applications/$DESKTOP_ID" | "icon:$DESKTOP_ICON") ;;
+          *) fail "invalid ownership path in $RECORD" ;;
+        esac
+        case "$digest" in *[!a-f0-9:ldx]*) fail "invalid fingerprint in $RECORD" ;; esac
+        printf '%s\t%s\t%s\n' "$role" "$path" "$digest" >>"$OLD_RECORD"
+      done
+    } <"$RECORD"
+  fi
+}
+
+owned() {
+  [ -f "$OLD_RECORD" ] || return 1
+  while IFS="$TAB" read -r _own_role own_path own_digest; do
+    own_parent="$(dirname "$own_path")"
+    query_parent="$(dirname "$1")"
+    if [ "$own_path" = "$1" ] || { [ "${own_path##*/}" = "${1##*/}" ] &&
+      [ -d "$own_parent" ] && [ -d "$query_parent" ] &&
+      [ "$(cd "$own_parent" && pwd -P)" = "$(cd "$query_parent" && pwd -P)" ]; }; then
+      actual="$(fingerprint "$1")" || return 1
+      [ "$actual" = "$own_digest" ] && return 0
+      return 1
+    fi
+  done <"$OLD_RECORD"
+  return 1
+}
+
+check_target() {
+  if occupied "$1" && ! owned "$1"; then
+    fail "collision: $1 is unrelated or modified; left untouched"
+  fi
+}
+
+record_path() {
+  digest="$(fingerprint "$2")" || fail "cannot fingerprint $2"
+  printf '%s\t%s\t%s\n' "$1" "$2" "$digest" >>"$NEW_RECORD"
+}
+# shared:ownership:end
 
 detect_platform
-if desktop_running; then
-  fail "the srcz desktop app is running; quit it, then run this again"
-fi
-# The desktop app bundles a srcz; the CLI may not be installed.
-for program in "$(command -v srcz 2>/dev/null || true)" "$DESKTOP_HOME/bin/srcz" \
-  "/Applications/srcz-desktop.app/Contents/Resources/bin/srcz" \
-  "$HOME/Applications/srcz-desktop.app/Contents/Resources/bin/srcz"; do
-  if [ -x "$program" ] && "$program" daemon status >/dev/null 2>&1; then
-    fail "a srcz daemon is running; stop it with '$program daemon stop', then run this again"
+make_tmp
+init_records
+if desktop_running; then fail "the zero desktop app is running; quit it, then run this again"; fi
+# Only execute a fingerprint-verified CLI, never a PATH lookup or bundled stranger.
+while IFS="$TAB" read -r role path digest; do
+  program=""
+  if owned "$path"; then
+    case "$role" in
+      cli) program="$path" ;;
+      app)
+        if [ "$OS" = linux ]; then program="$path/bin/zero"
+        else program="$path/Contents/Resources/bin/zero"
+        fi
+        ;;
+    esac
   fi
-done
-
-step "removing srcz"
-remove "$HOME/.local/bin/srcz" "$HOME/bin/srcz" "$(go_bin)/srcz" \
-  "$HOME/.local/bin/srcz-desktop" "$HOME/bin/srcz-desktop"
-
-if [ "$OS" = linux ]; then
-  remove "$DESKTOP_HOME" "$DESKTOP_DATA/applications/$DESKTOP_ID" "$DESKTOP_ICON"
-  # Only what the scripts put there: WebKit's page state shares this directory.
-  rmdir "$DESKTOP_DATA/srcz-desktop" 2>/dev/null || true
-  if has update-desktop-database; then
-    update-desktop-database "$DESKTOP_DATA/applications" >/dev/null 2>&1 || true
-  fi
-else
-  for dir in /Applications "$HOME/Applications"; do
-    if [ -e "$dir/srcz-desktop.app" ] && ! [ -w "$dir" ]; then
-      warn "cannot remove $dir/srcz-desktop.app; remove it with:"
-      note "sudo rm -rf \"$dir/srcz-desktop.app\""
-    else
-      remove "$dir/srcz-desktop.app"
+  if [ -n "$program" ] && [ -x "$program" ]; then
+    if "$program" daemon status >/dev/null 2>&1; then
+      fail "a zero daemon is running; stop it with '$program daemon stop', then run this again"
     fi
+  fi
+done <"$OLD_RECORD"
+REMOVED=0
+REMAINING="$TMP/remaining"
+: >"$REMAINING"
+while IFS="$TAB" read -r role path digest; do
+  if ! occupied "$path"; then continue; fi
+  if owned "$path"; then
+    rm -rf "$path"
+    ok "removed $path"
+    REMOVED=$((REMOVED + 1))
+  else
+    warn "kept $path: unrelated or modified"
+    printf '%s\t%s\t%s\n' "$role" "$path" "$digest" >>"$REMAINING"
+  fi
+done <"$OLD_RECORD"
+if [ -s "$REMAINING" ]; then
+  record_stage="$(mktemp "$ZERO_CONFIG/.install.XXXXXX")"
+  { printf 'zero-install-v1\nname\t%s\n' "$OLD_NAME"; cat "$REMAINING"; } >"$record_stage"
+  chmod 600 "$record_stage"
+  mv -f "$record_stage" "$RECORD"
+elif [ -f "$RECORD" ]; then rm -f "$RECORD"
+fi
+# Report other copies without executing or deleting them, including old srcz.
+for name in "${OLD_NAME:-zero}" zero zero-desktop; do
+  rest="${PATH:-}"
+  while :; do
+    dir="${rest%%:*}"
+    [ -n "$dir" ] || dir=.
+    if occupied "$dir/$name"; then warn "kept $dir/$name: not removed; use its installation tool"; fi
+    case "$rest" in *:*) rest="${rest#*:}" ;; *) break ;; esac
   done
-fi
-
-# Copies on PATH that a package manager owns, or that this script does not know.
-set -f
-old_ifs="$IFS"
-IFS=:
-for dir in ${PATH:-}; do
-  if [ -z "$dir" ] || ! [ -x "$dir/srcz" ]; then continue; fi
-  bin="$dir/srcz"
-  resolved="$bin"
-  if [ -L "$bin" ]; then resolved="$(readlink "$bin" || true)"; fi
-  case "$bin $resolved" in
-    *Cellar* | *homebrew* | *linuxbrew*)
-      warn "$bin is installed by Homebrew; remove it with:"
-      note "brew uninstall flexdinesh/tap/srcz"
-      ;;
-    *mise*)
-      warn "$bin is installed by mise; remove it with mise (mise uninstall)"
-      ;;
-    *)
-      warn "$bin remains; remove it with the tool that installed it"
-      ;;
-  esac
 done
-IFS="$old_ifs"
-set +f
-
-if [ "$REMOVED" -eq 0 ]; then
-  ok "nothing to remove in $HOME"
-else
-  ok "uninstalled srcz"
+if [ "$REMOVED" = 0 ]; then ok "nothing to remove in $HOME"
+else ok "uninstalled zero"
 fi
-
+step "kept your data (delete it yourself if you no longer need it):"
 if [ "$OS" = linux ]; then
-  cache="${XDG_CACHE_HOME:-}"
-  case "$cache" in
-    /*) ;;
-    *) cache="$HOME/.cache" ;;
-  esac
-  report_kept "$DESKTOP_DATA/srcz-desktop" "$DESKTOP_CONFIG/srcz-desktop" "$cache/srcz-desktop" "$DESKTOP_CONFIG/srcz" "$cache/srcz"
+  note "$ZERO_CONFIG"
+  note "$DESKTOP_DATA/zero-desktop"
 else
-  support="$HOME/Library/Application Support"
-  report_kept "$HOME/Library/WebKit/io.github.flexdinesh.srcz.desktop" "$support/srcz-desktop" "$support/srcz" "$HOME/Library/Caches/srcz"
+  note "$ZERO_CONFIG"
+  note "$HOME/Library/WebKit/io.github.flexdinesh.zero.desktop"
 fi

@@ -12,51 +12,101 @@ macOS and Linux, no sudo. This installs the CLI and the
 [desktop app](/docs/desktop):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh
 ```
 
 For the CLI alone, such as on a server:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install.sh | sh -s -- --cli-only
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh -s -- --cli-only
 ```
 
-It puts the latest release's `srcz` in `~/.local/bin` (or `~/bin` when that is
+It puts the latest release's CLI in `~/.local/bin` (or `~/bin` when that is
 on your `PATH`), and prints the line to add when the directory is not on `PATH`.
-The desktop app needs WebKitGTK 4.1 on Linux. Run the script again to update,
-after quitting the app; it stops while the app runs.
+The desktop app needs WebKitGTK 4.1 on Linux.
 
-The install scripts are the supported way to install Source Zero; Homebrew and
-`go install` are no longer offered. A specific version's archive is on
-[GitHub Releases](https://github.com/flexdinesh/srcz/releases): put its
-`srcz` binary in `~/.local/bin`.
+The install scripts are the supported way to install Zero; Homebrew and
+`go install` are no longer offered. Versioned archives are on
+[GitHub Releases](https://github.com/flexdinesh/zero/releases). If unpacking
+one manually, choose an unused destination: the installer does not adopt or
+overwrite unmanaged copies.
+
+### Command name collisions
+
+The canonical command is `zero`. Before changing either component, the stable
+and edge installers check for unrelated executables on `PATH` and occupied
+installation paths, including files, directories, and dangling symlinks. They
+also check the desktop app and launcher destinations.
+
+If `zero` collides and `zero-cli` is available, the installer asks through your
+terminal whether to use `zero-cli`. The default is No. Declining, reaching EOF,
+having no terminal, or an occupied `zero-cli` stops installation without
+changing either component. For unattended installs, or to choose another name,
+pass `--name` explicitly:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh -s -- --name my-zero
+# CLI only, with the same name selection
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh -s -- --cli-only --name my-zero
+```
+
+Choose an unused executable basename. `--name` never authorizes overwriting
+unrelated files or commands. The installer cannot see aliases or functions in
+your parent shell; check those yourself when choosing a name.
+
+Examples use `zero`; substitute `zero-cli` or your chosen command. The choice
+changes only the exposed CLI filename. The desktop app and launcher stay
+`zero-desktop`, its bundled CLI stays `zero`, and protocols (`zero://`,
+`zero-app://`) and Zero's configuration and data paths keep their canonical
+names.
+
+### Updates and existing installs
+
+Quit the desktop app, then run the script again to update; it stops while the
+app runs. The installer remembers the chosen CLI name across updates and
+switches between stable and edge, so no collision prompt is needed for an
+installer-owned command. A successful install with a different `--name`
+retires the previous owned command. Managed paths and content fingerprints
+are recorded in Zero's configuration directory; modified or unrelated paths
+are left alone and reported.
+
+Existing `srcz` installs and data stay untouched and can coexist with Zero.
+Zero starts fresh: settings, tabs, saved roots, connections, identity, and
+walkthroughs are not migrated. Old connection strings do not carry across.
+
+The first Zero stable release is v0.2.0. Until its `zero_*` and
+`zero-desktop_*` assets are published, the new stable installer fails clearly
+without changing your installation. Edge likewise needs a completed build
+carrying Zero assets.
 
 ### Uninstall
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/uninstall.sh | sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/uninstall.sh | sh
 ```
 
-It removes the CLI and the desktop app however they were installed in your
-home directory, prints the command for a copy that Homebrew, mise, apt, or
-another tool installed earlier, and keeps your data.
+It remembers the installed CLI name and removes only installer-owned paths
+whose fingerprints still match, including the desktop app. Modified or
+unrelated paths are retained and reported. It keeps user data and leaves
+existing `srcz` installs and data untouched. Remove unmanaged copies with the
+tool that installed them.
 
 ## Run
 
 Serve the current directory:
 
 ```sh
-srcz .
+zero .
 ```
 
-With the [desktop app](/docs/desktop) installed, Source Zero opens the directory in it.
+With the [desktop app](/docs/desktop) installed, Zero opens the directory in it.
 Otherwise it opens the browser UI on the first free port from `7971` through
-`7980`; `srcz browser .` always does. See [Usage](/docs/usage) for directories,
+`7980`; `zero browser .` always does. See [Usage](/docs/usage) for directories,
 scope, and ports, and
 [Browsing](/docs/browsing) for the UI.
 
 See all options:
 
 ```sh
-srcz --help
+zero --help
 ```

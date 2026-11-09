@@ -4,28 +4,33 @@ showAskAi: false
 
 # Desktop app
 
-The Source Zero desktop app, `srcz-desktop`, shows the same UI as `srcz browser`
+The Zero desktop app, `zero-desktop`, shows the same UI as `zero browser`
 in one window of its own: the operating system's web view, with native menus
 and dialogs, through the [mygo](https://github.com/egoist/mygo) toolkit. It talks
-to one long-lived Source Zero daemon per user over a private socket, so the window
-and `srcz .` share the same server.
+to one long-lived Zero daemon per user over a private socket, so the window
+and `zero .` share the same server.
 
 It shows projects on this computer. The app is a preview: macOS builds are not
 notarized and there is no auto-update. It has not been run on a Mac yet.
 
 ## Install
 
-macOS and Linux, no sudo. The install script installs the app and the `srcz` CLI:
+macOS and Linux, no sudo. The install script installs the app and the `zero` CLI:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh
 ```
 
 For latest `main` (the `edge` prerelease; no macOS Intel builds):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install-edge.sh | sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh
 ```
+
+If `zero` is taken, confirm available `zero-cli` in the terminal or pass
+`--name NAME`; see [command name collisions](/docs/getting-started#command-name-collisions).
+Only the exposed CLI name changes. The app and launcher stay `zero-desktop`,
+with canonical `zero://` links, configuration paths, and bundled `zero` binary.
 
 Linux needs WebKitGTK 4.1 and GTK 3; the install script warns when it can't find
 them. On Debian and Ubuntu:
@@ -34,53 +39,54 @@ them. On Debian and Ubuntu:
 sudo apt install libwebkit2gtk-4.1-0
 ```
 
-The app carries its own `srcz` binary for the daemon. The scripts put `srcz` and
-`srcz-desktop` in `~/.local/bin` (or `~/bin`). The `srcz` CLI is what opens the
-app with `srcz .` and publishes walkthroughs.
+The app carries its own `zero` binary for the daemon. The scripts put the
+chosen CLI command and `zero-desktop` in `~/.local/bin` (or `~/bin`). The CLI
+opens the app with `zero .` and publishes walkthroughs; substitute your chosen
+command for `zero` in the examples below.
 
-- macOS: `srcz-desktop.app` goes to `/Applications` (or `~/Applications`).
+- macOS: `zero-desktop.app` goes to `/Applications` (or `~/Applications`).
   Builds are ad-hoc signed, not notarized. curl marks nothing as downloaded, so
   Gatekeeper does not block the first launch. A browser-downloaded zip needs one
   right-click, **Open**, or:
 
   ```sh
-  xattr -dr com.apple.quarantine /Applications/srcz-desktop.app
+  xattr -dr com.apple.quarantine /Applications/zero-desktop.app
   ```
 
-- Linux: the app goes to `~/.local/share/srcz-desktop/app/`, with a desktop
-  entry that opens `srcz://` links and an icon.
+- Linux: the app goes to `~/.local/share/zero-desktop/app/`, with a desktop
+  entry that opens `zero://` links and an icon.
 
 Run a script again to update; quit the app first. Packages are on
-[GitHub Releases](https://github.com/flexdinesh/srcz/releases):
-`srcz-desktop_<version>_linux_<arch>.tar.gz` and
-`srcz-desktop_<version>_darwin_<arch>.zip`. Unpacking one by hand registers no
-`srcz://` handler on Linux, so `srcz .` serves in a browser instead.
+[GitHub Releases](https://github.com/flexdinesh/zero/releases):
+`zero-desktop_<version>_linux_<arch>.tar.gz` and
+`zero-desktop_<version>_darwin_<arch>.zip`. Unpacking one by hand registers no
+`zero://` handler on Linux, so `zero .` serves in a browser instead.
 
 ## Open from a terminal
 
 ```sh
-srcz-desktop .
+zero-desktop .
 ```
 
 opens the current directory. Only one copy runs: a second command or link opens
 in the running app. With the CLI installed:
 
 ```sh
-srcz .
+zero .
 ```
 
-Source Zero checks the directory, starts the daemon if needed, adds the directory to
-it, opens the project in the app, and exits. `--no-open` prints the `srcz://`
+Zero checks the directory, starts the daemon if needed, adds the directory to
+it, opens the project in the app, and exits. `--no-open` prints the `zero://`
 link instead.
 
-Source Zero serves in a browser instead, as `srcz browser` does, when:
+Zero serves in a browser instead, as `zero browser` does, when:
 
 - `--host` or `--port` is set;
 - the app is not installed or does not open (prints install instructions);
 - the daemon cannot start or speaks another protocol (prints why).
 
-`srcz browser [path]` always serves in a browser. On a machine without a UI
-(an SSH session, or Linux without a display), `srcz [path]` tells you to use
+`zero browser [path]` always serves in a browser. On a machine without a UI
+(an SSH session, or Linux without a display), `zero [path]` tells you to use
 `--remote` ([Remote hosts](/docs/remote)).
 
 ## Tabs
@@ -91,13 +97,13 @@ when no tabs are open.
 
 ## Links
 
-`srcz://local/?project=/abs/path` opens a project, and
-`srcz://local/view?…` takes the same query as a browser URL (`path`, `wt`,
-`review`, …). Links never add directories; only `srcz [path]`, `srcz-desktop
-[path]`, and **File › Open Folder…** do. `srcz walkthrough publish` prints a
-`srcz://` link when the app can show the walkthrough.
+`zero://local/?project=/abs/path` opens a project, and
+`zero://local/view?…` takes the same query as a browser URL (`path`, `wt`,
+`review`, …). Links never add directories; only `zero [path]`, `zero-desktop
+[path]`, and **File › Open Folder…** do. `zero walkthrough publish` prints a
+`zero://` link when the app can show the walkthrough.
 
-`srcz://r-<id>/…` opens a server you connected to with `srcz connect`
+`zero://r-<id>/…` opens a server you connected to with `zero connect`
 ([Remote hosts](/docs/remote)), with the same routes. Links carry no address and
 no secret; the app looks up a connection saved on this computer.
 
@@ -106,7 +112,7 @@ no secret; the app looks up a connection saved on this computer.
 Right-click a file or folder in the Explorer, or a tab, for the app's native
 menu. **Reveal in File Manager** shows the file in Finder or your Linux file
 manager; the Explorer menu also copies a file's full or relative path, and a
-file's menu has **Show File History** ([Browsing](/docs/browsing)). Source Zero
+file's menu has **Show File History** ([Browsing](/docs/browsing)). Zero
 reveals only files inside a project it serves, and never follows a link out of
 the project.
 
@@ -129,18 +135,18 @@ uncommitted changes does not notify again. Click a notification to open what it
 is about.
 
 Settings warns you if this computer has no notification service or macOS is
-blocking Source Zero. Each notification is limited to one per project and kind every
+blocking Zero. Each notification is limited to one per project and kind every
 30 seconds.
 
 ## Not in the desktop app
 
 These went with the earlier Electron app and are not coming back as they were:
 
-- ssh connections and the Connect page. `srcz connect` opens other machines
+- ssh connections and the Connect page. `zero connect` opens other machines
   ([Remote hosts](/docs/remote)).
 - Open at Login, recent folders, the Dock menu, and dropping folders on the
   window or the Dock.
-- **Open in srcz** in file managers, and deb and AppImage packages.
+- **Open in zero** in file managers, and deb and AppImage packages.
 
 ## WebKit
 
@@ -155,17 +161,17 @@ WebKit in a browser but not yet in this app. Known differences from a browser:
 
 ## Uninstall
 
-The uninstall script removes the app and CLI however you installed them in your
-home directory. Quit the
-app first; if a daemon is running, the script stops and prints the command to end
-it. It prints the command for a copy
-another tool installed, and keeps and lists your data:
+The uninstall script remembers your CLI name and removes only installer-owned
+paths whose fingerprints still match. Modified or unrelated paths are retained
+and reported. Quit the app first; if a daemon is running, the script stops and
+prints the command to end it. It keeps user data and leaves existing srcz
+installs and data untouched:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/uninstall.sh | sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/uninstall.sh | sh
 ```
 
-Page state lives in `~/.local/share/srcz-desktop/` beside the app on Linux, and
-in `~/Library/WebKit/io.github.flexdinesh.srcz.desktop` on macOS. The daemon's
-remembered directories are in `srcz/roots.json` under `~/.config` or
+Page state lives in `~/.local/share/zero-desktop/` beside the app on Linux, and
+in `~/Library/WebKit/io.github.flexdinesh.zero.desktop` on macOS. The daemon's
+remembered directories are in `zero/roots.json` under `~/.config` or
 `~/Library/Application Support`.

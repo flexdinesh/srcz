@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 
 export type SidebarView = "explorer" | "search" | "source-control" | "walkthroughs"
 
-const storageKey = "srcz-sidebar"
+const storageKey = "zero-sidebar"
 const mobileQuery = "(max-width: 48rem)"
 
 export interface StoredSidebar {

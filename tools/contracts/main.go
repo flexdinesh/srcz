@@ -1,5 +1,5 @@
 // Command contracts generates packages/contracts, the TypeScript types and
-// runtime guards for srcz's transport contract, from apps/srcz/pkg/contract
+// runtime guards for zero's transport contract, from apps/zero/pkg/contract
 // (decision 0080). Run it from the repository root:
 //
 //	go run ./tools/contracts          # write packages/contracts/src
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	sourceDir = "apps/srcz/pkg/contract"
+	sourceDir = "apps/zero/pkg/contract"
 	outputDir = "packages/contracts/src"
 )
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-11-08T04:01:40.000Z",
-  "title": "Design System: srcz",
+  "title": "Design System: zero",
   "extensions": {
     "colorMeta": {
       "bg": {
@@ -862,10 +862,10 @@
   ],
   "narrative": {
     "northStar": "Sharp slate panes",
-    "overview": "srcz follows familiar editor conventions: a compact explorer, document tabs, a readable preview, and a quiet status footer. Square panes meet on 1px hairlines; slate surfaces, flat rows, and restrained controls keep local files central.\n\nWorkspace identity sits above the explorer. App identity, content search, process state, and theme selection sit in the footer. There is no top app header; the logo sits in the footer and on Welcome. Mobile keeps the document visible and opens files in a drawer.",
+    "overview": "zero follows familiar editor conventions: a compact explorer, document tabs, a readable preview, and a quiet status footer. Square panes meet on 1px hairlines; slate surfaces, flat rows, and restrained controls keep local files central.\n\nWorkspace identity sits above the explorer. App identity, content search, process state, and theme selection sit in the footer. There is no top app header; the logo sits in the footer and on Welcome. Mobile keeps the document visible and opens files in a drawer.",
     "keyCharacteristics": [
       "Compact editor navigation.",
-      "Square corners and panes on hairlines; slate Source Zero surfaces.",
+      "Square corners and panes on hairlines; slate Zero surfaces.",
       "Left-aligned proportional prose and monospace code.",
       "Shared semantic roles across named editor themes.",
       "Site: a framed 75rem column on 1px blue-tinted rails over a diagonal hatch.",
@@ -916,7 +916,7 @@
       "Don't center preview prose or substitute generic heading/body tokens for the preview scale.",
       "Don't introduce decorative gradients, pill containers, heavy shadows, or cards around document sections.",
       "Don't rely on color alone for selection, focus, errors, or status.",
-      "Don't require a CDN, frontend sidecar, or system JavaScript runtime in production; build and embed assets, never edit `apps/srcz/internal/web/dist/` directly.",
+      "Don't require a CDN, frontend sidecar, or system JavaScript runtime in production; build and embed assets, never edit `apps/zero/internal/web/dist/` directly.",
       "Don't round a corner on the site; `_root.css` keeps every Vocs radius at 0.",
       "Don't give docs callouts, code blocks, or content a side stripe; the tint goes on all four sides.",
       "Don't use coral beyond the logo mark, remote, and docs warnings.",

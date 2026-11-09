@@ -115,11 +115,11 @@ shellcheck on `apps/desktop/scripts`, `go mod tidy -diff`, `go vet`, and
 
 The e2e half builds the app with `-tags e2e` (mygo's automation plugin) and drives
 its page under Xvfb with WebKitGTK from the Debian snapshot, against the real
-`srcz` binary with its web app embedded; screenshots and
+`zero` binary with its web app embedded; screenshots and
 `report.json` land in the artifact directory under `desktop-e2e/`. It also runs
-`srcz <dir>` against a `srcz://` handler registered with real `xdg-utils`. Each
+`zero <dir>` against a `zero://` handler registered with real `xdg-utils`. Each
 launch gets its own socket, roots file, and XDG directories; nothing reaches the
-user's daemon. The group reads `apps/desktop/`, `apps/srcz/` (the module it
+user's daemon. The group reads `apps/desktop/`, `apps/zero/` (the module it
 replaces and the binary it runs), `apps/web/`, and `packages/contracts/`.
 `fmt:check` covers `apps/desktop`; `tidy:check` does not. Linux only: macOS is
 built and smoke-tested by `build.yml`.
@@ -143,7 +143,7 @@ validated snapshot.
 | `node-deps`, `browsers` | Frozen pnpm install (store cache mount); Chromium and WebKit |
 | `go-deps`, `desktop-deps` | Module downloads (cache mount, then an offline copy of the exact build list); Go 1.27.3 for `apps/desktop` |
 | `source` | The group's inputs and a private baseline commit, before any build |
-| `web`, `binary` | Embedded frontend and the srcz binary (Go build cache mount) |
+| `web`, `binary` | Embedded frontend and the zero binary (Go build cache mount) |
 | targets | `go`, `frontend`, `tooling`, `docs`, `browser` (also `browser-extended`, `webkit`), `desktop` (also `desktop-extended`) |
 
 Build contexts are hardlink trees materialized from the group's fingerprinted
@@ -156,14 +156,14 @@ inputs shares them. A Playwright bump that needs new system packages fails
 Runners get 2 CPUs, 4 GiB, `init`, a 1 GiB `/dev/shm`, an internal network
 with no egress, no published ports, no host network, and no Docker socket.
 The only shared mutable state is the external Go build cache volume
-`srcz-check-go-build`, which teardown never removes.
+`zero-check-go-build`, which teardown never removes.
 
 A run that executes a container group takes one of two slots in
 `~/.cache/local-validation/slots`, shared with other repositories so the limit
 stays machine-wide; host-only runs take none. It acquires input locks first,
 then the slot, then sweeps that slot's leftovers. Up to three groups run at
-once. Projects are named `srcz-check-s<slot>-<group>` and images
-`srcz-check:s<slot>-<target>`. Each group writes `build.log` and `check.log`,
+once. Projects are named `zero-check-s<slot>-<group>` and images
+`zero-check:s<slot>-<target>`. Each group writes `build.log` and `check.log`,
 copies `/out` with `docker cp`, and is removed with `docker rm -f` and
 `docker compose down -v` after success, failure, or cancellation. Image tags
 are removed at run end; build cache stays for the next run. A failed group
@@ -210,7 +210,7 @@ schema. Shared workspace locks invalidate their consumers. Site content does
 not invalidate application tests. Toolchain preparation is separate from task
 commands, so unchanged toolchains can survive a task edit.
 
-Desktop keeps the replaced srcz module's test files: `go mod tidy` follows
+Desktop keeps the replaced zero module's test files: `go mod tidy` follows
 dependency test imports when checking its sums. The standalone application
 binary still excludes Go test files from its build inputs.
 
@@ -223,7 +223,7 @@ invalidate affected groups. No elapsed-time or small-diff rule establishes succe
 
 BuildKit caches image stages across groups and worktrees. Persistent Go
 compilation caches (a build cache mount for the binary, the
-`srcz-check-go-build` volume for checks) retain unchanged packages across source
+`zero-check-go-build` volume for checks) retain unchanged packages across source
 edits and compatible binary/test builds. Frozen pnpm installs and module
 downloads reuse cache mounts when a lockfile changes. Compilation and download
 caches never substitute for successful test evidence. Debian packages also keep

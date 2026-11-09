@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-const policy = "srcz-validation-v4-suites-host-and-linux-amd64-compose"
+const policy = "zero-validation-v4-suites-host-and-linux-amd64-compose"
 
 type entry struct {
 	Path    string
@@ -290,7 +290,7 @@ func excluded(name string) bool {
 			return true
 		}
 	}
-	return strings.HasPrefix(name, ".scratch/") || strings.HasPrefix(name, ".dev/") || strings.HasPrefix(name, "apps/srcz/internal/web/dist/") || strings.HasPrefix(name, "apps/site/dist/") || strings.HasPrefix(name, "test-results/") || strings.HasPrefix(name, "playwright-report/")
+	return strings.HasPrefix(name, ".scratch/") || strings.HasPrefix(name, ".dev/") || strings.HasPrefix(name, "apps/zero/internal/web/dist/") || strings.HasPrefix(name, "apps/site/dist/") || strings.HasPrefix(name, "test-results/") || strings.HasPrefix(name, "playwright-report/")
 }
 
 func selected(group, name string) bool {
@@ -310,16 +310,16 @@ func selected(group, name string) bool {
 			return false
 		}
 	}
-	// Desktop runs tidy against its replaced srcz module: dependency tests
+	// Desktop runs tidy against its replaced zero module: dependency tests
 	// affect the required sums. Only the browser consumes production Go alone.
 	if group == "browser" && strings.HasSuffix(name, "_test.go") {
 		return false
 	}
-	if group == "frontend" && name == "apps/srcz/internal/walkthrough/schema.json" {
+	if group == "frontend" && name == "apps/zero/internal/walkthrough/schema.json" {
 		return true
 	}
 	switch name {
-	case "mise.toml", "mise.lock", ".node-version", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "apps/web/package.json", "apps/site/package.json", "packages/contracts/package.json", "go.work", "apps/srcz/go.mod", "apps/srcz/go.sum", "tools/go.mod", ".gitignore", ".npmrc", ".pnpmfile.cjs":
+	case "mise.toml", "mise.lock", ".node-version", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "apps/web/package.json", "apps/site/package.json", "packages/contracts/package.json", "go.work", "apps/zero/go.mod", "apps/zero/go.sum", "tools/go.mod", ".gitignore", ".npmrc", ".pnpmfile.cjs":
 		return true
 	}
 	for _, prefix := range []string{"patches/", "tools/validate/"} {
@@ -332,16 +332,16 @@ func selected(group, name string) bool {
 		return true
 	}
 	prefixes := map[string][]string{
-		"repo":           {"apps/srcz/", "apps/desktop/", "tools/", "packages/contracts/"},
+		"repo":           {"apps/zero/", "apps/desktop/", "tools/", "packages/contracts/"},
 		"web-static":     {"apps/web/", "packages/contracts/"},
 		"tooling-static": {"scripts/", "tests/"},
 		"site-static":    {"apps/site/"},
-		"go":             {"apps/srcz/", "tools/", "testdata/", "apps/web/", "packages/contracts/"},
+		"go":             {"apps/zero/", "tools/", "testdata/", "apps/web/", "packages/contracts/"},
 		"frontend":       {"apps/web/", "testdata/", "packages/contracts/"},
 		"tooling":        {"scripts/", "tests/", "tools/validate/", "testdata/"},
 		"docs":           {"apps/site/"},
-		"browser":        {"apps/srcz/", "testdata/", "apps/web/", "tests/", "scripts/", "packages/contracts/"},
-		"desktop":        {"apps/desktop/", "apps/srcz/", "apps/web/", "packages/contracts/"},
+		"browser":        {"apps/zero/", "testdata/", "apps/web/", "tests/", "scripts/", "packages/contracts/"},
+		"desktop":        {"apps/desktop/", "apps/zero/", "apps/web/", "packages/contracts/"},
 	}
 	for _, prefix := range prefixes[group] {
 		if strings.HasPrefix(name, prefix) {

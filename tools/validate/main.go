@@ -106,7 +106,7 @@ func run(ctx context.Context, args []string) error {
 	}
 	digest := sha256.Sum256([]byte(common))
 	global := filepath.Join(base, "local-validation")
-	a := app{Root: root, Cache: filepath.Join(global, "srcz", hex.EncodeToString(digest[:16])), Global: global}
+	a := app{Root: root, Cache: filepath.Join(global, "zero", hex.EncodeToString(digest[:16])), Global: global}
 	if command == "prune" {
 		return a.prune()
 	}

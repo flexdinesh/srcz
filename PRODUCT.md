@@ -1,4 +1,4 @@
-# Source Zero
+# Zero
 
 <!-- impeccable:product-schema 1 -->
 
@@ -23,4 +23,4 @@ Browse and search any local file in a directory through a Go CLI and embedded Re
 
 ## Brand Commitments
 
-The app name is Source Zero (command: `srcz`). The interface follows VS Code conventions. Its visual language is sharp slate panes: square corners, panes on hairlines, mono chrome labels. The logo is a Z inside a zero: the z of `srcz` and the zero of Source Zero share one diagonal (decision 0104).
+The app name is Zero (command: `zero`). The interface follows VS Code conventions. Its visual language is sharp slate panes: square corners, panes on hairlines, mono chrome labels. The logo is a Z inside a zero: the z of `zero` and the zero of Zero share one diagonal (decision 0104).

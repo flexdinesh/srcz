@@ -17,13 +17,13 @@ Use these samples to verify language labels, syntax highlighting, horizontal ove
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-srcz ./docs --port 8080
+zero ./docs --port 8080
 ```
 
 ## Shell
 
 ```shell
-srcz ./docs --no-open
+zero ./docs --no-open
 ```
 
 ## Unknown language

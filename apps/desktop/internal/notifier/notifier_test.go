@@ -16,15 +16,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/flexdinesh/srcz/pkg/client"
-	"github.com/flexdinesh/srcz/pkg/connection"
-	"github.com/flexdinesh/srcz/pkg/contract"
+	"github.com/flexdinesh/zero/pkg/client"
+	"github.com/flexdinesh/zero/pkg/connection"
+	"github.com/flexdinesh/zero/pkg/contract"
 )
 
 const projectA, projectB = "/code/a", "/code/b"
 
-// fakeServer answers the routes a notifier uses, as srcz does. The real server
-// is the e2e's: this module cannot import srcz's internals.
+// fakeServer answers the routes a notifier uses, as zero does. The real server
+// is the e2e's: this module cannot import zero's internals.
 type fakeServer struct {
 	mu        sync.Mutex
 	streams   map[*fakeStream]struct{}

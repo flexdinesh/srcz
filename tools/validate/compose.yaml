@@ -1,9 +1,9 @@
-# One project per group run: srcz-check-s<slot>-<group> (docs/validation.md).
+# One project per group run: zero-check-s<slot>-<group> (docs/validation.md).
 # tools/validate sets the variables below, creates the external cache volume,
 # and removes the project's containers and network after every run.
 services:
   runner:
-    image: ${SRCZ_CHECK_IMAGE:?image id required}
+    image: ${ZERO_CHECK_IMAGE:?image id required}
     pull_policy: never
     init: true
     cpus: 2
@@ -14,11 +14,11 @@ services:
     working_dir: /src
     networks: [isolated]
     environment:
-      SRCZ_CHECK_LOG_DIR: /out/logs
-      SRCZ_VALIDATION_ATTEMPT: ${SRCZ_VALIDATION_ATTEMPT:?attempt required}
-      SRCZ_VALIDATION_FORCE: ${SRCZ_VALIDATION_FORCE:?force required}
-      SRCZ_BROWSER_EXTENDED: ${SRCZ_BROWSER_EXTENDED:-0}
-      SRCZ_DESKTOP_EXTENDED: ${SRCZ_DESKTOP_EXTENDED:-0}
+      ZERO_CHECK_LOG_DIR: /out/logs
+      ZERO_VALIDATION_ATTEMPT: ${ZERO_VALIDATION_ATTEMPT:?attempt required}
+      ZERO_VALIDATION_FORCE: ${ZERO_VALIDATION_FORCE:?force required}
+      ZERO_BROWSER_EXTENDED: ${ZERO_BROWSER_EXTENDED:-0}
+      ZERO_DESKTOP_EXTENDED: ${ZERO_DESKTOP_EXTENDED:-0}
     volumes:
       - go-build:/home/runner/.cache/go-build
 
@@ -31,4 +31,4 @@ networks:
 volumes:
   go-build:
     external: true
-    name: srcz-check-go-build
+    name: zero-check-go-build

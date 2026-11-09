@@ -1,7 +1,7 @@
 import { defineConfig } from 'vocs/config'
 
 export default defineConfig({
-  title: 'Source Zero',
+  title: 'Zero',
   description:
     'The code viewer for the agentic era: browse files and review what agents change, with diffs, commits, branches, and walkthroughs.',
   renderStrategy: 'full-static',
@@ -29,5 +29,5 @@ export default defineConfig({
       ],
     },
   ],
-  topNav: [{ text: 'GitHub', link: 'https://github.com/flexdinesh/srcz' }],
+  topNav: [{ text: 'GitHub', link: 'https://github.com/flexdinesh/zero' }],
 })

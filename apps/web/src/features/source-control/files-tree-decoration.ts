@@ -1,4 +1,4 @@
-import type { FileStats } from "@srcz/contracts"
+import type { FileStats } from "@zero/contracts"
 import { statsLabel } from "./use-compare-stats.ts"
 import { countedLines, pureRename } from "./diff-stats.ts"
 

@@ -1,12 +1,12 @@
 import { isRecord } from "../../api/http.ts"
 
 // Files marked Viewed in review tabs (decisions 0035, 0117), remembered in
-// this browser under srcz-review-viewed as project -> path -> blob. A mark
+// this browser under zero-review-viewed as project -> path -> blob. A mark
 // keeps the blob it was made at: it counts while the file's blob matches,
 // and once the blob changes the file reads as changed since viewed until it
 // is marked again. Pure except for readViewed/writeViewed, which never throw.
 
-export const VIEWED_STORAGE_KEY = "srcz-review-viewed"
+export const VIEWED_STORAGE_KEY = "zero-review-viewed"
 
 const maxProjects = 50
 const maxFiles = 2_000

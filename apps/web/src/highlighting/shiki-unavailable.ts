@@ -1,9 +1,9 @@
 // shiki-unavailable stands in for every `shiki` entry when production builds
-// bundle @pierre/diffs (vite.config.ts, decision 0029). srcz highlights
+// bundle @pierre/diffs (vite.config.ts, decision 0029). zero highlights
 // only with Highlights, so Pierre's Shiki backend never loads; these exports
 // exist only so the bundle links.
 function unavailable(): never {
-  throw new Error("srcz does not bundle Shiki")
+  throw new Error("zero does not bundle Shiki")
 }
 
 export const createCssVariablesTheme = unavailable

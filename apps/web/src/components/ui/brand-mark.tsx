@@ -21,7 +21,7 @@ export type BrandMarkProps = {
   className?: string
 }
 
-// BrandMark draws the Source Zero mark, a Z inside a zero (decision 0104). It is
+// BrandMark draws the Zero mark, a Z inside a zero (decision 0104). It is
 // decorative: the surrounding link or heading names it.
 export function BrandMark({ size = "small", tone = "mono", className }: BrandMarkProps) {
   const grid = GRIDS[size]

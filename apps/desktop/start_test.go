@@ -8,9 +8,9 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/flexdinesh/srcz/apps/desktop/internal/connect"
-	"github.com/flexdinesh/srcz/apps/desktop/internal/proxy"
-	"github.com/flexdinesh/srcz/pkg/connection"
+	"github.com/flexdinesh/zero/apps/desktop/internal/connect"
+	"github.com/flexdinesh/zero/apps/desktop/internal/proxy"
+	"github.com/flexdinesh/zero/pkg/connection"
 )
 
 func TestWindowIdentityFollowsTheConnection(t *testing.T) {
@@ -20,21 +20,21 @@ func TestWindowIdentityFollowsTheConnection(t *testing.T) {
 	if windowStateKey("r-0123456789ab") == windowStateKey("r-000000000000") {
 		t.Error("two connections share remembered bounds")
 	}
-	if got := windowTitle(proxy.Host, ""); got != "Source Zero" {
+	if got := windowTitle(proxy.Host, ""); got != "Zero" {
 		t.Errorf("local title = %q", got)
 	}
-	if got := windowTitle("r-0123456789ab", "box"); got != "Source Zero: box" {
+	if got := windowTitle("r-0123456789ab", "box"); got != "Zero: box" {
 		t.Errorf("remote title = %q", got)
 	}
 }
 
 func TestOnlyNamesConnection(t *testing.T) {
 	for raw, want := range map[string]bool{
-		"srcz-app://r-0123456789ab/":              true,
-		"srcz-app://r-0123456789ab":               true,
-		"srcz-app://r-0123456789ab/?project=%2Fa": false,
-		"srcz-app://r-0123456789ab/view":          false,
-		"srcz-app://r-0123456789ab/#L1":           false,
+		"zero-app://r-0123456789ab/":              true,
+		"zero-app://r-0123456789ab":               true,
+		"zero-app://r-0123456789ab/?project=%2Fa": false,
+		"zero-app://r-0123456789ab/view":          false,
+		"zero-app://r-0123456789ab/#L1":           false,
 	} {
 		if got := onlyNamesConnection(raw); got != want {
 			t.Errorf("onlyNamesConnection(%q) = %v", raw, got)
@@ -93,9 +93,9 @@ func TestStartURLReportsWhatItCouldNotOpen(t *testing.T) {
 		args []string
 		want string
 	}{
-		{"unknown link", []string{"srcz://nope:x/"}, "Not a srcz link."},
+		{"unknown link", []string{"zero://nope:x/"}, "Not a zero link."},
 		{"folder", []string{"/no/such/folder"}, "Could not open folder"},
-		{"connection not saved here", []string{"srcz://r-0123456789ab/"}, "This computer has no such srcz connection"},
+		{"connection not saved here", []string{"zero://r-0123456789ab/"}, "This computer has no such zero connection"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

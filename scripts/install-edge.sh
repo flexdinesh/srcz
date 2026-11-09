@@ -1,19 +1,21 @@
 #!/bin/sh
-# Installs the srcz CLI and desktop app from the edge prerelease: latest main,
+# Installs the zero CLI and desktop app from the edge prerelease: latest main,
 # rebuilt by CI after every green push. Stable installs use scripts/install.sh.
 # Decisions 0073, 0079, and 0101.
 #
-#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install-edge.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/srcz/main/scripts/install-edge.sh | sh -s -- --cli-only
+#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh -s -- --cli-only
 #
 # Installs in the same places as scripts/install.sh and replaces either
-# install. --cli-only writes only the srcz binary. Remove with
+# install. --cli-only writes only the zero binary. Remove with
 # scripts/uninstall.sh.
+
+
 
 # shared:base:begin
 set -eu
 
-REPO="flexdinesh/srcz"
+REPO="flexdinesh/zero"
 
 if [ -t 1 ]; then
   BOLD="$(printf '\033[1m')"
@@ -45,12 +47,12 @@ detect_platform() {
   case "$(uname -s)" in
     Linux) OS=linux ;;
     Darwin) OS=darwin ;;
-    *) fail "unsupported OS $(uname -s): srcz supports macOS and Linux" ;;
+    *) fail "unsupported OS $(uname -s): zero supports macOS and Linux" ;;
   esac
   case "$(uname -m)" in
     x86_64 | amd64) ARCH=amd64 ;;
     aarch64 | arm64) ARCH=arm64 ;;
-    *) fail "unsupported architecture $(uname -m): srcz supports amd64 and arm64" ;;
+    *) fail "unsupported architecture $(uname -m): zero supports amd64 and arm64" ;;
   esac
 }
 
@@ -70,87 +72,11 @@ cleanup() {
   if [ -n "$TMP" ]; then rm -rf "$TMP"; fi
 }
 make_tmp() {
-  TMP="$(mktemp -d 2>/dev/null || mktemp -d -t srcz)"
+  TMP="$(mktemp -d 2>/dev/null || mktemp -d -t zero)"
   trap cleanup EXIT
   trap 'exit 130' INT TERM
 }
 # shared:base:end
-
-# shared:cli:begin
-on_path() {
-  case ":${PATH:-}:" in
-    *":$1:"*) return 0 ;;
-  esac
-  return 1
-}
-
-# choose_bin_dir sets BIN_DIR: a writable directory already on PATH
-# (~/.local/bin, then ~/bin), else ~/.local/bin, created if needed.
-choose_bin_dir() {
-  for dir in "$HOME/.local/bin" "$HOME/bin"; do
-    if on_path "$dir" && mkdir -p "$dir" 2>/dev/null && [ -w "$dir" ]; then
-      BIN_DIR="$dir"
-      return 0
-    fi
-  done
-  BIN_DIR="$HOME/.local/bin"
-  if ! mkdir -p "$BIN_DIR" 2>/dev/null || ! [ -w "$BIN_DIR" ]; then
-    fail "cannot write $BIN_DIR"
-  fi
-}
-
-# install_cli SRC installs the srcz binary SRC as BIN_DIR/srcz.
-install_cli() {
-  choose_bin_dir
-  target="$BIN_DIR/srcz"
-  previous=""
-  if [ -x "$target" ]; then
-    previous="$("$target" --version 2>/dev/null | head -n 1 || true)"
-  fi
-  staged="$BIN_DIR/.srcz.$$"
-  cp "$1" "$staged"
-  chmod 755 "$staged"
-  mv -f "$staged" "$target"
-  current="$("$target" --version 2>/dev/null | head -n 1 || true)"
-  if [ -n "$previous" ]; then
-    ok "updated $target ($previous -> $current)"
-  else
-    ok "installed $target ($current)"
-  fi
-
-  if ! on_path "$BIN_DIR"; then
-    warn "$BIN_DIR is not on PATH; add it:"
-    case "$(basename "${SHELL:-sh}")" in
-      fish) note "fish_add_path \"$BIN_DIR\"" ;;
-      zsh) note "export PATH=\"$BIN_DIR:\$PATH\"   # in ~/.zshrc" ;;
-      bash) note "export PATH=\"$BIN_DIR:\$PATH\"   # in ~/.bashrc" ;;
-      *) note "export PATH=\"$BIN_DIR:\$PATH\"   # in ~/.profile" ;;
-    esac
-  fi
-  first="$(command -v srcz 2>/dev/null || true)"
-  if [ -n "$first" ] && [ "$first" != "$target" ]; then
-    warn "$first comes first on PATH and is not the srcz just installed"
-  fi
-  if "$target" daemon status >/dev/null 2>&1; then
-    warn "a srcz daemon is running an earlier build; to switch now, run:"
-    note "srcz daemon stop"
-  fi
-}
-# shared:cli:end
-
-# shared:args:begin
-CLI_ONLY=0
-
-# parse_args sets CLI_ONLY from the script's arguments.
-parse_args() {
-  for arg in "$@"; do
-    case "$arg" in
-      --cli-only) CLI_ONLY=1 ;;
-      *) fail "unknown option $arg; the only option is --cli-only" ;;
-    esac
-  done
-}
-# shared:args:end
 
 # shared:desktop:begin
 DESKTOP_DATA="${XDG_DATA_HOME:-}"
@@ -164,20 +90,299 @@ case "$DESKTOP_CONFIG" in
   *) DESKTOP_CONFIG="$HOME/.config" ;;
 esac
 # The app has a directory of its own: WebKit keeps the page's localStorage
-# beside it in srcz-desktop/, which updates and uninstall leave alone.
-DESKTOP_HOME="$DESKTOP_DATA/srcz-desktop/app"
-DESKTOP_ID="srcz-desktop.desktop"
-DESKTOP_ICON="$DESKTOP_DATA/icons/hicolor/512x512/apps/srcz-desktop.png"
+# beside it in zero-desktop/, which updates and uninstall leave alone.
+DESKTOP_HOME="$DESKTOP_DATA/zero-desktop/app"
+DESKTOP_ID="zero-desktop.desktop"
+DESKTOP_ICON="$DESKTOP_DATA/icons/hicolor/512x512/apps/zero-desktop.png"
 
 desktop_running() {
   has pgrep || return 1
   if [ "$OS" = darwin ]; then
-    pgrep -f 'srcz-desktop\.app/Contents/MacOS/srcz-desktop' >/dev/null 2>&1
+    pgrep -f 'zero-desktop\.app/Contents/MacOS/zero-desktop' >/dev/null 2>&1
   else
-    pgrep -x -u "$(id -u)" srcz-desktop >/dev/null 2>&1
+    pgrep -x -u "$(id -u)" zero-desktop >/dev/null 2>&1
   fi
 }
 # shared:desktop:end
+
+# shared:ownership:begin
+# Data only: header, name<TAB>basename, then role<TAB>absolute-path<TAB>fingerprint.
+# Never source this file or use unverified programs to identify an installation.
+occupied() { [ -e "$1" ] || [ -L "$1" ]; }
+valid_name() {
+  case "$1" in
+    '' | [!A-Za-z0-9_]* | *[!A-Za-z0-9_.+-]* | zero-desktop) return 1 ;;
+  esac
+}
+
+hash() {
+  if has sha256sum; then sum="$(sha256sum)" || return 1
+  elif has shasum; then sum="$(shasum -a 256)" || return 1
+  else fail "sha256sum or shasum is required"
+  fi
+  printf '%s\n' "${sum%% *}"
+}
+
+# Includes names, empty directories, executable bits, link targets, and bytes.
+# Directory traversal never follows symlinks.
+fingerprint() (
+  if [ -L "$1" ]; then
+    link="$(readlink "$1")" || exit 1
+    content="$(printf '%s\n' "$link" | hash)" || exit 1
+    printf 'l:%s\n' "$content"
+  elif [ -f "$1" ]; then
+    executable=0
+    if [ -x "$1" ]; then executable=1; fi
+    content="$(hash <"$1")" || exit 1
+    printf 'f:%s:%s\n' "$content" "$executable"
+  elif [ -d "$1" ]; then
+    cd "$1" || exit 1
+    listing="$(mktemp "$TMP/tree.XXXXXX")"
+    entries="$(mktemp "$TMP/entries.XXXXXX")"
+    find . -print >"$listing" || exit 1
+    LC_ALL=C sort "$listing" >"$entries"
+    while IFS= read -r entry; do
+      case "$entry" in *"$TAB"*) exit 1 ;; esac
+      printf '%s\t' "$entry"
+      if [ -L "$entry" ]; then
+        link="$(readlink "$entry")" || exit 1
+        content="$(printf '%s\n' "$link" | hash)" || exit 1
+        printf 'l:%s\n' "$content"
+      elif [ -f "$entry" ]; then
+        executable=0
+        if [ -x "$entry" ]; then executable=1; fi
+        content="$(hash <"$entry")" || exit 1
+        printf 'f:%s:%s\n' "$content" "$executable"
+      elif [ -d "$entry" ]; then printf 'd\n'
+      else exit 1
+      fi
+    done <"$entries" >"$listing" || exit 1
+    content="$(hash <"$listing")" || exit 1
+    printf 'd:%s\n' "$content"
+  else return 1
+  fi
+)
+
+init_records() {
+  has sha256sum || has shasum || fail "sha256sum or shasum is required"
+  TAB="$(printf '\t')"
+  if [ "$OS" = darwin ]; then
+    ZERO_CONFIG="$HOME/Library/Application Support/zero"
+  else
+    ZERO_CONFIG="$DESKTOP_CONFIG/zero"
+  fi
+  RECORD="$ZERO_CONFIG/install.tsv"
+  OLD_RECORD="$TMP/old-record"
+  : >"$OLD_RECORD"
+  OLD_NAME=""
+  # Line-oriented records cannot represent tabs/newlines. Refuse, never truncate.
+  case "$HOME$ZERO_CONFIG$DESKTOP_DATA${PATH:-}" in
+    *"$TAB"* | *'
+'*) fail "installation paths cannot contain tabs or newlines" ;;
+  esac
+  [ ! -L "$ZERO_CONFIG" ] || fail "refusing symlink configuration directory $ZERO_CONFIG"
+  if occupied "$ZERO_CONFIG" && [ ! -d "$ZERO_CONFIG" ]; then fail "configuration path is not a directory: $ZERO_CONFIG"; fi
+  if occupied "$RECORD"; then
+    [ -f "$RECORD" ] && [ ! -L "$RECORD" ] || fail "invalid ownership record $RECORD"
+    {
+      IFS= read -r header || fail "invalid ownership record $RECORD"
+      [ "$header" = zero-install-v1 ] || fail "invalid ownership record $RECORD"
+      IFS="$TAB" read -r kind OLD_NAME extra || fail "invalid ownership record $RECORD"
+      if [ "$kind" != name ] || [ -n "$extra" ] || ! valid_name "$OLD_NAME"; then
+        fail "invalid ownership name in $RECORD"
+      fi
+      seen=' '
+      while IFS="$TAB" read -r role path digest extra; do
+        [ -n "$digest" ] && [ -z "$extra" ] || fail "invalid ownership row in $RECORD"
+        case "$seen" in *" $role "*) fail "duplicate ownership role in $RECORD" ;; esac
+        seen="$seen$role "
+        case "$role:$path" in
+          "cli:$HOME/.local/bin/$OLD_NAME" | "cli:$HOME/bin/$OLD_NAME" | \
+          "link:$HOME/.local/bin/zero-desktop" | "link:$HOME/bin/zero-desktop" | \
+          "app:$DESKTOP_HOME" | 'app:/Applications/zero-desktop.app' | "app:$HOME/Applications/zero-desktop.app" | \
+          "entry:$DESKTOP_DATA/applications/$DESKTOP_ID" | "icon:$DESKTOP_ICON") ;;
+          *) fail "invalid ownership path in $RECORD" ;;
+        esac
+        case "$digest" in *[!a-f0-9:ldx]*) fail "invalid fingerprint in $RECORD" ;; esac
+        printf '%s\t%s\t%s\n' "$role" "$path" "$digest" >>"$OLD_RECORD"
+      done
+    } <"$RECORD"
+  fi
+}
+
+owned() {
+  [ -f "$OLD_RECORD" ] || return 1
+  while IFS="$TAB" read -r _own_role own_path own_digest; do
+    own_parent="$(dirname "$own_path")"
+    query_parent="$(dirname "$1")"
+    if [ "$own_path" = "$1" ] || { [ "${own_path##*/}" = "${1##*/}" ] &&
+      [ -d "$own_parent" ] && [ -d "$query_parent" ] &&
+      [ "$(cd "$own_parent" && pwd -P)" = "$(cd "$query_parent" && pwd -P)" ]; }; then
+      actual="$(fingerprint "$1")" || return 1
+      [ "$actual" = "$own_digest" ] && return 0
+      return 1
+    fi
+  done <"$OLD_RECORD"
+  return 1
+}
+
+check_target() {
+  if occupied "$1" && ! owned "$1"; then
+    fail "collision: $1 is unrelated or modified; left untouched"
+  fi
+}
+
+record_path() {
+  digest="$(fingerprint "$2")" || fail "cannot fingerprint $2"
+  printf '%s\t%s\t%s\n' "$1" "$2" "$digest" >>"$NEW_RECORD"
+}
+# shared:ownership:end
+
+# shared:cli:begin
+on_path() {
+  case ":${PATH:-}:" in *":$1:"*) return 0 ;; esac
+  return 1
+}
+
+# Choose without creating destinations. Probe the nearest existing parent.
+writable_dir() (
+  probe="$1"
+  while ! occupied "$probe"; do probe="$(dirname "$probe")"; done
+  [ -d "$probe" ] && [ -w "$probe" ]
+)
+choose_bin_dir() {
+  for dir in "$HOME/.local/bin" "$HOME/bin"; do
+    if on_path "$dir" && writable_dir "$dir"; then BIN_DIR="$dir"; return; fi
+  done
+  BIN_DIR="$HOME/.local/bin"
+  writable_dir "$BIN_DIR" || fail "cannot write $BIN_DIR"
+}
+
+# Check every executable file on PATH, including entries after our destination.
+name_available() {
+  candidate="$BIN_DIR/$1"
+  if occupied "$candidate" && ! owned "$candidate"; then
+    COLLISION="$candidate"
+    return 1
+  fi
+  rest="${PATH:-}"
+  while :; do
+    dir="${rest%%:*}"
+    [ -n "$dir" ] || dir=.
+    path="$dir/$1"
+    if [ -f "$path" ] && [ -x "$path" ]; then
+      absolute="$(cd "$dir" 2>/dev/null && pwd -P)/$1"
+      if ! owned "$absolute"; then COLLISION="$path"; return 1; fi
+    fi
+    case "$rest" in *:*) rest="${rest#*:}" ;; *) break ;; esac
+  done
+  return 0
+}
+
+rerun() {
+  printf 'Rerun: curl -fsSL https://raw.githubusercontent.com/%s/main/scripts/%s | sh -s --' "$REPO" "$INSTALL_SCRIPT" >&2
+  if [ "$CLI_ONLY" = 1 ]; then printf ' --cli-only' >&2; fi
+  printf ' --name %s\n' "$1" >&2
+}
+select_name() {
+  choose_bin_dir
+  NAME="${REQUESTED_NAME:-${OLD_NAME:-zero}}"
+  if name_available "$NAME"; then return; fi
+  warn "collision: $COLLISION is unrelated or modified; left untouched"
+  if [ -n "$REQUESTED_NAME" ]; then
+    rerun NAME
+    fail "explicit name $NAME is occupied"
+  fi
+  if [ "$NAME" = zero-cli ] || ! name_available zero-cli; then
+    rerun NAME
+    fail "cannot use $NAME or zero-cli; choose an available --name NAME"
+  fi
+  # /dev/tty reads the controlling terminal even when sh reads its script on stdin.
+  # Open in a subshell: a failed special-builtin redirect must not kill the script.
+  if ! (exec 3<>/dev/tty) 2>/dev/null; then
+    rerun zero-cli
+    fail "confirmation requires a terminal; no destinations changed"
+  fi
+  answer=""
+  answer="$(
+    exec 3<>/dev/tty
+    printf 'Install as zero-cli instead? [y/N] ' >&3
+    IFS= read -r reply <&3 || exit 1
+    printf '%s' "$reply"
+  )" || answer=""
+  case "$answer" in y | Y | yes | YES) NAME=zero-cli ;;
+    *) rerun zero-cli; fail "installation cancelled; no destinations changed" ;;
+  esac
+}
+
+install_cli() {
+  target="$BIN_DIR/$NAME"
+  updated=0
+  if occupied "$target"; then updated=1; fi
+  check_target "$target"
+  mkdir -p "$BIN_DIR"
+  staged="$(mktemp "$BIN_DIR/.zero.XXXXXX")"
+  cp "$CLI" "$staged"
+  chmod 755 "$staged"
+  mv -f "$staged" "$target"
+  record_path cli "$target"
+  if [ "$updated" = 1 ]; then ok "updated $target (zero $VERSION)"
+  else ok "installed $target (zero $VERSION)"
+  fi
+  if ! on_path "$BIN_DIR"; then
+    warn "$BIN_DIR is not on PATH; add it:"
+    case "$(basename "${SHELL:-sh}")" in
+      fish) note "fish_add_path \"$BIN_DIR\"" ;;
+      zsh) note "export PATH=\"$BIN_DIR:\$PATH\"   # in ~/.zshrc" ;;
+      bash) note "export PATH=\"$BIN_DIR:\$PATH\"   # in ~/.bashrc" ;;
+      *) note "export PATH=\"$BIN_DIR:\$PATH\"   # in ~/.profile" ;;
+    esac
+  fi
+}
+
+finish_records() {
+  # Preserve components omitted by --cli-only, including their old fingerprints.
+  while IFS="$TAB" read -r role path digest; do
+    if [ "$role" != cli ] && [ "$CLI_ONLY" = 1 ]; then
+      printf '%s\t%s\t%s\n' "$role" "$path" "$digest" >>"$NEW_RECORD"
+    fi
+  done <"$OLD_RECORD"
+  mkdir -p "$ZERO_CONFIG"
+  record_stage="$(mktemp "$ZERO_CONFIG/.install.XXXXXX")"
+  { printf 'zero-install-v1\nname\t%s\n' "$NAME"; cat "$NEW_RECORD"; } >"$record_stage"
+  chmod 600 "$record_stage"
+  mv -f "$record_stage" "$RECORD"
+  # Retire an old command only after the new installation and record succeed.
+  while IFS="$TAB" read -r role path digest; do
+    if [ "$role" = cli ] && [ "$path" != "$BIN_DIR/$NAME" ] && occupied "$path"; then
+      if owned "$path"; then rm -f "$path"; ok "retired $path"
+      else warn "kept $path: ownership changed"
+      fi
+    fi
+  done <"$OLD_RECORD"
+}
+
+# shared:cli:end
+
+# shared:args:begin
+CLI_ONLY=0
+REQUESTED_NAME=""
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --cli-only) CLI_ONLY=1 ;;
+      --name)
+        [ "$#" -ge 2 ] || fail "--name requires a simple executable basename"
+        shift
+        valid_name "$1" || fail "invalid --name: use a simple executable basename"
+        REQUESTED_NAME="$1"
+        ;;
+      *) fail "unknown option $1; use --cli-only or --name NAME" ;;
+    esac
+    shift
+  done
+}
+# shared:args:end
 
 # shared:desktop-install:begin
 # check_webkit warns on Linux without WebKitGTK 4.1, which the app's window
@@ -196,8 +401,27 @@ check_webkit() {
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 
 check_desktop_conflicts() {
-  if desktop_running; then
-    fail "the srcz desktop app is running; quit it, then run this again"
+  if desktop_running; then fail "the zero desktop app is running; quit it, then run this again"; fi
+  check_target "$BIN_DIR/zero-desktop"
+  # Also protect executable zero-desktop copies elsewhere on PATH.
+  name_available zero-desktop || fail "collision: $COLLISION is unrelated or modified; left untouched"
+  if [ "$OS" = linux ]; then
+    APP_TARGET="$DESKTOP_HOME"
+    check_target "$DESKTOP_DATA/applications/$DESKTOP_ID"
+    check_target "$DESKTOP_ICON"
+  else
+    apps=/Applications
+    if [ ! -d "$apps" ] || [ ! -w "$apps" ]; then apps="$HOME/Applications"; fi
+    APP_TARGET="$apps/zero-desktop.app"
+  fi
+  check_target "$APP_TARGET"
+  for destination in "$APP_TARGET" "$BIN_DIR/zero-desktop"; do
+    writable_dir "$(dirname "$destination")" || fail "cannot write $destination"
+  done
+  if [ "$OS" = linux ]; then
+    for destination in "$DESKTOP_DATA/applications/$DESKTOP_ID" "$DESKTOP_ICON"; do
+      writable_dir "$(dirname "$destination")" || fail "cannot write $destination"
+    done
   fi
 }
 
@@ -215,93 +439,123 @@ desktop_exec() {
 
 # replace_path SRC DEST copies SRC over DEST, swapping it in once copied.
 replace_path() {
-  rm -rf "$2.new"
-  if has ditto; then
-    ditto "$1" "$2.new"
-  else
-    cp -R "$1" "$2.new"
+  check_target "$2"
+  parent="$(dirname "$2")"
+  mkdir -p "$parent"
+  replacement="$(mktemp -d "$parent/.zero.XXXXXX")"
+  if has ditto; then ditto "$1" "$replacement/app"
+  else cp -R "$1" "$replacement/app"
   fi
   rm -rf "$2"
-  mv "$2.new" "$2"
+  mv "$replacement/app" "$2"
+  rmdir "$replacement"
 }
 
-# link_desktop TARGET links BIN_DIR/srcz-desktop to TARGET.
+# Install metadata through a private file, including over read-only owned files.
+install_file() {
+  check_target "$2"
+  metadata_stage="$(mktemp "$(dirname "$2")/.zero.XXXXXX")"
+  cp "$1" "$metadata_stage"
+  chmod 644 "$metadata_stage"
+  mv -f "$metadata_stage" "$2"
+}
+
+# link_desktop TARGET links BIN_DIR/zero-desktop to TARGET.
 link_desktop() {
-  choose_bin_dir
-  ln -sfn "$1" "$BIN_DIR/srcz-desktop"
-  ok "linked $BIN_DIR/srcz-desktop"
+  check_target "$BIN_DIR/zero-desktop"
+  mkdir -p "$BIN_DIR"
+  rm -f "$BIN_DIR/zero-desktop"
+  ln -s "$1" "$BIN_DIR/zero-desktop"
+  record_path link "$BIN_DIR/zero-desktop"
+  ok "linked $BIN_DIR/zero-desktop"
 }
 
 # install_desktop_linux DIR installs the unpacked Linux archive DIR, its
-# desktop entry and icon, and makes it the srcz:// handler.
+# desktop entry and icon, and makes it the zero:// handler.
 install_desktop_linux() {
-  if ! [ -x "$1/srcz-desktop" ] || ! [ -x "$1/bin/srcz" ]; then
-    fail "$package has no srcz-desktop app"
+  if ! [ -x "$1/zero-desktop" ] || ! [ -x "$1/bin/zero" ]; then
+    fail "$package has no zero-desktop app"
   fi
-  mkdir -p "$DESKTOP_DATA/srcz-desktop"
+  mkdir -p "$DESKTOP_DATA/zero-desktop"
   replace_path "$1" "$DESKTOP_HOME"
-  version="$("$DESKTOP_HOME/srcz-desktop" --version 2>/dev/null | head -n 1 || true)"
-  ok "installed $DESKTOP_HOME ($version)"
-  exec_arg="$(desktop_exec "$DESKTOP_HOME/srcz-desktop")"
+  record_path app "$DESKTOP_HOME"
+  ok "installed $DESKTOP_HOME (zero-desktop $VERSION)"
+  exec_arg="$(desktop_exec "$DESKTOP_HOME/zero-desktop")"
   mkdir -p "$DESKTOP_DATA/applications" "$(dirname "$DESKTOP_ICON")" "$DESKTOP_CONFIG"
-  cp "$DESKTOP_HOME/srcz-desktop.png" "$DESKTOP_ICON"
-  cat >"$DESKTOP_DATA/applications/$DESKTOP_ID" <<EOF2
+  install_file "$DESKTOP_HOME/zero-desktop.png" "$DESKTOP_ICON"
+  cat >"$TMP/desktop-entry" <<EOF2
 [Desktop Entry]
 Type=Application
-Name=srcz
-Comment=Browse local files with Source Zero
+Name=Zero
+Comment=Browse local files with Zero
 Exec=$exec_arg %U
-Icon=srcz-desktop
+Icon=zero-desktop
 Terminal=false
 Categories=Development;
-MimeType=x-scheme-handler/srcz;
+MimeType=x-scheme-handler/zero;
 EOF2
+  install_file "$TMP/desktop-entry" "$DESKTOP_DATA/applications/$DESKTOP_ID"
+  record_path entry "$DESKTOP_DATA/applications/$DESKTOP_ID"
+  record_path icon "$DESKTOP_ICON"
   if has update-desktop-database; then
     update-desktop-database "$DESKTOP_DATA/applications" >/dev/null 2>&1 || true
   fi
-  if has xdg-mime && xdg-mime default "$DESKTOP_ID" x-scheme-handler/srcz; then
-    ok "registered srcz:// links"
+  if has xdg-mime && xdg-mime default "$DESKTOP_ID" x-scheme-handler/zero; then
+    ok "registered zero:// links"
   else
-    warn "could not set the srcz:// handler (xdg-mime); srcz . may serve in a browser instead"
+    warn "could not set the zero:// handler (xdg-mime); $NAME . may serve in a browser instead"
   fi
-  link_desktop "$DESKTOP_HOME/srcz-desktop"
+  link_desktop "$DESKTOP_HOME/zero-desktop"
 }
 
-# install_desktop_macos APP installs srcz-desktop.app into /Applications, or
+# install_desktop_macos APP installs zero-desktop.app into /Applications, or
 # ~/Applications when /Applications is not writable.
 install_desktop_macos() {
-  apps="/Applications"
-  if ! [ -d "$apps" ] || ! [ -w "$apps" ]; then
-    apps="$HOME/Applications"
-    mkdir -p "$apps"
-  fi
-  replace_path "$1" "$apps/srcz-desktop.app"
+  apps="$(dirname "$APP_TARGET")"
+  replace_path "$1" "$APP_TARGET"
+  record_path app "$APP_TARGET"
   if [ -x "$LSREGISTER" ]; then
-    "$LSREGISTER" -f "$apps/srcz-desktop.app" >/dev/null 2>&1 || true
+    "$LSREGISTER" -f "$apps/zero-desktop.app" >/dev/null 2>&1 || true
   fi
-  ok "installed $apps/srcz-desktop.app"
-  link_desktop "$apps/srcz-desktop.app/Contents/MacOS/srcz-desktop"
+  ok "installed $apps/zero-desktop.app"
+  link_desktop "$apps/zero-desktop.app/Contents/MacOS/zero-desktop"
 }
 
 # download_desktop unpacks the desktop app of release TAG into TMP/desktop.
 download_desktop() {
   if [ "$OS" = linux ]; then
-    package="srcz-desktop_${VERSION}_linux_${ARCH}.tar.gz"
+    package="zero-desktop_${VERSION}_linux_${ARCH}.tar.gz"
   else
-    package="srcz-desktop_${VERSION}_darwin_${ARCH}.zip"
+    package="zero-desktop_${VERSION}_darwin_${ARCH}.zip"
   fi
 
-  step "downloading the srcz desktop app $TAG ($OS/$ARCH)"
+  step "downloading the zero desktop app $TAG ($OS/$ARCH)"
   fetch "$(release_url "$package")" "$TMP/$package" ||
-    fail "srcz $TAG has no $package; install the CLI alone with --cli-only"
+    fail "zero $TAG has no $package; install the CLI alone with --cli-only"
 
   mkdir -p "$TMP/desktop"
   if [ "$OS" = linux ]; then
+    validate_tar "$TMP/$package"
     tar -xzf "$TMP/$package" -C "$TMP/desktop"
-  elif has ditto; then
-    ditto -x -k "$TMP/$package" "$TMP/desktop"
   else
-    unzip -q "$TMP/$package" -d "$TMP/desktop"
+    unzip -tq "$TMP/$package" >/dev/null || fail "invalid archive $package"
+    unzip -Z -l "$TMP/$package" >"$TMP/archive-types" || fail "invalid archive $package"
+    if LC_ALL=C grep -q '^[lbcps]' "$TMP/archive-types"; then fail "unsafe archive entry in $package"; fi
+    unzip -Z1 "$TMP/$package" >"$TMP/archive-list" || fail "invalid archive $package"
+    validate_members "$TMP/archive-list"
+    if has ditto; then
+      ditto -x -k "$TMP/$package" "$TMP/desktop"
+    else
+      unzip -q "$TMP/$package" -d "$TMP/desktop"
+    fi
+  fi
+  if [ "$OS" = linux ]; then
+    [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
+      [ -f "$TMP/desktop/bin/zero" ] && [ -x "$TMP/desktop/bin/zero" ] &&
+      [ -f "$TMP/desktop/zero-desktop.png" ] || fail "$package has no valid zero-desktop app"
+  else
+    [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
+      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ] || fail "$package has no valid zero-desktop.app"
   fi
 }
 
@@ -310,16 +564,43 @@ install_desktop() {
   if [ "$OS" = linux ]; then
     install_desktop_linux "$TMP/desktop"
   else
-    [ -d "$TMP/desktop/srcz-desktop.app" ] || fail "$package has no srcz-desktop.app"
-    install_desktop_macos "$TMP/desktop/srcz-desktop.app"
+    [ -d "$TMP/desktop/zero-desktop.app" ] || fail "$package has no zero-desktop.app"
+    install_desktop_macos "$TMP/desktop/zero-desktop.app"
   fi
 }
 # shared:desktop-install:end
 
-# shared:edge:begin
-# edge_release selects the edge prerelease: after every green push to main, CI
-# replaces its assets with that commit's build, named for version 0.0.0-edge.
-# Decision 0093: macOS Intel is stable only.
+# shared:release:begin
+release_url() {
+  printf 'https://github.com/%s/releases/download/%s/%s' "$REPO" "$TAG" "$1"
+}
+
+validate_members() {
+  [ -s "$1" ] || fail "empty archive"
+  while IFS= read -r member; do
+    case "$member" in /* | ../* | */../* | */.. | .. | *\\* | *"$TAB"*) fail "unsafe archive member: $member" ;; esac
+  done <"$1"
+}
+validate_tar() {
+  tar -tzf "$1" >"$TMP/archive-list" || fail "invalid archive $1"
+  validate_members "$TMP/archive-list"
+  # Release tarballs contain files and directories, never device nodes or links.
+  tar -tvzf "$1" >"$TMP/archive-types" || fail "invalid archive $1"
+  if LC_ALL=C grep -q '^[^d-]' "$TMP/archive-types"; then fail "unsafe archive entry in $1"; fi
+}
+
+download_cli() {
+  name="zero_${VERSION}_${OS}_${ARCH}"
+  step "downloading zero $TAG ($OS/$ARCH)"
+  fetch "$(release_url "$name.tar.gz")" "$TMP/$name.tar.gz" || fail "could not download $name.tar.gz from zero $TAG"
+  validate_tar "$TMP/$name.tar.gz"
+  mkdir -p "$TMP/cli"
+  tar -xzf "$TMP/$name.tar.gz" -C "$TMP/cli"
+  CLI="$TMP/cli/$name/zero"
+  [ -f "$CLI" ] && [ -x "$CLI" ] && [ ! -L "$CLI" ] || fail "$name.tar.gz has no executable zero binary"
+}
+# shared:release:end
+
 edge_release() {
   if [ "$OS" = darwin ] && [ "$ARCH" = amd64 ]; then
     fail "edge has no macOS Intel builds; use the stable install script (the name without -edge)"
@@ -327,37 +608,25 @@ edge_release() {
   TAG=edge
   VERSION=0.0.0-edge
 }
-# shared:edge:end
 
-# shared:release:begin
-# release_url FILE prints FILE's download URL in release TAG.
-release_url() {
-  printf 'https://github.com/%s/releases/download/%s/%s' "$REPO" "$TAG" "$1"
-}
-
-# download_cli sets CLI to the srcz binary of release TAG, whose assets are
-# named for VERSION.
-download_cli() {
-  name="srcz_${VERSION}_${OS}_${ARCH}"
-  step "downloading srcz $TAG ($OS/$ARCH)"
-  fetch "$(release_url "$name.tar.gz")" "$TMP/$name.tar.gz" || fail "could not download $name.tar.gz from srcz $TAG"
-  tar -xzf "$TMP/$name.tar.gz" -C "$TMP"
-  CLI="$TMP/$name/srcz"
-  [ -f "$CLI" ] || fail "$name.tar.gz has no srcz binary"
-}
-# shared:release:end
+INSTALL_SCRIPT=install-edge.sh
 
 parse_args "$@"
 detect_platform
-if [ "$CLI_ONLY" = 0 ]; then check_desktop_conflicts; fi
-make_tmp
 edge_release
+make_tmp
+init_records
+select_name
+writable_dir "$ZERO_CONFIG" || fail "cannot write $ZERO_CONFIG"
+if [ "$CLI_ONLY" = 0 ]; then check_desktop_conflicts; fi
 download_cli
-if [ "$CLI_ONLY" = 0 ]; then
-  download_desktop
-  install_desktop
-fi
-install_cli "$CLI"
+if [ "$CLI_ONLY" = 0 ]; then download_desktop; fi
+# All preflight checks and downloads finish before either destination changes.
+NEW_RECORD="$TMP/new-record"
+: >"$NEW_RECORD"
+if [ "$CLI_ONLY" = 0 ]; then install_desktop; fi
+install_cli
+finish_records
 if [ "$CLI_ONLY" = 0 ]; then check_webkit; fi
 ok "done; open the current directory with:"
-note "srcz ."
+note "$NAME ."

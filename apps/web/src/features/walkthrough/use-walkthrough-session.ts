@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import type { Walkthrough } from "@srcz/contracts"
+import type { Walkthrough } from "@zero/contracts"
 import {
   isNew, progressOf, readWalkthroughMemory, rememberFinished, rememberOpened, rememberSeen, rememberStep, rememberVisited, unseenCount,
   writeWalkthroughMemory, type WalkthroughMemory, type WalkthroughProgress,

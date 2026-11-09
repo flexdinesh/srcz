@@ -1,13 +1,13 @@
 import { isRecord } from "../../api/http.ts"
 
 // Per-browser walkthrough memory (decisions 0047, 0113), under
-// srcz-walkthroughs: each project's newest walkthrough time the user has
+// zero-walkthroughs: each project's newest walkthrough time the user has
 // seen, for the activity badge; the last step opened in each walkthrough, to
 // resume it; and each walkthrough's progress (the steps read and whether it
 // was finished) at the version read. Pure functions return new values; at
 // most 50 projects and 100 walkthroughs each are kept, newest first.
 
-const storageKey = "srcz-walkthroughs"
+const storageKey = "zero-walkthroughs"
 const maxProjects = 50
 const maxWalkthroughs = 100
 // maxSteps matches the server's step limit (decision 0047).

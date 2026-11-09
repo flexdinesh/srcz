@@ -7,7 +7,7 @@ export function Nav() {
     <header className="landing-nav">
       <a className="landing-wordmark" href="/">
         <Mark />
-        <span className="landing-nav-name">Source Zero</span>
+        <span className="landing-nav-name">Zero</span>
       </a>
       <nav aria-label="Primary" className="landing-nav-links">
         <a href={links.docs}>Docs</a>

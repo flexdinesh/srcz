@@ -10,13 +10,13 @@ import (
 	"testing"
 )
 
-// The app is a client of srcz (decision 0094): from the srcz module it
+// The app is a client of zero (decision 0094): from the zero module it
 // imports only the transport contract, the connection model, and the Go
-// client. Its module path sits under srcz's, so Go's internal rule would not
+// client. Its module path sits under zero's, so Go's internal rule would not
 // stop it.
-func TestImportsOnlySrczContractAndClient(t *testing.T) {
-	const srcz = "github.com/flexdinesh/srcz/"
-	allowed := map[string]bool{srcz + "pkg/contract": true, srcz + "pkg/connection": true, srcz + "pkg/client": true}
+func TestImportsOnlyZeroContractAndClient(t *testing.T) {
+	const zero = "github.com/flexdinesh/zero/"
+	allowed := map[string]bool{zero + "pkg/contract": true, zero + "pkg/connection": true, zero + "pkg/client": true}
 	files := 0
 	err := filepath.WalkDir(".", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -38,8 +38,8 @@ func TestImportsOnlySrczContractAndClient(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			if strings.HasPrefix(imported, srcz) && !strings.HasPrefix(imported, srcz+"apps/desktop/") && !allowed[imported] {
-				t.Errorf("%s imports %s; the app imports only pkg/contract, pkg/connection, and pkg/client from srcz", path, imported)
+			if strings.HasPrefix(imported, zero) && !strings.HasPrefix(imported, zero+"apps/desktop/") && !allowed[imported] {
+				t.Errorf("%s imports %s; the app imports only pkg/contract, pkg/connection, and pkg/client from zero", path, imported)
 			}
 		}
 		return nil

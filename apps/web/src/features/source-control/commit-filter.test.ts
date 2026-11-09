@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { CommitsResponse } from "@srcz/contracts"
+import type { CommitsResponse } from "@zero/contracts"
 import {
   appliedFilter, closedFilter, emptyHistoryMessage, fileHistory, filterAnnouncement, isFiltered, moreLabel, sameHistoryFilter,
 } from "./commit-filter.ts"

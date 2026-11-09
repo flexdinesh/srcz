@@ -26,7 +26,7 @@ test("startup failure rejects readiness and cleanup handles missing commands", a
   const failed = startProcess(process.execPath, ["-e", "process.exit(7)"], process.env, true)
   await assert.rejects(serverPort(failed), /status 7/)
   await stopProcess(failed)
-  const missing = startProcess("srcz-browser-deliberately-missing-command", [], process.env, true)
+  const missing = startProcess("zero-browser-deliberately-missing-command", [], process.env, true)
   await assert.rejects(serverPort(missing), /ENOENT/)
   await stopProcess(missing)
 })

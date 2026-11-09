@@ -111,12 +111,12 @@ function mix(a: string, b: string, p: number): string {
 // The selection fill is a text-primary ink layer (decision 0109); on each
 // ground the mark holds 3:1 and selected text holds 4.5:1.
 test("every theme's selection fill keeps its mark and text readable", () => {
-  const srcz = /:root:is\(\[data-theme="system"\][^{]*\{([^}]*)\}/.exec(themesCSS)?.[1] ?? ""
-  const srczLight = (key: string) => new RegExp(`--color-${key}:\\s*light-dark\\((#[0-9a-f]{6})`).exec(srcz)?.[1]
+  const zero = /:root:is\(\[data-theme="system"\][^{]*\{([^}]*)\}/.exec(themesCSS)?.[1] ?? ""
+  const zeroLight = (key: string) => new RegExp(`--color-${key}:\\s*light-dark\\((#[0-9a-f]{6})`).exec(zero)?.[1]
   const share = Number(/--color-selected:\s*color-mix\(in srgb, var\(--color-text-primary\) (\d+)%, transparent\)/.exec(tokensCSS)?.[1])
   assert.ok(share > 0, "--color-selected is a text-primary ink layer")
   for (const [name, values] of allThemes()) {
-    const value = (key: string) => (name === "light" ? srczLight(key) : undefined) ?? values.get(`--color-${key}`) ?? ""
+    const value = (key: string) => (name === "light" ? zeroLight(key) : undefined) ?? values.get(`--color-${key}`) ?? ""
     const chrome = value("workspace-chrome") || mix(value("surface"), value("canvas"), 0.5)
     for (const [ground, color] of [["surface", value("surface")], ["surface-secondary", value("surface-secondary")], ["surface-raised", value("surface-raised")], ["workspace-chrome", chrome]]) {
       const fill = mix(value("text-primary"), color, share / 100)
@@ -129,10 +129,10 @@ test("every theme's selection fill keeps its mark and text readable", () => {
 })
 
 test("every theme's selection mark and field edges hold 3:1 against their grounds", () => {
-  const srcz = /:root:is\(\[data-theme="system"\][^{]*\{([^}]*)\}/.exec(themesCSS)?.[1] ?? ""
-  const srczLight = (key: string) => new RegExp(`--color-${key}:\\s*light-dark\\((#[0-9a-f]{6})`).exec(srcz)?.[1]
+  const zero = /:root:is\(\[data-theme="system"\][^{]*\{([^}]*)\}/.exec(themesCSS)?.[1] ?? ""
+  const zeroLight = (key: string) => new RegExp(`--color-${key}:\\s*light-dark\\((#[0-9a-f]{6})`).exec(zero)?.[1]
   for (const [name, values] of allThemes()) {
-    const value = (key: string) => (name === "light" ? srczLight(key) : undefined) ?? values.get(`--color-${key}`) ?? ""
+    const value = (key: string) => (name === "light" ? zeroLight(key) : undefined) ?? values.get(`--color-${key}`) ?? ""
     const chrome = value("workspace-chrome") || mix(value("surface"), value("canvas"), 0.5)
     const field = value("field-border") || mix(value("text-muted"), value("surface"), 0.9)
     for (const [ground, color] of [["surface", value("surface")], ["surface-secondary", value("surface-secondary")], ["surface-raised", value("surface-raised")], ["workspace-chrome", chrome]]) {

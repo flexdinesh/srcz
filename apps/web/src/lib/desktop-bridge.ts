@@ -2,8 +2,8 @@ import { isRecord } from "../api/http.ts"
 
 declare global {
   interface Window {
-    // srczDesktop is the desktop app's preload bridge; browsers have none.
-    srczDesktop?: unknown
+    // zeroDesktop is the desktop app's preload bridge; browsers have none.
+    zeroDesktop?: unknown
   }
 }
 
@@ -106,7 +106,7 @@ export function readDesktopBridge(value: unknown): DesktopBridge | null {
 
 // desktopBridge is the bridge the desktop app exposes, or null in browsers.
 export function desktopBridge(): DesktopBridge | null {
-  return typeof window === "undefined" ? null : readDesktopBridge(window.srczDesktop)
+  return typeof window === "undefined" ? null : readDesktopBridge(window.zeroDesktop)
 }
 
 // notificationsAvailable reports a client that can show notices: the desktop

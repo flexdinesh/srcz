@@ -5,8 +5,8 @@
 #
 # Contexts (ctx-* so they never shadow a stage): ctx-toolchain (reduced mise
 # config from mise.lock), ctx-node (workspace manifests and patches), ctx-gomod
-# (srcz/tools modules), ctx-desktopmod (desktop modules), ctx-web (web build
-# inputs), ctx-bin (srcz binary inputs), ctx-src (all group inputs).
+# (zero/tools modules), ctx-desktopmod (desktop modules), ctx-web (web build
+# inputs), ctx-bin (zero binary inputs), ctx-src (all group inputs).
 #
 # Debian packages come from snapshot 20261031T000000Z, which also names the apt
 # caches; change every occurrence together.
@@ -16,7 +16,7 @@
 # the runner reads /out/status.json. Its own stage keeps edits from rebuilding
 # toolchain and dependency layers; every target copies it in.
 FROM scratch AS capture
-COPY --chmod=0755 <<'EOF' /usr/local/bin/srcz-check-capture
+COPY --chmod=0755 <<'EOF' /usr/local/bin/zero-check-capture
 #!/usr/bin/env bash
 set +e
 {
@@ -78,12 +78,12 @@ ENV HOME=/home/runner \
 #   desktop e2e: display, session bus, GTK 3, WebKitGTK 4.1, Mesa, xdotool, xdg-utils
 #   playwright: tools, chromium, and webkit lists for debian12-x64 of the
 #   locked Playwright (TestPlaywrightPackagesCoverLockedPlaywright guards it)
-RUN --mount=type=cache,id=srcz-check-apt-archives-20261031T000000Z,target=/var/cache/apt/archives,sharing=locked \
-    --mount=type=cache,id=srcz-check-apt-lists-20261031T000000Z,target=/var/lib/apt/lists,sharing=locked <<'EOF'
+RUN --mount=type=cache,id=zero-check-apt-archives-20261031T000000Z,target=/var/cache/apt/archives,sharing=locked \
+    --mount=type=cache,id=zero-check-apt-lists-20261031T000000Z,target=/var/lib/apt/lists,sharing=locked <<'EOF'
 set -eu
 mkdir -p /home/runner /out/logs /src
 rm -f /etc/apt/sources.list.d/debian.sources /etc/apt/apt.conf.d/docker-clean
-printf '%s\n' 'Acquire::Retries "5";' 'Acquire::http::Timeout "30";' 'Dir::Cache::pkgcache "";' 'Dir::Cache::srcpkgcache "";' > /etc/apt/apt.conf.d/80srcz-validation
+printf '%s\n' 'Acquire::Retries "5";' 'Acquire::http::Timeout "30";' 'Dir::Cache::pkgcache "";' 'Dir::Cache::srcpkgcache "";' > /etc/apt/apt.conf.d/80zero-validation
 printf '%s\n' \
   'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20261031T000000Z bookworm main' \
   'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20261031T000000Z bookworm-updates main' \
@@ -111,7 +111,7 @@ install /tmp/mise/bin/mise /usr/local/bin/mise
 rm -rf /tmp/mise /tmp/mise.tar.xz
 EOF
 WORKDIR /src
-ENTRYPOINT ["/usr/local/bin/srcz-check-capture"]
+ENTRYPOINT ["/usr/local/bin/zero-check-capture"]
 
 # Locked go, node, and pnpm only: task edits in mise.toml keep this layer.
 FROM base AS toolchain
@@ -123,7 +123,7 @@ RUN MISE_JOBS=1 mise install go node pnpm
 # it, and a different runtime store makes pnpm recreate node_modules offline.
 FROM toolchain AS node-deps
 COPY --from=ctx-node . /src/
-RUN --mount=type=cache,id=srcz-check-pnpm-store,target=/home/runner/.local/share/pnpm/store \
+RUN --mount=type=cache,id=zero-check-pnpm-store,target=/home/runner/.local/share/pnpm/store \
     mise exec -- pnpm install --frozen-lockfile --package-import-method=copy
 
 # Playwright picks browser builds from the locked version.
@@ -135,7 +135,7 @@ RUN mise exec -- pnpm exec playwright install chromium webkit
 # list into the layer (sums still checked against go.sum).
 FROM toolchain AS go-deps
 COPY --from=ctx-gomod . /src/
-RUN --mount=type=cache,id=srcz-check-go-mod,target=/cache/go-mod <<'EOF'
+RUN --mount=type=cache,id=zero-check-go-mod,target=/cache/go-mod <<'EOF'
 set -eu
 for attempt in 1 2 3; do GOMODCACHE=/cache/go-mod mise exec -- go mod download all && break; [ "$attempt" -lt 3 ] && sleep 5 || exit 1; done
 GOMODCACHE=/home/runner/go/pkg/mod GOPROXY=file:///cache/go-mod/cache/download GOSUMDB=off mise exec -- go mod download all
@@ -143,7 +143,7 @@ EOF
 
 # apps/desktop is its own Go 1.27 module outside go.work (mygo v0.7.4).
 FROM toolchain AS desktop-deps
-ENV GOWORK=off SRCZ_DESKTOP_GOROOT=/usr/local/go1.27
+ENV GOWORK=off ZERO_DESKTOP_GOROOT=/usr/local/go1.27
 RUN <<'EOF'
 set -eu
 curl -fsSL https://go.dev/dl/go1.27.3.linux-amd64.tar.gz -o /tmp/go.tar.gz
@@ -154,7 +154,7 @@ rm /tmp/go.tar.gz
 /usr/local/go1.27/bin/go version
 EOF
 COPY --from=ctx-desktopmod . /src/
-RUN --mount=type=cache,id=srcz-check-go-mod,target=/cache/go-mod <<'EOF'
+RUN --mount=type=cache,id=zero-check-go-mod,target=/cache/go-mod <<'EOF'
 set -eu
 export GOROOT=/usr/local/go1.27
 for attempt in 1 2 3; do GOMODCACHE=/cache/go-mod /usr/local/go1.27/bin/go -C apps/desktop mod download all && break; [ "$attempt" -lt 3 ] && sleep 5 || exit 1; done
@@ -172,43 +172,43 @@ RUN mise run --force build:web
 
 FROM go-deps AS binary
 COPY --from=ctx-bin . /src/
-COPY --from=web /src/apps/srcz/internal/web/dist /src/apps/srcz/internal/web/dist
-RUN --mount=type=cache,id=srcz-check-go-build,target=/home/runner/.cache/go-build \
-    mise exec -- go build -buildvcs=false -o /out/srcz ./apps/srcz
+COPY --from=web /src/apps/zero/internal/web/dist /src/apps/zero/internal/web/dist
+RUN --mount=type=cache,id=zero-check-go-build,target=/home/runner/.cache/go-build \
+    mise exec -- go build -buildvcs=false -o /out/zero ./apps/zero
 
 # Group targets. Runtime caches mount from compose.yaml.
 FROM node-deps AS go
-COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
+COPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture
 COPY --from=go-deps /home/runner/go/pkg/mod /home/runner/go/pkg/mod
 COPY --from=source /src /src
-COPY --from=web /src/apps/srcz/internal/web/dist /src/apps/srcz/internal/web/dist
+COPY --from=web /src/apps/zero/internal/web/dist /src/apps/zero/internal/web/dist
 
 FROM node-deps AS frontend
-COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
+COPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture
 COPY --from=source /src /src
 
 FROM node-deps AS tooling
-COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
+COPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture
 COPY --from=source /src /src
 
 FROM node-deps AS docs
-COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
+COPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture
 COPY --from=source /src /src
 
 FROM browsers AS browser
-COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
+COPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture
 COPY --from=source /src /src
-COPY --from=web /src/apps/srcz/internal/web/dist /src/apps/srcz/internal/web/dist
-COPY --from=binary /out/srcz /opt/srcz
-ENV SRCZ_BROWSER_BINARY=/opt/srcz \
-    SRCZ_BROWSER_ISOLATED=1 \
-    SRCZ_BROWSER_ARTIFACT_DIR=/out/fixtures \
-    SRCZ_BROWSER_OUTPUT_DIR=/out/playwright \
+COPY --from=web /src/apps/zero/internal/web/dist /src/apps/zero/internal/web/dist
+COPY --from=binary /out/zero /opt/zero
+ENV ZERO_BROWSER_BINARY=/opt/zero \
+    ZERO_BROWSER_ISOLATED=1 \
+    ZERO_BROWSER_ARTIFACT_DIR=/out/fixtures \
+    ZERO_BROWSER_OUTPUT_DIR=/out/playwright \
     PORT=18090 \
-    SRCZ_BROWSER_WEB_PORT=15183
+    ZERO_BROWSER_WEB_PORT=15183
 
 FROM desktop-deps AS desktop
-COPY --from=capture /usr/local/bin/srcz-check-capture /usr/local/bin/srcz-check-capture
+COPY --from=capture /usr/local/bin/zero-check-capture /usr/local/bin/zero-check-capture
 COPY --from=source /src /src
-COPY --from=binary /out/srcz /opt/srcz
-ENV SRCZ_DESKTOP_BINARY=/opt/srcz
+COPY --from=binary /out/zero /opt/zero
+ENV ZERO_DESKTOP_BINARY=/opt/zero

@@ -125,7 +125,7 @@ function Frame({ label, children }: { label: string; children: ReactNode }) {
 
 function ReviewPane() {
   return (
-    <Frame label="srcz ~/code/api">
+    <Frame label="zero ~/code/api">
       <Tabs tabs={[{ name: 'routes.ts', meta: 'step 1 of 4', active: true }, { name: 'session.ts' }, { name: 'README.md' }]} />
       <div className="pane-band">
         <span>src/routes.ts</span>
@@ -172,7 +172,7 @@ function Tree({ rows }: { rows: { name: string; depth?: number; selected?: boole
 
 function BrowsePane() {
   return (
-    <Frame label="srcz ~/code/api">
+    <Frame label="zero ~/code/api">
       <Tabs
         tabs={[{ name: 'README.md', active: true }, { name: 'config.yaml' }, { name: 'logo.png' }]}
         trailing={
@@ -230,7 +230,7 @@ function BrowsePane() {
 
 function DiffsPane() {
   return (
-    <Frame label="srcz ~/code/api · source control">
+    <Frame label="zero ~/code/api · source control">
       <div className="pane-split">
         <div className="pane-side">
           <p className="pane-side-head">
@@ -323,7 +323,7 @@ function Source({ lines }: { lines: SourceLine[] }) {
 
 function WalkthroughPane() {
   return (
-    <Frame label="srcz ~/code/api · walkthroughs">
+    <Frame label="zero ~/code/api · walkthroughs">
       <div className="pane-split">
         <div className="pane-side">
           <p className="pane-side-head">Walkthroughs · 3</p>
@@ -371,21 +371,21 @@ function RemotePane() {
         <span>synthetic demo</span>
       </figcaption>
       <pre className="pane-term">
-        <span className="pane-prompt">$</span> srcz ~/code/foo --remote{'\n'}
-        {'  '}srcz 1.4.0{'\n'}
+        <span className="pane-prompt">$</span> zero ~/code/foo --remote{'\n'}
+        {'  '}zero 1.4.0{'\n'}
         {'  '}serving directory: /home/dee/code/foo{'\n\n'}
         {'  '}on your computer, run:{'\n'}
         {'  '}
-        <span className="pane-strong">srcz connect 10.0.0.5:7971/&lt;credential&gt;</span>
+        <span className="pane-strong">zero connect 10.0.0.5:7971/&lt;credential&gt;</span>
       </pre>
       <p className="pane-caption">
         <span>on your laptop</span>
       </p>
       <pre className="pane-term">
-        <span className="pane-prompt">$</span> srcz connect 10.0.0.5:7971/&lt;credential&gt;
+        <span className="pane-prompt">$</span> zero connect 10.0.0.5:7971/&lt;credential&gt;
       </pre>
       <div className="pane-app pane-window">
-        <Tabs tabs={[{ name: 'srcz://r-3f9a1c2b7d4e/', meta: 'foo', active: true }]} />
+        <Tabs tabs={[{ name: 'zero://r-3f9a1c2b7d4e/', meta: 'foo', active: true }]} />
         <div className="pane-split">
           <div className="pane-side">
             <Tree rows={[{ name: 'foo' }, { name: 'cmd', depth: 1 }, { name: 'README.md', depth: 1, selected: true }]} />
@@ -411,7 +411,7 @@ const facts = [
 
 function LeanPane() {
   return (
-    <Frame label="srcz · facts">
+    <Frame label="zero · facts">
       <Tabs tabs={[{ name: 'facts', active: true }]} />
       <dl className="pane-facts">
         {facts.map((fact) => (
@@ -422,10 +422,10 @@ function LeanPane() {
         ))}
       </dl>
       <pre className="pane-term pane-term-flat">
-        <span className="pane-prompt">$</span> which srcz{'\n'}
-        /home/dee/.local/bin/srcz{'\n'}
-        <span className="pane-prompt">$</span> srcz daemon status{'\n'}
-        srcz daemon 1.4.0 (protocol 1) at /run/user/1000/srcz/daemon.sock, pid 4182, 2 roots
+        <span className="pane-prompt">$</span> which zero{'\n'}
+        /home/dee/.local/bin/zero{'\n'}
+        <span className="pane-prompt">$</span> zero daemon status{'\n'}
+        zero daemon 1.4.0 (protocol 1) at /run/user/1000/zero/daemon.sock, pid 4182, 2 roots
       </pre>
       <Status>
         <span>one binary</span>

@@ -7,7 +7,7 @@ showAskAi: false
 A walkthrough is an ordered tour of code that an agent writes for you: notes,
 line ranges in files, files at a commit, and diffs, each with Markdown
 narration. Ask an agent to explain a pull request, a branch, or how a feature
-works as a walkthrough; Source Zero shows it beside the code.
+works as a walkthrough; Zero shows it beside the code.
 
 ## Following a walkthrough
 
@@ -26,7 +26,7 @@ review opens the step's file and folds the others. The narration appears
 inside the code, right after the step's lines, with a progress line,
 Previous, Next, and Close. Notes appear alone in the walkthrough's own tab.
 
-Steps you have read get a check in the step list, and Source Zero remembers
+Steps you have read get a check in the step list, and Zero remembers
 them in this browser. On the last step, **Finish** marks the walkthrough done
 and suggests the next one you haven't opened. Publishing a walkthrough again
 starts its progress over.
@@ -52,7 +52,7 @@ changes later, the step says so, showing the line it expected and the line
 there now, instead of guessing where the code moved.
 Steps pinned to a commit never change.
 
-Walkthroughs live in your user cache (`srcz/walkthroughs`), up to 100 per
+Walkthroughs live in your user cache (`zero/walkthroughs`), up to 100 per
 project; the least recently updated go first. Delete one from its step list.
 They are per machine and are not shared through git.
 
@@ -61,14 +61,18 @@ They are per machine and are not shared through git.
 The quickest start: choose **Copy agent instructions** (the copy icon in the
 Walkthroughs header, or the button in an empty list), paste it into your agent,
 and finish the last line, “Walk me through: ”, with what to explain. The
-instructions carry this Source Zero's address, your project's path, the format, and
+instructions carry this Zero's address, your project's path, the format, and
 how to publish.
 
-Agents publish with the Source Zero CLI; no running server is needed:
+Agents publish with the Zero CLI; no running server is needed:
 
 ```sh
-srcz walkthrough publish walkthrough.json
+zero walkthrough publish walkthrough.json
 ```
+
+Examples and copied prompts use the canonical `zero`. If installed as
+`zero-cli` or with `--name NAME`, substitute your chosen command; see
+[installation details](/docs/getting-started#command-name-collisions).
 
 ```json
 {
@@ -83,7 +87,7 @@ srcz walkthrough publish walkthrough.json
 }
 ```
 
-Source Zero checks every path, line, and commit, stores the walkthrough, and prints
+Zero checks every path, line, and commit, stores the walkthrough, and prints
 its `id`. An open browser lists it within seconds. `project` is the repository
 or worktree root (`git rev-parse --show-toplevel`) or a folder outside any
 repository; folders inside a repository are rejected. Publishing again with the
@@ -93,23 +97,23 @@ as `steps[2].file.lines: end 90 is past the file's last line, 61`.
 | Option | Effect |
 | --- | --- |
 | `-` instead of a file | Read the walkthrough from standard input |
-| `--depth N` | How deep working-tree files may be (default 5, as `srcz browser`) |
+| `--depth N` | How deep working-tree files may be (default 5, as `zero browser`) |
 | `--no-open` | Never open the desktop app or browser |
 | `--json` | Print `{"id", "project", "created", "url", "desktopUrl"}` as one JSON object |
 
 When the [desktop app](/docs/desktop) is installed and the daemon serves the
-project, the CLI prints a `srcz://` `url` and `"open": true` opens it in the
-app. On a machine serving with `--remote`, it prints a `srcz://` link that
+project, the CLI prints a `zero://` `url` and `"open": true` opens it in the
+app. On a machine serving with `--remote`, it prints a `zero://` link that
 opens on your connected computer (`desktopUrl` in `--json`; see [Remote
 hosts](/docs/remote)). Otherwise, when a running browser server shows the
 project, the CLI prints its web `url`, and `"open": true` opens it in the
 browser (never on a machine without a UI, such as an SSH session). Without one,
 it prints
-how to view the walkthrough: `srcz <project>`, then the Walkthroughs view.
-The CLI never starts a server. `srcz walkthrough schema` prints the JSON
+how to view the walkthrough: `zero <project>`, then the Walkthroughs view.
+The CLI never starts a server. `zero walkthrough schema` prints the JSON
 Schema.
 
-Agents can also publish with `POST /api/walkthroughs` on a running srcz:
+Agents can also publish with `POST /api/walkthroughs` on a running zero:
 
 ```sh
 curl -q -sS -X POST -H 'Content-Type: application/json' \
@@ -117,20 +121,20 @@ curl -q -sS -X POST -H 'Content-Type: application/json' \
 ```
 
 The response carries the walkthrough's `id` and `url`; `"open": true` also
-opens it in the browser unless Source Zero runs with `--no-open`.
+opens it in the browser unless Zero runs with `--no-open`.
 `GET /api/walkthrough-schema` returns the JSON Schema, and any mistake comes
 back as a 400 naming each problem field.
 
-Source Zero ships an agent skill with the full guidance: discovery, targets, and
+Zero ships an agent skill with the full guidance: discovery, targets, and
 how to tell a good story. Install it with the
 [`skills`](https://github.com/vercel-labs/skills) CLI:
 
 ```sh
-npx skills add flexdinesh/srcz --skill srcz-walkthrough
+npx skills add flexdinesh/zero --skill zero-walkthrough
 ```
 
-The skill is documentation only; Source Zero does not install it. Its source is
-[`skills/srcz-walkthrough`](https://github.com/flexdinesh/srcz/tree/main/skills/srcz-walkthrough).
+The skill is documentation only; Zero does not install it. Its source is
+[`skills/zero-walkthrough`](https://github.com/flexdinesh/zero/tree/main/skills/zero-walkthrough).
 
 The endpoint accepts JSON only, from any local process; requests from another
 site's pages are refused.

@@ -1,6 +1,6 @@
-// Diff toolbar options, persisted per browser under srcz-diff-options.
+// Diff toolbar options, persisted per browser under zero-diff-options.
 
-export const DIFF_OPTIONS_STORAGE_KEY = "srcz-diff-options"
+export const DIFF_OPTIONS_STORAGE_KEY = "zero-diff-options"
 
 export type DiffStyle = "split" | "unified"
 // InlineChanges is the within-line emphasis of changed lines.

@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/flexdinesh/srcz/pkg/client"
+	"github.com/flexdinesh/zero/pkg/client"
 )
 
 // failureCooldown spaces automatic ensures after a failure: a live page's

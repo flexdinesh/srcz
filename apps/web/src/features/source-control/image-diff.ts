@@ -1,4 +1,4 @@
-import type { DiffResponse, DiffSide } from "@srcz/contracts"
+import type { DiffResponse, DiffSide } from "@zero/contracts"
 import { formatBytes } from "../../lib/format-bytes.ts"
 
 // Image diffs (decision 0116) show a raster image's sides from /api/image:

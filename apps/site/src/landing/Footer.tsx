@@ -7,7 +7,7 @@ export function Footer() {
       <div className="landing-footer-brand">
         <span className="landing-wordmark">
           <Mark />
-          Source Zero
+          Zero
         </span>
         <span className="landing-muted">MIT License</span>
       </div>

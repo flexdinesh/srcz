@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
-import { execFile } from 'node:child_process'
-import { access, chmod, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import { execFile, spawn } from 'node:child_process'
+import { access, chmod, lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
+import { crc32 } from 'node:zlib'
 
 // The install scripts (decisions 0073, 0079) run under /bin/sh with a fake
 // HOME and stub uname, curl, wget, go, ditto, xdg-mime,
@@ -43,13 +44,12 @@ const STUBS: Record<string, string[]> = {
     '  esac',
     'fi',
   ],
-  // macOS only: extracts a release zip as srcz-desktop.app, or copies a
+  // macOS only: extracts a release zip as zero-desktop.app, or copies a
   // directory.
   ditto: [
     'echo "ditto $*" >> "$STUB_LOG"',
     'if [ "$1" = -x ]; then',
-    '  mkdir -p "$4/srcz-desktop.app/Contents/MacOS"',
-    "  printf 'app' > \"$4/srcz-desktop.app/Contents/MacOS/srcz-desktop\"",
+    '  /usr/bin/unzip -q "$3" -d "$4"',
     'else',
     '  cp -R "$1" "$2"',
     'fi',
@@ -101,11 +101,11 @@ const STUBS: Record<string, string[]> = {
   ],
 }
 
-function fakeSrcz(version: string): string {
+function fakeZero(version: string): string {
   return [
     '#!/bin/sh',
     'case "$1" in',
-    `  --version) echo "srcz ${version}" ;;`,
+    `  --version) echo "zero ${version}" ;;`,
     '  daemon) exit "${STUB_DAEMON_STATUS:-1}" ;;',
     'esac',
     '',
@@ -124,7 +124,7 @@ async function createSandbox(
 ): Promise<Sandbox> {
   const testRoot = join(repositoryRoot, '.scratch', 'test-tmp')
   await mkdir(testRoot, { recursive: true })
-  const root = await mkdtemp(join(testRoot, 'srcz-install-'))
+  const root = await mkdtemp(join(testRoot, 'zero-install-'))
   registerCleanup(async () => {
     await rm(root, { recursive: true, force: true })
   })
@@ -150,7 +150,7 @@ async function createSandbox(
       STUB_UNAME_S: 'Linux',
       STUB_UNAME_M: 'x86_64',
       STUB_RELEASE_DIR: join(root, 'release'),
-      STUB_LATEST: 'https://github.com/flexdinesh/srcz/releases/tag/v0.1.7',
+      STUB_LATEST: 'https://github.com/flexdinesh/zero/releases/tag/v0.1.7',
     },
   }
 }
@@ -166,8 +166,8 @@ async function createRelease(
   const os = options.os ?? 'linux'
   const version = options.version ?? '0.1.7'
   const release = sandbox.env.STUB_RELEASE_DIR ?? ''
-  const name = `srcz_${version}_${os}_${arch}`
-  await writeExecutable(join(release, name, 'srcz'), fakeSrcz(`${version} (abc123)`))
+  const name = `zero_${version}_${os}_${arch}`
+  await writeExecutable(join(release, name, 'zero'), fakeZero(`${version} (abc123)`))
   await new Promise<void>((resolve, reject) => {
     execFile('tar', ['-czf', join(release, `${name}.tar.gz`), '-C', release, name], (error) => {
       if (error === null) resolve()
@@ -177,25 +177,69 @@ async function createRelease(
   await rm(join(release, name), { recursive: true })
 }
 
+// Minimal stored ZIP writer, including Unix modes. Tests validate real ZIPs
+// with the same unzip integrity/member checks used by the macOS installer.
+function zipFiles(files: { name: string; content: string; mode?: number }[]): Buffer {
+  const local: Buffer[] = []
+  const central: Buffer[] = []
+  let offset = 0
+  for (const file of files) {
+    const name = Buffer.from(file.name)
+    const data = Buffer.from(file.content)
+    const checksum = crc32(data)
+    const header = Buffer.alloc(30)
+    header.writeUInt32LE(0x04034b50, 0)
+    header.writeUInt16LE(20, 4)
+    header.writeUInt32LE(checksum, 14)
+    header.writeUInt32LE(data.length, 18)
+    header.writeUInt32LE(data.length, 22)
+    header.writeUInt16LE(name.length, 26)
+    local.push(header, name, data)
+    const entry = Buffer.alloc(46)
+    entry.writeUInt32LE(0x02014b50, 0)
+    entry.writeUInt16LE(0x0314, 4)
+    entry.writeUInt16LE(20, 6)
+    entry.writeUInt32LE(checksum, 16)
+    entry.writeUInt32LE(data.length, 20)
+    entry.writeUInt32LE(data.length, 24)
+    entry.writeUInt16LE(name.length, 28)
+    entry.writeUInt32LE(((file.mode ?? 0o100755) * 65536) >>> 0, 38)
+    entry.writeUInt32LE(offset, 42)
+    central.push(entry, name)
+    offset += header.length + name.length + data.length
+  }
+  const directory = Buffer.concat(central)
+  const end = Buffer.alloc(22)
+  end.writeUInt32LE(0x06054b50, 0)
+  end.writeUInt16LE(files.length, 8)
+  end.writeUInt16LE(files.length, 10)
+  end.writeUInt32LE(directory.length, 12)
+  end.writeUInt32LE(offset, 16)
+  return Buffer.concat([...local, directory, end])
+}
+
 // createDesktopRelease writes the desktop app's assets for version: the Linux
-// archive for arch (the app, its bundled srcz, and its icon) and the
+// archive for arch (the app, its bundled zero, and its icon) and the
 // darwin/arm64 zip.
 async function createDesktopRelease(sandbox: Sandbox, options: { arch?: string; version?: string } = {}): Promise<void> {
   const arch = options.arch ?? 'amd64'
   const version = options.version ?? '0.1.7'
   const release = sandbox.env.STUB_RELEASE_DIR ?? ''
   const staging = join(release, 'desktop-staging')
-  await writeExecutable(join(staging, 'srcz-desktop'), `#!/bin/sh\necho "srcz-desktop ${version} abc123"\n`)
-  await writeExecutable(join(staging, 'bin', 'srcz'), fakeSrcz(`${version} (abc123)`))
-  await writeFile(join(staging, 'srcz-desktop.png'), 'desktop png')
+  await writeExecutable(join(staging, 'zero-desktop'), `#!/bin/sh\necho "zero-desktop ${version} abc123"\n`)
+  await writeExecutable(join(staging, 'bin', 'zero'), fakeZero(`${version} (abc123)`))
+  await writeFile(join(staging, 'zero-desktop.png'), 'desktop png')
   await new Promise<void>((resolve, reject) => {
-    execFile('tar', ['-czf', join(release, `srcz-desktop_${version}_linux_${arch}.tar.gz`), '-C', staging, '.'], (error) => {
+    execFile('tar', ['-czf', join(release, `zero-desktop_${version}_linux_${arch}.tar.gz`), '-C', staging, '.'], (error) => {
       if (error === null) resolve()
       else reject(error)
     })
   })
   await rm(staging, { recursive: true })
-  await writeFile(join(release, `srcz-desktop_${version}_darwin_arm64.zip`), 'zip')
+  await writeFile(join(release, `zero-desktop_${version}_darwin_arm64.zip`), zipFiles([
+    { name: 'zero-desktop.app/Contents/MacOS/zero-desktop', content: '#!/bin/sh\nexit 1\n' },
+    { name: 'zero-desktop.app/Contents/Resources/bin/zero', content: fakeZero(version) },
+  ]))
 }
 
 // createFullRelease writes everything a default install downloads on Linux.
@@ -205,11 +249,18 @@ async function createFullRelease(sandbox: Sandbox, options: { arch?: string; ver
 }
 
 function run(script: string, sandbox: Sandbox, env: Record<string, string> = {}, args: string[] = []): Promise<Result> {
-  return new Promise((resolve) => {
-    execFile('/bin/sh', [join(scriptsDir, script), ...args], { env: { ...sandbox.env, ...env } }, (error, stdout, stderr) => {
-      const code = error === null ? 0 : typeof error.code === 'number' ? error.code : 1
-      resolve({ code, stdout, stderr })
+  return new Promise((resolve, reject) => {
+    const child = spawn('/bin/sh', [join(scriptsDir, script), ...args], {
+      env: { ...sandbox.env, ...env },
+      detached: true,
     })
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString() })
+    child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
+    child.on('error', reject)
+    child.on('close', (code) => { resolve({ code: code ?? 1, stdout, stderr }) })
+    child.stdin.end()
   })
 }
 
@@ -258,481 +309,461 @@ void test('shared blocks are identical in every script that carries them', async
   }
 })
 
-// --- install-edge.sh ---
-
-const EDGE_DOWNLOAD = 'https://github.com/flexdinesh/srcz/releases/download/edge/'
+const CHANNELS = [
+  { script: 'install.sh', version: '0.1.7' },
+  { script: 'install-edge.sh', version: '0.0.0-edge' },
+]
 const CLI_ONLY = ['--cli-only']
+const cliPath = (sandbox: Sandbox, name = 'zero') => join(sandbox.home, '.local', 'bin', name)
+const recordPath = (sandbox: Sandbox) => join(sandbox.home, '.config', 'zero', 'install.tsv')
 
-void test('install-edge.sh stops on macOS Intel before downloading', async (t) => {
-  for (const args of [[], CLI_ONLY]) {
-    const sandbox = await createSandbox(t.after.bind(t))
-
-    const result = await run('install-edge.sh', sandbox, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'x86_64' }, args)
-
-    assert.notEqual(result.code, 0)
-    assert.match(result.stderr, /edge has no macOS Intel builds; use the stable install script/)
-    assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /releases\/download/)
-    assert.equal(await exists(join(sandbox.home, '.local')), false)
-  }
-})
-
-void test('stable install.sh still targets macOS Intel', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-
-  await run('install.sh', sandbox, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'x86_64' })
-
-  assert.ok((await readFile(sandbox.log, 'utf8')).includes('/releases/download/v0.1.7/srcz_0.1.7_darwin_amd64.tar.gz'))
-})
-
-void test('install-edge.sh --cli-only installs only the CLI from the edge prerelease on PATH', async (t) => {
-  for (const [machine, arch] of [['x86_64', 'amd64'], ['aarch64', 'arm64']] as const) {
-    const sandbox = await createSandbox(t.after.bind(t))
-    await createFullRelease(sandbox, { arch, version: '0.0.0-edge' })
-
-    const result = await run('install-edge.sh', sandbox, { STUB_UNAME_M: machine }, CLI_ONLY)
-
-    assertOk(result)
-    const bin = join(sandbox.home, '.local', 'bin', 'srcz')
-    assert.ok(await isExecutable(bin))
-    assert.match(result.stdout, /downloading srcz edge \(linux\/(amd64|arm64)\)/)
-    assert.match(result.stdout, /installed .*\/\.local\/bin\/srcz \(srcz 0\.0\.0-edge \(abc123\)\)/)
-    assert.doesNotMatch(result.stdout, /not on PATH/)
-    assert.doesNotMatch(result.stdout, /WebKitGTK/)
-    const log = await readFile(sandbox.log, 'utf8')
-    assert.ok(log.includes(`${EDGE_DOWNLOAD}srcz_0.0.0-edge_linux_${arch}.tar.gz`), log)
-    assert.doesNotMatch(log, /srcz-desktop_/)
-    assert.doesNotMatch(log, /xdg-mime/)
-    assert.doesNotMatch(log, /releases\/latest/)
-    assert.doesNotMatch(log, /api\.github\.com/)
-    assert.equal(await exists(join(sandbox.home, '.local', 'share')), false, 'no app files')
-    assert.equal(await exists(join(sandbox.home, '.local', 'bin', 'srcz-desktop')), false)
-  }
-})
-
-void test('--cli-only updates the CLI and leaves a running desktop app alone', async (t) => {
-  for (const script of ['install.sh', 'install-edge.sh']) {
-    const sandbox = await createSandbox(t.after.bind(t))
-    const version = script === 'install.sh' ? '0.1.7' : '0.0.0-edge'
-    await createFullRelease(sandbox, { version })
-    const app = join(sandbox.home, '.local', 'share', 'srcz-desktop', 'app', 'srcz-desktop')
-    await writeExecutable(app, 'old')
-
-    const result = await run(script, sandbox, { STUB_PGREP: '0' }, CLI_ONLY)
-
-    assertOk(result)
-    assert.ok(await isExecutable(join(sandbox.home, '.local', 'bin', 'srcz')), script)
-    assert.equal(await readFile(app, 'utf8'), 'old', script)
-  }
-})
-
-void test('install scripts stop on an unknown option before downloading', async (t) => {
-  for (const script of ['install.sh', 'install-edge.sh']) {
-    const sandbox = await createSandbox(t.after.bind(t))
-
-    const result = await run(script, sandbox, {}, ['--desktop-only'])
-
-    assert.notEqual(result.code, 0, script)
-    assert.match(result.stderr, /unknown option --desktop-only; the only option is --cli-only/, script)
-    assert.equal(await readFile(sandbox.log, 'utf8'), '', script)
-    assert.equal(await exists(join(sandbox.home, '.local')), false, script)
-  }
-})
-
-void test('install-edge.sh prefers ~/bin when only it is on PATH', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox, { version: '0.0.0-edge' })
-
-  const result = await run('install-edge.sh', sandbox, { PATH: `${sandbox.stubs}:${join(sandbox.home, 'bin')}:${SYSTEM_PATH}` })
-
-  assertOk(result)
-  assert.ok(await exists(join(sandbox.home, 'bin', 'srcz')))
-  assert.ok(await exists(join(sandbox.home, 'bin', 'srcz-desktop')))
-  assert.equal(await exists(join(sandbox.home, '.local', 'bin', 'srcz')), false)
-  assert.equal(await exists(join(sandbox.home, '.local', 'bin', 'srcz-desktop')), false)
-})
-
-void test('install-edge.sh prints the PATH line once when installing the CLI and the app', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox, { version: '0.0.0-edge' })
-
-  const result = await run('install-edge.sh', sandbox, { PATH: `${sandbox.stubs}:${SYSTEM_PATH}` })
-
-  assertOk(result)
-  assert.ok(await exists(join(sandbox.home, '.local', 'bin', 'srcz')))
-  assert.equal(result.stdout.match(/not on PATH/g)?.length, 1, result.stdout)
-})
-
-void test('install-edge.sh prints the PATH line for the shell and never edits rc files', async (t) => {
-  for (const [shell, line] of [
-    ['/usr/bin/fish', /fish_add_path ".*\/\.local\/bin"/],
-    ['/bin/zsh', /export PATH=".*\/\.local\/bin:\$PATH" {3}# in ~\/\.zshrc/],
-    ['/bin/bash', /export PATH=".*\/\.local\/bin:\$PATH" {3}# in ~\/\.bashrc/],
-    ['/bin/dash', /export PATH=".*\/\.local\/bin:\$PATH" {3}# in ~\/\.profile/],
-  ] as const) {
-    const sandbox = await createSandbox(t.after.bind(t))
-    await createRelease(sandbox, { version: '0.0.0-edge' })
-
-    const result = await run('install-edge.sh', sandbox, { PATH: `${sandbox.stubs}:${SYSTEM_PATH}`, SHELL: shell }, CLI_ONLY)
-
-    assertOk(result)
-    assert.ok(await exists(join(sandbox.home, '.local', 'bin', 'srcz')))
-    assert.match(result.stdout, /\.local\/bin is not on PATH; add it:/)
-    assert.match(result.stdout, line)
-    assert.deepEqual(await readdir(sandbox.home), ['.local'], `${shell}: only ~/.local is written`)
-  }
-})
-
-void test('install-edge.sh reports an update, a shadowing srcz, and a running daemon once', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox, { version: '0.0.0-edge' })
-  await writeExecutable(join(sandbox.home, '.local', 'bin', 'srcz'), fakeSrcz('0.1.6'))
-  const earlier = join(sandbox.root, 'brew-bin')
-  await writeExecutable(join(earlier, 'srcz'), fakeSrcz('0.1.5'))
-
-  const result = await run('install-edge.sh', sandbox, {
-    PATH: `${sandbox.stubs}:${earlier}:${join(sandbox.home, '.local', 'bin')}:${SYSTEM_PATH}`,
-    STUB_DAEMON_STATUS: '0',
-  })
-
-  assertOk(result)
-  assert.match(result.stdout, /updated .*\/\.local\/bin\/srcz \(srcz 0\.1\.6 -> srcz 0\.0\.0-edge/)
-  assert.match(result.stdout, /brew-bin\/srcz comes first on PATH and is not the srcz just installed/)
-  assert.equal(result.stdout.match(/daemon stop/g)?.length, 1, result.stdout)
-})
-
-void test('install-edge.sh stops without its archive or on an unsupported platform', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  const missing = await run('install-edge.sh', sandbox, {}, CLI_ONLY)
-  assert.notEqual(missing.code, 0)
-  assert.match(missing.stderr, /could not download srcz_0\.0\.0-edge_linux_amd64\.tar\.gz from srcz edge/)
-
-  const windows = await run('install-edge.sh', sandbox, { STUB_UNAME_S: 'MINGW64_NT-10.0' })
-  assert.notEqual(windows.code, 0)
-  assert.match(windows.stderr, /unsupported OS MINGW64_NT-10\.0/)
-  const i686 = await run('install-edge.sh', sandbox, { STUB_UNAME_M: 'i686' })
-  assert.notEqual(i686.code, 0)
-  assert.match(i686.stderr, /unsupported architecture i686/)
-  assert.equal(await exists(join(sandbox.home, '.local')), false)
-})
-
-// --- default install: the CLI and the desktop app ---
-
-void test('install-edge.sh installs the CLI and the Linux app, registers srcz://, and links both on PATH', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t), { homeName: 'home 50%' })
-  await createFullRelease(sandbox, { version: '0.0.0-edge' })
-  const share = join(sandbox.home, '.local', 'share')
-  await writeExecutable(join(share, 'srcz-desktop', 'app', 'stale'), 'earlier build')
-  const storage = join(share, 'srcz-desktop', 'localstorage', 'page.localstorage')
-  await mkdir(dirname(storage), { recursive: true })
-  await writeFile(storage, 'tabs')
-
-  const result = await run('install-edge.sh', sandbox)
-
-  assertOk(result)
-  const app = join(share, 'srcz-desktop', 'app')
-  assert.ok(await isExecutable(join(app, 'srcz-desktop')))
-  assert.ok(await isExecutable(join(app, 'bin', 'srcz')), 'the app bundles the srcz it runs the daemon with')
-  assert.equal(await exists(join(app, 'stale')), false, 'a new install replaces the earlier one')
-  assert.equal(await readFile(storage, 'utf8'), 'tabs', 'an install keeps the page state WebKit stores')
-  assert.match(result.stdout, /installed .*srcz-desktop\/app \(srcz-desktop 0\.0\.0-edge abc123\)/)
-  const link = join(sandbox.home, '.local', 'bin', 'srcz-desktop')
-  assert.equal((await readFile(link, 'utf8')).includes('srcz-desktop 0.0.0-edge'), true)
-  assert.ok(await isExecutable(join(sandbox.home, '.local', 'bin', 'srcz')), 'the CLI goes on PATH')
-  assert.match(result.stdout, /installed .*\/\.local\/bin\/srcz \(srcz 0\.0\.0-edge \(abc123\)\)/)
-
-  const exec = `"${join(app, 'srcz-desktop').replaceAll('%', '%%')}"`
-  const entry = await readFile(join(share, 'applications', 'srcz-desktop.desktop'), 'utf8')
-  assert.match(entry, /^MimeType=x-scheme-handler\/srcz;$/m)
-  assert.doesNotMatch(entry, /inode\/directory/)
-  assert.ok(entry.includes(`\nExec=${exec} %U\n`), entry)
-  assert.match(entry, /^Icon=srcz-desktop$/m)
-  assert.equal(await readFile(join(share, 'icons', 'hicolor', '512x512', 'apps', 'srcz-desktop.png'), 'utf8'), 'desktop png')
-
-  const log = await readFile(sandbox.log, 'utf8')
-  assert.ok(log.includes(`${EDGE_DOWNLOAD}srcz-desktop_0.0.0-edge_linux_amd64.tar.gz`), log)
-  assert.ok(log.includes(`${EDGE_DOWNLOAD}srcz_0.0.0-edge_linux_amd64.tar.gz`), log)
-  assert.doesNotMatch(log, /releases\/latest/)
-  assert.match(log, /^xdg-mime default srcz-desktop\.desktop x-scheme-handler\/srcz$/m)
-  assert.ok(await exists(join(sandbox.home, '.config')), 'xdg-mime writes mimeapps.list there and does not create it')
-  assert.match(log, /^update-desktop-database .*\/applications$/m)
-  assert.match(result.stdout, /srcz \./)
-})
-
-void test('install.sh warns without WebKitGTK and installs anyway', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox)
-
-  const missing = await run('install.sh', sandbox)
-  assertOk(missing)
-  assert.match(missing.stdout, /WebKitGTK 4\.1 not found/)
-  assert.match(missing.stdout, /apt install libwebkit2gtk-4\.1-0/)
-  assert.ok(await isExecutable(join(sandbox.home, '.local', 'share', 'srcz-desktop', 'app', 'srcz-desktop')))
-
-  const present = await run('install.sh', sandbox, { STUB_LDCONFIG: 'libwebkit2gtk-4.1.so.0 (libc6,x86-64) => /usr/lib/libwebkit2gtk-4.1.so.0' })
-  assertOk(present)
-  assert.doesNotMatch(present.stdout, /WebKitGTK/)
-})
-
-void test('install.sh installs the CLI and the app of the latest release for the machine', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox, { arch: 'arm64' })
-
-  const result = await run('install.sh', sandbox, { STUB_UNAME_M: 'aarch64' })
-
-  assertOk(result)
-  assert.ok(await isExecutable(join(sandbox.home, '.local', 'bin', 'srcz')))
-  assert.ok(await isExecutable(join(sandbox.home, '.local', 'share', 'srcz-desktop', 'app', 'srcz-desktop')))
-  const log = await readFile(sandbox.log, 'utf8')
-  assert.match(log, /-w %\{redirect_url\} https:\/\/github\.com\/flexdinesh\/srcz\/releases\/latest/)
-  assert.ok(log.includes('https://github.com/flexdinesh/srcz/releases/download/v0.1.7/srcz_0.1.7_linux_arm64.tar.gz'), log)
-  assert.ok(log.includes('https://github.com/flexdinesh/srcz/releases/download/v0.1.7/srcz-desktop_0.1.7_linux_arm64.tar.gz'), log)
-})
-
-void test('install.sh installs the CLI and srcz-desktop.app on macOS and links both', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createRelease(sandbox, { arch: 'arm64', os: 'darwin' })
-  await createDesktopRelease(sandbox)
-  const apps = (await exists('/Applications')) ? '/Applications' : join(sandbox.home, 'Applications')
-  t.after(async () => {
-    if (apps === '/Applications') await rm('/Applications/srcz-desktop.app', { recursive: true, force: true })
-  })
-  const result = await run('install.sh', sandbox, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'arm64' })
-
-  assertOk(result)
-  const executable = join(apps, 'srcz-desktop.app', 'Contents', 'MacOS', 'srcz-desktop')
-  assert.equal(await readFile(executable, 'utf8'), 'app')
-  assert.equal(await readFile(join(sandbox.home, '.local', 'bin', 'srcz-desktop'), 'utf8'), 'app')
-  assert.ok(await isExecutable(join(sandbox.home, '.local', 'bin', 'srcz')))
-  assert.equal(await exists(join(sandbox.home, '.local', 'share')), false)
-  const log = await readFile(sandbox.log, 'utf8')
-  assert.ok(log.includes('https://github.com/flexdinesh/srcz/releases/download/v0.1.7/srcz-desktop_0.1.7_darwin_arm64.zip'), log)
-  assert.doesNotMatch(log, /xdg-mime/)
-})
-
-void test('install.sh without the desktop asset names --cli-only and changes nothing', async (t) => {
-  for (const [os, assetOs, machine, arch, asset] of [
-    ['Linux', 'linux', 'x86_64', 'amd64', 'srcz-desktop_0\\.1\\.7_linux_amd64\\.tar\\.gz'],
-    ['Darwin', 'darwin', 'arm64', 'arm64', 'srcz-desktop_0\\.1\\.7_darwin_arm64\\.zip'],
-  ] as const) {
-    const sandbox = await createSandbox(t.after.bind(t))
-    await createRelease(sandbox, { arch, os: assetOs })
-    const oldApp = join(sandbox.home, '.local', 'share', 'srcz-desktop', 'app', 'srcz-desktop')
-    await writeExecutable(oldApp, 'old')
-    const oldCli = join(sandbox.home, '.local', 'bin', 'srcz')
-    await writeExecutable(oldCli, fakeSrcz('0.1.6'))
-
-    const result = await run('install.sh', sandbox, { STUB_UNAME_S: os, STUB_UNAME_M: machine })
-
-    assert.notEqual(result.code, 0)
-    assert.match(result.stderr, new RegExp(`srcz v0\\.1\\.7 has no ${asset}; install the CLI alone with --cli-only`))
-    assert.equal(await readFile(oldApp, 'utf8'), 'old', 'a failed install leaves the installed app alone')
-    assert.equal(await readFile(oldCli, 'utf8'), fakeSrcz('0.1.6'), 'a failed install leaves the installed CLI alone')
-  }
-})
-
-void test('install.sh without the CLI archive leaves the installed app alone', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createDesktopRelease(sandbox)
-  const oldApp = join(sandbox.home, '.local', 'share', 'srcz-desktop', 'app', 'srcz-desktop')
-  await writeExecutable(oldApp, 'old')
-
-  const result = await run('install.sh', sandbox)
-
-  assert.notEqual(result.code, 0)
-  assert.match(result.stderr, /could not download srcz_0\.1\.7_linux_amd64\.tar\.gz from srcz v0\.1\.7/)
-  assert.equal(await readFile(oldApp, 'utf8'), 'old')
-  assert.equal(await exists(join(sandbox.home, '.local', 'bin', 'srcz')), false)
-})
-
-void test('install scripts stop while the app runs and change nothing', async (t) => {
-  for (const [script, version] of [['install.sh', '0.1.7'], ['install-edge.sh', '0.0.0-edge']] as const) {
-    const sandbox = await createSandbox(t.after.bind(t))
-    await createFullRelease(sandbox, { version })
-
-    const running = await run(script, sandbox, { STUB_PGREP: '0' })
-
-    assert.notEqual(running.code, 0, script)
-    assert.match(running.stderr, /the srcz desktop app is running; quit it, then run this again/, script)
-    assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /releases\/download/, script)
-    assert.equal(await exists(join(sandbox.home, '.local')), false, script)
-  }
-})
-
-void test('install.sh overwrites an earlier desktop entry', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox)
-  const share = join(sandbox.home, '.local', 'share')
-  const oldEntry = join(share, 'applications', 'srcz-desktop.desktop')
-  await writeExecutable(oldEntry, 'old')
-
-  const result = await run('install.sh', sandbox)
-
-  assertOk(result)
-  assert.match(await readFile(oldEntry, 'utf8'), /srcz-desktop\/app\/srcz-desktop %U/, 'the desktop entry is overwritten')
-  assert.ok(await isExecutable(join(share, 'srcz-desktop', 'app', 'srcz-desktop')))
-})
-
-// --- install.sh ---
-
-void test('install.sh --cli-only installs only the CLI from the release the latest page redirects to', async (t) => {
-  for (const [machine, arch] of [['x86_64', 'amd64'], ['aarch64', 'arm64']] as const) {
-    const sandbox = await createSandbox(t.after.bind(t))
-    await createFullRelease(sandbox, { arch })
-
-    const result = await run('install.sh', sandbox, { STUB_UNAME_M: machine }, CLI_ONLY)
-
-    assertOk(result)
-    assert.match(result.stdout, /installed .*\/\.local\/bin\/srcz \(srcz 0\.1\.7 \(abc123\)\)/)
-    assert.doesNotMatch(result.stdout, /WebKitGTK/)
-    const log = await readFile(sandbox.log, 'utf8')
-    assert.match(log, /-w %\{redirect_url\} https:\/\/github\.com\/flexdinesh\/srcz\/releases\/latest/)
-    assert.ok(log.includes(`https://github.com/flexdinesh/srcz/releases/download/v0.1.7/srcz_0.1.7_linux_${arch}.tar.gz`), log)
-    assert.doesNotMatch(log, /srcz-desktop_/)
-    assert.doesNotMatch(log, /api\.github\.com/)
-    assert.equal(await exists(join(sandbox.home, '.local', 'share')), false, 'no app files')
-    assert.equal(await exists(join(sandbox.home, '.local', 'bin', 'srcz-desktop')), false)
-  }
-})
-
-// systemPathWithout links every /usr/bin and /bin program except names into
-// one directory, so a real system copy cannot stand in for a removed stub.
-async function systemPathWithout(sandbox: Sandbox, names: string[]): Promise<string> {
-  const dir = join(sandbox.root, 'system')
-  await mkdir(dir, { recursive: true })
-  for (const source of SYSTEM_PATH.split(':')) {
-    for (const name of await readdir(source)) {
-      if (names.includes(name) || (await exists(join(dir, name)))) continue
-      await symlink(join(source, name), join(dir, name))
-    }
-  }
-  return dir
+async function entryExists(path: string): Promise<boolean> {
+  try { await lstat(path); return true } catch { return false }
 }
 
-void test('install.sh resolves the latest release with wget when curl is missing', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t), { without: ['curl'] })
-  await createFullRelease(sandbox)
-  const system = await systemPathWithout(sandbox, ['curl'])
+// util-linux script creates a real controlling PTY. The installer is delivered
+// by curl | sh, so confirmation must read /dev/tty instead of script stdin.
+async function runPipedPTY(sandbox: Sandbox, script: string, answer: string, args: string[] = []): Promise<Result> {
+  await mkdir(sandbox.env.STUB_RELEASE_DIR ?? '', { recursive: true })
+  await writeFile(join(sandbox.env.STUB_RELEASE_DIR ?? '', 'installer'), await readFile(join(scriptsDir, script)))
+  return new Promise((resolve, reject) => {
+    const child = spawn('/usr/bin/script', ['-q', '-e', '-c', `curl https://fixture/installer | sh -s -- ${args.join(' ')}`, '/dev/null'], {
+      env: sandbox.env,
+      detached: true,
+    })
+    let stdout = ''
+    let stderr = ''
+    let answered = false
+    const timeout = setTimeout(() => { child.kill('SIGKILL'); reject(new Error(`PTY timeout: ${stdout}\n${stderr}`)) }, 15_000)
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString()
+      if (!answered && stdout.includes('[y/N]')) {
+        answered = true
+        child.stdin.write(answer)
+      }
+    })
+    child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
+    child.on('error', reject)
+    child.on('close', (code) => {
+      clearTimeout(timeout)
+      resolve({ code: code ?? 1, stdout, stderr })
+    })
+  })
+}
 
-  const result = await run('install.sh', sandbox, { PATH: `${sandbox.stubs}:${join(sandbox.home, '.local', 'bin')}:${system}` })
+for (const { script, version } of CHANNELS) {
+  void test(`${script}: installs both components, records ownership, keeps canonical identity`, async (t) => {
+    const sandbox = await createSandbox(t.after.bind(t), { homeName: 'home 50%' })
+    await createFullRelease(sandbox, { version })
+    const state = join(sandbox.home, '.local/share/zero-desktop/localstorage/page.localstorage')
+    await writeExecutable(state, 'tabs')
+    assertOk(await run(script, sandbox, {}, ['--name', 'my-zero']))
+    const app = join(sandbox.home, '.local/share/zero-desktop/app')
+    assert.ok(await isExecutable(cliPath(sandbox, 'my-zero')))
+    assert.equal(await exists(cliPath(sandbox)), false)
+    assert.ok(await isExecutable(join(app, 'bin/zero')))
+    assert.equal(await readFile(state, 'utf8'), 'tabs')
+    const entry = await readFile(join(sandbox.home, '.local/share/applications/zero-desktop.desktop'), 'utf8')
+    assert.match(entry, /^Name=Zero$/m)
+    assert.match(entry, /^MimeType=x-scheme-handler\/zero;$/m)
+    assert.ok(entry.includes(`Exec="${app.replaceAll('%', '%%')}/zero-desktop" %U`), entry)
+    const record = await readFile(recordPath(sandbox), 'utf8')
+    assert.match(record, /^zero-install-v1\nname\tmy-zero\n/)
+    for (const role of ['cli', 'app', 'link', 'entry', 'icon']) assert.ok(record.includes(`\n${role}\t`), role)
+    assert.equal((await stat(recordPath(sandbox))).mode & 0o777, 0o600)
+    const output = await run(script, sandbox, {}, ['--cli-only'])
+    assertOk(output)
+    assert.match(output.stdout, /updated .*my-zero/)
+    assert.match(output.stdout, /my-zero \./)
+  })
 
-  assertOk(result)
-  assert.match(result.stdout, /installed .*\/\.local\/bin\/srcz \(srcz 0\.1\.7 \(abc123\)\)/)
-  assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /^curl /m)
-  assert.match(await readFile(sandbox.log, 'utf8'), /wget -S --max-redirect=0 -O \/dev\/null https:\/\/github\.com\/flexdinesh\/srcz\/releases\/latest/)
-})
+  void test(`${script}: every occupied destination type collides without executing it`, async (t) => {
+    for (const type of ['executable', 'file', 'directory', 'symlink', 'dangling']) {
+      const sandbox = await createSandbox(t.after.bind(t))
+      await createFullRelease(sandbox, { version })
+      const target = cliPath(sandbox)
+      await mkdir(dirname(target), { recursive: true })
+      if (type === 'directory') await mkdir(target)
+      else if (type === 'symlink' || type === 'dangling') {
+        const referent = join(sandbox.root, 'referent')
+        if (type === 'symlink') await writeExecutable(referent, 'exit 1')
+        await symlink(referent, target)
+      } else {
+        await writeFile(target, '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n')
+        if (type === 'executable') await chmod(target, 0o755)
+      }
+      const before = await lstat(target)
+      const result = await run(script, sandbox)
+      assert.notEqual(result.code, 0, type)
+      assert.match(result.stdout, /collision:/)
+      assert.ok(result.stderr.includes(`scripts/${script} | sh -s -- --name zero-cli`), result.stderr)
+      assert.match(result.stderr, /confirmation requires a terminal/)
+      assert.equal((await lstat(target)).ino, before.ino, type)
+      assert.equal(await exists(join(sandbox.home, '.local/share')), false)
+      assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /EXECUTED|releases\/download/)
+    }
+  })
 
-void test('install.sh stops when the latest release or its archive is missing', async (t) => {
+  void test(`${script}: detects executable copies anywhere on PATH, including relative and empty entries`, async (t) => {
+    for (const position of ['before', 'after', 'relative']) {
+      const sandbox = await createSandbox(t.after.bind(t))
+      await createFullRelease(sandbox, { version })
+      const unrelated = join(sandbox.root, 'other')
+      await writeExecutable(join(unrelated, 'zero'), '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n')
+      const path = position === 'before'
+        ? `${sandbox.stubs}:${unrelated}:${dirname(cliPath(sandbox))}:${SYSTEM_PATH}`
+        : position === 'after'
+          ? `${sandbox.env.PATH}:${unrelated}`
+          : `${sandbox.env.PATH}:${unrelated.slice(repositoryRoot.length + 1)}:`
+      const result = await run(script, sandbox, { PATH: path })
+      assert.notEqual(result.code, 0)
+      assert.match(result.stdout, /other\/zero/)
+      assert.equal(await exists(cliPath(sandbox)), false)
+      assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /EXECUTED/)
+    }
+  })
+
+  void test(`${script}: piped PTY accepts only explicit yes; decline and EOF leave both components alone`, async (t) => {
+    for (const answer of ['y\n', 'yes\n', 'n\n', '\n', '\x04']) {
+      const sandbox = await createSandbox(t.after.bind(t))
+      await createFullRelease(sandbox, { version })
+      await writeExecutable(cliPath(sandbox), '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n')
+      const result = await runPipedPTY(sandbox, script, answer)
+      assert.match(result.stdout, /Install as zero-cli instead\? \[y\/N\]/)
+      if (answer.startsWith('y')) {
+        assertOk(result)
+        assert.ok(await isExecutable(cliPath(sandbox, 'zero-cli')))
+        assert.match(result.stdout, /zero-cli \./)
+      } else {
+        assert.notEqual(result.code, 0)
+        assert.match(result.stdout, /--name zero-cli/)
+        assert.equal(await exists(cliPath(sandbox, 'zero-cli')), false)
+        assert.equal(await exists(join(sandbox.home, '.local/share')), false)
+      }
+      assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /EXECUTED/)
+    }
+  })
+
+  void test(`${script}: both occupied names stop without prompting; explicit names never overwrite`, async (t) => {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox, { version })
+    await writeExecutable(cliPath(sandbox), 'zero stranger')
+    await mkdir(cliPath(sandbox, 'zero-cli'))
+    const result = await runPipedPTY(sandbox, script, 'y\n')
+    assert.notEqual(result.code, 0)
+    assert.doesNotMatch(result.stdout, /\[y\/N\]/)
+    assert.match(result.stdout, /--name NAME/)
+    const explicit = await run(script, sandbox, {}, ['--name', 'zero'])
+    assert.notEqual(explicit.code, 0)
+    assert.match(explicit.stderr, /explicit name zero is occupied/)
+    assert.equal(await readFile(cliPath(sandbox), 'utf8'), 'zero stranger')
+    assertOk(await run(script, sandbox, {}, ['--name', 'zero-custom']))
+  })
+
+  void test(`${script}: validates custom basenames and options before downloads`, async (t) => {
+    const sandbox = await createSandbox(t.after.bind(t))
+    for (const args of [['--name'], ['--name', '../zero'], ['--name', '/tmp/zero'], ['--name', '-zero'], ['--name', 'white space'], ['--name', ''], ['--name', 'zero-desktop'], ['--wrong']]) {
+      assert.notEqual((await run(script, sandbox, {}, args)).code, 0, JSON.stringify(args))
+    }
+    assert.equal(await readFile(sandbox.log, 'utf8'), '')
+    assert.deepEqual(await readdir(sandbox.home), [])
+  })
+
+  void test(`${script}: desktop destination collisions preflight before either install`, async (t) => {
+    for (const relative of ['.local/bin/zero-desktop', '.local/share/zero-desktop/app', '.local/share/applications/zero-desktop.desktop', '.local/share/icons/hicolor/512x512/apps/zero-desktop.png']) {
+      const sandbox = await createSandbox(t.after.bind(t))
+      await createFullRelease(sandbox, { version })
+      const path = join(sandbox.home, relative)
+      await writeExecutable(path, 'stranger')
+      const result = await run(script, sandbox)
+      assert.notEqual(result.code, 0)
+      assert.ok(result.stderr.includes(`collision: ${path}`), result.stderr)
+      assert.equal(await exists(cliPath(sandbox)), false)
+      assert.equal(await readFile(path, 'utf8'), 'stranger')
+      assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /releases\/download/)
+    }
+  })
+
+  void test(`${script}: cli-only skips desktop checks and downloads; preserves its record`, async (t) => {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox, { version })
+    assertOk(await run(script, sandbox))
+    const before = (await readFile(recordPath(sandbox), 'utf8')).split('\n').filter((line) => /^(app|link|entry|icon)\t/.test(line))
+    assertOk(await run(script, sandbox, { STUB_PGREP: '0' }, CLI_ONLY))
+    const after = (await readFile(recordPath(sandbox), 'utf8')).split('\n').filter((line) => /^(app|link|entry|icon)\t/.test(line))
+    assert.deepEqual(after, before)
+  })
+
+  void test(`${script}: missing or malformed assets leave existing owned installations unchanged`, async (t) => {
+    for (const failure of ['cli-missing', 'desktop-missing', 'cli-corrupt', 'desktop-corrupt', 'desktop-incomplete']) {
+      const sandbox = await createSandbox(t.after.bind(t))
+      await createFullRelease(sandbox, { version })
+      assertOk(await run(script, sandbox))
+      const record = await readFile(recordPath(sandbox), 'utf8')
+      const cli = await readFile(cliPath(sandbox), 'utf8')
+      const release = sandbox.env.STUB_RELEASE_DIR ?? ''
+      const cliArchive = join(release, `zero_${version}_linux_amd64.tar.gz`)
+      const desktopArchive = join(release, `zero-desktop_${version}_linux_amd64.tar.gz`)
+      if (failure === 'cli-missing') await rm(cliArchive)
+      else if (failure === 'desktop-missing') await rm(desktopArchive)
+      else if (failure === 'cli-corrupt') await writeFile(cliArchive, 'bad')
+      else if (failure === 'desktop-corrupt') await writeFile(desktopArchive, 'bad')
+      else {
+        const empty = join(release, 'empty')
+        await mkdir(empty)
+        await new Promise<void>((resolve, reject) => {
+          execFile('tar', ['-czf', desktopArchive, '-C', empty, '.'], (error) => error === null ? resolve() : reject(error))
+        })
+      }
+      const result = await run(script, sandbox, {}, ['--name', 'new-zero'])
+      assert.notEqual(result.code, 0, failure)
+      assert.equal(await readFile(recordPath(sandbox), 'utf8'), record)
+      assert.equal(await readFile(cliPath(sandbox), 'utf8'), cli)
+      assert.equal(await exists(cliPath(sandbox, 'new-zero')), false)
+    }
+  })
+}
+
+void test('updates, name switches, channel switches, and uninstall use recorded fingerprints', async (t) => {
   const sandbox = await createSandbox(t.after.bind(t))
-
-  const noLatest = await run('install.sh', sandbox, { STUB_LATEST: '' })
-  assert.notEqual(noLatest.code, 0)
-  assert.match(noLatest.stderr, /could not find the latest srcz release at https:\/\/github\.com\/flexdinesh\/srcz\/releases\/latest/)
-
-  const noArchive = await run('install.sh', sandbox)
-  assert.notEqual(noArchive.code, 0)
-  assert.match(noArchive.stderr, /could not download srcz_0\.1\.7_linux_amd64\.tar\.gz from srcz v0\.1\.7/)
-  assert.equal(await exists(join(sandbox.home, '.local', 'bin', 'srcz')), false)
+  await createFullRelease(sandbox)
+  await createFullRelease(sandbox, { version: '0.0.0-edge' })
+  assertOk(await run('install.sh', sandbox, {}, ['--name', 'zero-cli']))
+  assertOk(await run('install-edge.sh', sandbox))
+  assert.match(await readFile(cliPath(sandbox, 'zero-cli'), 'utf8'), /0.0.0-edge/)
+  assertOk(await run('install.sh', sandbox, {}, ['--name', 'another-zero']))
+  assert.equal(await entryExists(cliPath(sandbox, 'zero-cli')), false)
+  assert.equal(await exists(cliPath(sandbox)), false)
+  assert.match(await readFile(cliPath(sandbox, 'another-zero'), 'utf8'), /0.1.7/)
+  const roots = join(sandbox.home, '.config/zero/roots.json')
+  await writeFile(roots, '[]')
+  const srcz = cliPath(sandbox, 'srcz')
+  const stranger = cliPath(sandbox)
+  const malicious = '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n'
+  await writeExecutable(srcz, malicious)
+  await writeExecutable(stranger, malicious)
+  await writeExecutable(join(sandbox.home, 'go/bin/zero'), malicious)
+  const result = await run('uninstall.sh', sandbox)
+  assertOk(result)
+  assert.equal(await exists(cliPath(sandbox, 'another-zero')), false)
+  assert.equal(await exists(join(sandbox.home, '.local/share/zero-desktop/app')), false)
+  assert.equal(await entryExists(cliPath(sandbox, 'zero-desktop')), false)
+  assert.equal(await exists(recordPath(sandbox)), false)
+  for (const path of [srcz, stranger, join(sandbox.home, 'go/bin/zero')]) assert.equal(await readFile(path, 'utf8'), malicious)
+  assert.equal(await readFile(roots, 'utf8'), '[]')
+  assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /EXECUTED/)
 })
 
-for (const script of ['install.sh', 'uninstall.sh']) {
-  void test(`${script} keeps page state when XDG_DATA_HOME equals XDG_CONFIG_HOME`, async (t) => {
+void test('modified CLI and app are preserved on update and uninstall; name switch leaves modified old command', async (t) => {
+  for (const modified of ['cli', 'app', 'link', 'entry', 'icon']) {
     const sandbox = await createSandbox(t.after.bind(t))
     await createFullRelease(sandbox)
-    const same = join(sandbox.root, 'xdg')
-    const pageState = join(same, 'srcz-desktop', 'localstorage', 'page.localstorage')
-    await writeExecutable(pageState, 'tabs')
-
-    const result = await run(script, sandbox, { XDG_DATA_HOME: same, XDG_CONFIG_HOME: same })
-
+    assertOk(await run('install.sh', sandbox))
+    const app = join(sandbox.home, '.local/share/zero-desktop/app')
+    const path = modified === 'cli' ? cliPath(sandbox)
+      : modified === 'app' ? join(app, 'bin/zero')
+        : modified === 'entry' ? join(sandbox.home, '.local/share/applications/zero-desktop.desktop')
+          : modified === 'icon' ? join(sandbox.home, '.local/share/icons/hicolor/512x512/apps/zero-desktop.png')
+            : cliPath(sandbox, 'zero-desktop')
+    if (modified === 'link') { await rm(path); await symlink('/unrelated', path) }
+    else await writeExecutable(path, '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n')
+    const update = await run('install.sh', sandbox)
+    assert.notEqual(update.code, 0, modified)
+    assert.match(update.stdout + update.stderr, /collision:/)
+    if (modified === 'cli') {
+      const rename = await run('install.sh', sandbox, {}, ['--name', 'zero-other'])
+      assertOk(rename)
+      assert.match(rename.stdout, /kept .*zero: ownership changed/)
+    }
+    const result = await run('uninstall.sh', sandbox)
     assertOk(result)
-    assert.ok(await exists(pageState), 'page state shares the directory and stays')
-    assert.equal(await exists(join(same, 'srcz-desktop', 'app', 'srcz-desktop')), script === 'install.sh')
-  })
-}
-
-// --- uninstall.sh ---
-
-void test('uninstall.sh removes the desktop app, reports package-managed copies, and keeps user data', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  await createFullRelease(sandbox, { version: '0.0.0-edge' })
-  assertOk(await run('install-edge.sh', sandbox))
-  const share = join(sandbox.home, '.local', 'share')
-  const config = join(sandbox.home, '.config')
-  const pageState = join(share, 'srcz-desktop', 'localstorage')
-  await mkdir(pageState, { recursive: true })
-  await writeExecutable(join(sandbox.home, 'go', 'bin', 'srcz'), fakeSrcz('0.1.6'))
-  await writeExecutable(join(sandbox.home, '.local', 'bin', 'srcz'), fakeSrcz('0.1.6'))
-  await mkdir(join(config, 'srcz'), { recursive: true })
-  await writeFile(join(config, 'srcz', 'roots.json'), '[]')
-  await mkdir(join(sandbox.home, '.cache', 'srcz'), { recursive: true })
-  const shims = join(sandbox.root, 'mise', 'shims')
-  await writeExecutable(join(shims, 'srcz'), fakeSrcz('0.1.6'))
-
-  const result = await run('uninstall.sh', sandbox, { PATH: `${sandbox.stubs}:${join(sandbox.home, '.local', 'bin')}:${shims}:${SYSTEM_PATH}` })
-
-  assertOk(result)
-  for (const path of [
-    join(sandbox.home, '.local', 'bin', 'srcz'),
-    join(sandbox.home, '.local', 'bin', 'srcz-desktop'),
-    join(sandbox.home, 'go', 'bin', 'srcz'),
-    join(share, 'srcz-desktop', 'app'),
-    join(share, 'applications', 'srcz-desktop.desktop'),
-    join(share, 'icons', 'hicolor', '512x512', 'apps', 'srcz-desktop.png'),
-  ]) {
-    assert.equal(await exists(path), false, `${path} is removed`)
+    assert.ok(await entryExists(path), modified)
+    assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /EXECUTED/)
   }
-  for (const path of [join(config, 'srcz', 'roots.json'), join(sandbox.home, '.cache', 'srcz'), pageState]) {
-    assert.ok(await exists(path), `${path} is kept`)
-  }
-  assert.match(result.stdout, /mise\/shims\/srcz is installed by mise/)
-  assert.match(result.stdout, /kept your data/)
-  assert.ok(result.stdout.includes(join(config, 'srcz')))
-  assert.ok(result.stdout.includes(join(share, 'srcz-desktop')), 'page state is reported')
 })
 
-void test('uninstall.sh removes the macOS bundle and keeps page state', async (t) => {
+void test('ownership record is parsed only as data; symlink records rejected', async (t) => {
   const sandbox = await createSandbox(t.after.bind(t))
-  const applications = join(sandbox.home, 'Applications')
-  const bundle = join(applications, 'srcz-desktop.app')
-  await writeExecutable(join(bundle, 'Contents', 'MacOS', 'app'), 'app')
-  const webkit = join(sandbox.home, 'Library', 'WebKit', 'io.github.flexdinesh.srcz.desktop')
-  await mkdir(webkit, { recursive: true })
-
-  const result = await run('uninstall.sh', sandbox, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'arm64' })
-
-  assertOk(result)
-  assert.equal(await exists(bundle), false, `${bundle} is removed`)
-  assert.ok(await exists(webkit), 'page state is kept')
-  assert.ok(result.stdout.includes(webkit))
+  await createFullRelease(sandbox)
+  await mkdir(dirname(recordPath(sandbox)), { recursive: true })
+  await writeFile(recordPath(sandbox), 'touch "$HOME/EXECUTED"\n')
+  assert.notEqual((await run('install.sh', sandbox)).code, 0)
+  assert.notEqual((await run('uninstall.sh', sandbox)).code, 0)
+  assert.equal(await exists(join(sandbox.home, 'EXECUTED')), false)
+  await rm(recordPath(sandbox))
+  await symlink(join(sandbox.root, 'absent'), recordPath(sandbox))
+  assert.notEqual((await run('install.sh', sandbox)).code, 0)
+  assert.equal(await exists(cliPath(sandbox)), false)
 })
 
-void test('uninstall.sh stops for a running daemon when only the app is installed', async (t) => {
+void test('unmanaged zero and srcz installations are neither executed nor deleted', async (t) => {
   const sandbox = await createSandbox(t.after.bind(t))
-  const bundled = join(sandbox.home, '.local', 'share', 'srcz-desktop', 'app', 'bin', 'srcz')
-  await writeExecutable(bundled, '#!/bin/sh\nexit 0\n')
-
+  for (const name of ['zero', 'srcz', 'zero-desktop']) await writeExecutable(cliPath(sandbox, name), '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n')
+  const app = join(sandbox.home, '.local/share/zero-desktop/app/bin/zero')
+  await writeExecutable(app, '#!/bin/sh\necho EXECUTED >> "$STUB_LOG"\n')
   const result = await run('uninstall.sh', sandbox)
-
-  assert.notEqual(result.code, 0)
-  assert.ok(result.stderr.includes(`${bundled} daemon stop`), result.stderr)
-  assert.ok(await exists(bundled), 'nothing is removed under a live daemon')
-})
-
-void test('uninstall.sh stops while srcz runs and reports an empty home', async (t) => {
-  const sandbox = await createSandbox(t.after.bind(t))
-  const bin = join(sandbox.home, '.local', 'bin', 'srcz')
-  await writeExecutable(bin, fakeSrcz('0.1.6'))
-
-  const daemon = await run('uninstall.sh', sandbox, { STUB_DAEMON_STATUS: '0' })
-  assert.notEqual(daemon.code, 0)
-  assert.match(daemon.stderr, /a srcz daemon is running; stop it with '.*srcz daemon stop'/)
-  const app = await run('uninstall.sh', sandbox, { STUB_PGREP: '0' })
-  assert.notEqual(app.code, 0)
-  assert.match(app.stderr, /the srcz desktop app is running/)
-  assert.ok(await exists(bin))
-
-  const empty = await createSandbox(t.after.bind(t))
-  const result = await run('uninstall.sh', empty)
   assertOk(result)
   assert.match(result.stdout, /nothing to remove/)
+  for (const name of ['zero', 'srcz', 'zero-desktop']) assert.ok(await exists(cliPath(sandbox, name)))
+  assert.ok(await exists(app))
+  assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /EXECUTED/)
+})
+
+void test('running managed daemon or desktop stops uninstall; cli-only still updates', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createFullRelease(sandbox)
+  assertOk(await run('install.sh', sandbox))
+  const daemon = await run('uninstall.sh', sandbox, { STUB_DAEMON_STATUS: '0' })
+  assert.notEqual(daemon.code, 0)
+  assert.match(daemon.stderr, /zero daemon stop/)
+  const desktop = await run('uninstall.sh', sandbox, { STUB_PGREP: '0' })
+  assert.notEqual(desktop.code, 0)
+  assert.match(desktop.stderr, /desktop app is running/)
+  const install = await run('install.sh', sandbox, { STUB_PGREP: '0' })
+  assert.notEqual(install.code, 0)
+  assertOk(await run('install.sh', sandbox, { STUB_PGREP: '0' }, CLI_ONLY))
+})
+
+void test('bin-directory preference and shell PATH instructions survive collision safety', async (t) => {
+  for (const shell of ['fish', 'zsh', 'bash', 'dash']) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createRelease(sandbox)
+    const result = await run('install.sh', sandbox, { PATH: `${sandbox.stubs}:${SYSTEM_PATH}`, SHELL: `/bin/${shell}` }, CLI_ONLY)
+    assertOk(result)
+    assert.equal(result.stdout.match(/not on PATH/g)?.length, 1)
+    assert.match(result.stdout, shell === 'fish' ? /fish_add_path/ : /export PATH=/)
+    assert.deepEqual((await readdir(sandbox.home)).sort(), ['.config', '.local'])
+  }
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createFullRelease(sandbox)
+  assertOk(await run('install.sh', sandbox, { PATH: `${sandbox.stubs}:${join(sandbox.home, 'bin')}:${SYSTEM_PATH}` }))
+  assert.ok(await exists(join(sandbox.home, 'bin/zero')))
+  assert.ok(await entryExists(join(sandbox.home, 'bin/zero-desktop')))
+})
+
+void test('platform support and missing latest release fail without installing', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  const unsupported: Record<string, string>[] = [{ STUB_UNAME_S: 'Windows' }, { STUB_UNAME_M: 'i686' }, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'x86_64' }]
+  for (const env of unsupported) {
+    assert.notEqual((await run('install-edge.sh', sandbox, env)).code, 0)
+  }
+  const result = await run('install.sh', sandbox, { STUB_LATEST: '' })
+  assert.notEqual(result.code, 0)
+  assert.match(result.stderr, /could not find the latest zero release/)
+  assert.deepEqual(await readdir(sandbox.home), [])
+})
+
+void test('macOS uses canonical config and application identity with alternate CLI naming', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createRelease(sandbox, { os: 'darwin', arch: 'arm64' })
+  await createDesktopRelease(sandbox)
+  const apps = (await exists('/Applications')) ? '/Applications' : join(sandbox.home, 'Applications')
+  t.after(async () => { if (apps === '/Applications') await rm(join(apps, 'zero-desktop.app'), { recursive: true, force: true }) })
+  const env = { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'arm64' }
+  assertOk(await run('install.sh', sandbox, env, ['--name', 'zero-cli']))
+  const record = join(sandbox.home, 'Library/Application Support/zero/install.tsv')
+  assert.match(await readFile(record, 'utf8'), /name\tzero-cli/)
+  assert.ok(await exists(join(apps, 'zero-desktop.app/Contents/Resources/bin/zero')))
+  assertOk(await run('uninstall.sh', sandbox, env))
+  assert.equal(await exists(join(apps, 'zero-desktop.app')), false)
+})
+
+void test('PATH nonexecutables are ignored; unmanaged byte-identical executable copies still collide', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createRelease(sandbox)
+  const other = join(sandbox.root, 'other')
+  await mkdir(other)
+  await writeFile(join(other, 'zero'), 'not executable')
+  const env = { PATH: `${sandbox.env.PATH}:${other}` }
+  assertOk(await run('install.sh', sandbox, env, CLI_ONLY))
+  await writeExecutable(join(other, 'zero'), await readFile(cliPath(sandbox), 'utf8'))
+  const result = await run('install.sh', sandbox, env, CLI_ONLY)
+  assert.notEqual(result.code, 0)
+  assert.match(result.stdout, /other\/zero/)
+})
+
+void test('absolute/relative XDG paths and shared data/config preserve user state', async (t) => {
+  for (const absolute of [true, false]) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox)
+    const xdg = join(sandbox.root, 'xdg')
+    const env = { XDG_DATA_HOME: absolute ? xdg : 'relative', XDG_CONFIG_HOME: absolute ? xdg : 'relative' }
+    const config = absolute ? join(xdg, 'zero') : join(sandbox.home, '.config/zero')
+    const data = absolute ? xdg : join(sandbox.home, '.local/share')
+    const state = join(data, 'zero-desktop/localstorage/page.localstorage')
+    await writeExecutable(state, 'tabs')
+    assertOk(await run('install.sh', sandbox, env))
+    assert.ok(await exists(join(config, 'install.tsv')))
+    assertOk(await run('uninstall.sh', sandbox, env))
+    assert.equal(await readFile(state, 'utf8'), 'tabs')
+  }
+})
+
+void test('symlinked bin-directory aliases still identify the same managed installation', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createRelease(sandbox)
+  const real = join(sandbox.root, 'actual-bin')
+  await mkdir(real)
+  await mkdir(dirname(cliPath(sandbox)), { recursive: true })
+  await rm(dirname(cliPath(sandbox)), { recursive: true })
+  await symlink(real, dirname(cliPath(sandbox)))
+  assertOk(await run('install.sh', sandbox, {}, CLI_ONLY))
+  assertOk(await run('install.sh', sandbox, {}, CLI_ONLY))
+  assertOk(await run('uninstall.sh', sandbox))
+  assert.equal(await exists(join(real, 'zero')), false)
+})
+
+void test('configuration collisions fail before installation destinations change', async (t) => {
+  for (const kind of ['file', 'symlink']) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox)
+    const config = dirname(recordPath(sandbox))
+    await mkdir(dirname(config), { recursive: true })
+    if (kind === 'file') await writeFile(config, 'unrelated')
+    else await symlink(join(sandbox.root, 'elsewhere'), config)
+    assert.notEqual((await run('install.sh', sandbox)).code, 0)
+    assert.equal(await exists(cliPath(sandbox)), false)
+    assert.equal(await exists(join(sandbox.home, '.local/share')), false)
+  }
+})
+
+void test('uninstall checks a verified bundled daemon when the exposed CLI is missing', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createFullRelease(sandbox)
+  assertOk(await run('install.sh', sandbox))
+  await rm(cliPath(sandbox))
+  const result = await run('uninstall.sh', sandbox, { STUB_DAEMON_STATUS: '0' })
+  assert.notEqual(result.code, 0)
+  assert.match(result.stderr, /app\/bin\/zero daemon stop/)
+  assert.ok(await exists(recordPath(sandbox)))
+})
+
+void test('unsafe tar and ZIP members fail before installing either component', async (t) => {
+  for (const format of ['tar-link', 'tar-parent', 'zip-link', 'zip-parent']) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    const darwin = format.startsWith('zip')
+    await createRelease(sandbox, darwin ? { os: 'darwin', arch: 'arm64' } : {})
+    await createDesktopRelease(sandbox)
+    const release = sandbox.env.STUB_RELEASE_DIR ?? ''
+    if (darwin) {
+      await writeFile(join(release, 'zero-desktop_0.1.7_darwin_arm64.zip'), zipFiles([
+        { name: format === 'zip-parent' ? '../escaped' : 'link', content: '/tmp', mode: format === 'zip-link' ? 0o120777 : 0o100755 },
+      ]))
+    } else {
+      const staging = join(release, 'unsafe')
+      await mkdir(staging)
+      await writeFile(join(staging, 'file'), 'unrelated')
+      await symlink('/tmp', join(staging, 'link'))
+      const args = format === 'tar-link' ? ['link'] : ['--transform=s,file,../escaped,', 'file']
+      await new Promise<void>((resolve, reject) => {
+        execFile('tar', ['-czf', join(release, 'zero-desktop_0.1.7_linux_amd64.tar.gz'), '-C', staging, ...args], (error) => error === null ? resolve() : reject(error))
+      })
+    }
+    const result = await run('install.sh', sandbox, darwin ? { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'arm64' } : {})
+    assert.notEqual(result.code, 0, format)
+    assert.match(result.stderr, /unsafe archive/, format)
+    assert.equal(await exists(cliPath(sandbox)), false)
+    assert.equal(await exists(recordPath(sandbox)), false)
+    assert.equal(await exists(join(sandbox.home, '.local/share')), false)
+  }
 })

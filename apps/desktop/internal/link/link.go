@@ -1,12 +1,12 @@
-// Package link parses what opens srcz-desktop: srcz:// links and
+// Package link parses what opens zero-desktop: zero:// links and
 // command-line arguments. It is pure: no I/O.
 //
 // The CLI prints these links (decisions 0063, 0098):
 //
-//	srcz://local/?project=<abs>&path=<rel>   the local daemon
-//	srcz://<id>/?project=<abs>&path=<rel>    a saved connection
+//	zero://local/?project=<abs>&path=<rel>   the local daemon
+//	zero://<id>/?project=<abs>&path=<rel>    a saved connection
 //
-// A link names a connection and carries no secret: `srcz connect` saves the
+// A link names a connection and carries no secret: `zero connect` saves the
 // credential. The route is "/" or "/view". The query and fragment are the web
 // app's.
 package link
@@ -17,11 +17,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/flexdinesh/srcz/pkg/connection"
+	"github.com/flexdinesh/zero/pkg/connection"
 )
 
-// Scheme is the URL scheme srcz-desktop registers.
-const Scheme = "srcz"
+// Scheme is the URL scheme zero-desktop registers.
+const Scheme = "zero"
 
 // Target is a parsed link: where it points and what it shows there.
 type Target struct {
@@ -34,10 +34,10 @@ type Target struct {
 	Fragment string
 }
 
-// ErrInvalid reports a link srcz-desktop does not open.
-var ErrInvalid = errors.New("not a srcz link")
+// ErrInvalid reports a link zero-desktop does not open.
+var ErrInvalid = errors.New("not a zero link")
 
-// Parse parses a srcz:// link.
+// Parse parses a zero:// link.
 func Parse(raw string) (Target, error) {
 	u, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil || u.Scheme != Scheme || u.User != nil || u.Opaque != "" {
@@ -67,15 +67,15 @@ func (t Target) AppPath() string {
 
 // Request is what one launch, or a second instance, asks for.
 type Request struct {
-	// Link is set when the arguments carry a srcz:// link.
+	// Link is set when the arguments carry a zero:// link.
 	Link *Target
 	// Path is an absolute directory to open through the daemon, as
-	// `srcz [path]` does; empty when none was given.
+	// `zero [path]` does; empty when none was given.
 	Path string
 }
 
 // FromArgs reads a command line, without the program name: the first
-// srcz:// argument wins; otherwise the first argument that is not a
+// zero:// argument wins; otherwise the first argument that is not a
 // flag names a path, made absolute against workingDir. A link that does not
 // parse is an error.
 func FromArgs(args []string, workingDir string) (Request, error) {

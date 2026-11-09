@@ -97,10 +97,10 @@ Source Control stacks three panes, always in this order:
 - **Branches** shows your branch stack: the branches between the base and
   your checkout, any built on top of it, and the base at the merge-base.
 
-Empty panes start closed; open or close any pane and Source Zero remembers it.
+Empty panes start closed; open or close any pane and Zero remembers it.
 Drag between open panes to resize them. The base defaults to `origin/HEAD`,
-`main`, or `master`; pick another from the Branches header, and Source Zero
-remembers it per project. Source Zero reads git data directly; `git` need not be
+`main`, or `master`; pick another from the Branches header, and Zero
+remembers it per project. Zero reads git data directly; `git` need not be
 installed.
 
 ### File history and commit search
@@ -145,7 +145,7 @@ character inline changes, and expand unchanged. A renamed file with no line
 changes reads "renamed". Commit, range, and branch reviews list their files
 in a rail beside the diffs; drag its edge to resize it, or hide it with the
 Files button. Filter the rail by path, or hide the files you have viewed;
-Source Zero remembers Hide viewed.
+Zero remembers Hide viewed.
 
 Mark a file Viewed to fold it away and move on to the next file you have not
 viewed; the rail checks viewed files and dims their names. When a viewed
@@ -165,7 +165,7 @@ button to jump between a review's files.
 
 ## Live updates
 
-Source Zero follows changes on disk in the project each tab shows. Save a file in
+Zero follows changes on disk in the project each tab shows. Save a file in
 your editor, or let an agent write one, and the Explorer, the open document,
 Source Control, and an open Search pick it up within a second or two. The
 document keeps its scroll, selection, and view; a deleted file shows that it
@@ -174,11 +174,11 @@ too.
 
 The status bar shows how the project is followed:
 
-- **Live**: Source Zero watches the project's folders for changes.
+- **Live**: Zero watches the project's folders for changes.
 - **Polling**: the project is too large to watch (more than 4096 folders, or
   8192 files and folders on macOS), or the system's watch limit is reached;
-  Source Zero checks every few seconds instead.
-- **Off**: Source Zero already follows 8 projects in other tabs, or the connection
+  Zero checks every few seconds instead.
+- **Off**: Zero already follows 8 projects in other tabs, or the connection
   dropped; the project rereads when you return to its tab.
 
 Only visible tabs follow their project: a background tab catches up when you
@@ -187,7 +187,7 @@ below `--depth` are not watched.
 
 ## Settings and commands
 
-- Choose a theme (Source Zero Dark by default; Auto, Source Zero Light, Dracula, Solarized Light, and
+- Choose a theme (Zero Dark by default; Auto, Zero Light, Dracula, Solarized Light, and
   Omarchy's 23 built-in themes, such as Tokyo Night, Kanagawa, and Rose Pine)
   and interface font size in Settings (gear in the status bar, Cmd/Ctrl+,); search, browse categories,
   or filter modified preferences. Changes apply immediately and save in the

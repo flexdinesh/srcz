@@ -1,4 +1,4 @@
-import type { CommitsResponse } from "@srcz/contracts"
+import type { CommitsResponse } from "@zero/contracts"
 
 import { noHistoryFilter, type HistoryFilter } from "./commit-filter.ts"
 

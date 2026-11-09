@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import type { FileStats } from "@srcz/contracts"
+import type { FileStats } from "@zero/contracts"
 import { pureRename } from "./diff-stats.ts"
 import { fileDecoration, viewedCSS } from "./files-tree-decoration.ts"
 

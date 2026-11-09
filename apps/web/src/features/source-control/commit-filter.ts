@@ -1,4 +1,4 @@
-import type { CommitsResponse } from "@srcz/contracts"
+import type { CommitsResponse } from "@zero/contracts"
 
 // Pure state for the Commits filter row (decision 0114): a query matched
 // against message, author, and hash prefix, and a path whose history the

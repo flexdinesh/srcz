@@ -1,4 +1,4 @@
-import type { ChangedFile, DiffResponse, LineDiff, PageData } from "@srcz/contracts"
+import type { ChangedFile, DiffResponse, LineDiff, PageData } from "@zero/contracts"
 import { splitSourceLines } from "../../lib/line-selection.ts"
 
 // Pure model of Source's change markers (decision 0115): where a working-tree
