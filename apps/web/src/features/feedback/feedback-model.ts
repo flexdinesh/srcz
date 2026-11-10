@@ -88,13 +88,15 @@ function span(lines: readonly [number, number]): string {
 // present" as they apply; "path (file)" for a whole file.
 export function locationLabel(thread: FeedbackThread): string {
   const { anchor, location } = thread
-  const outdated = location.state === "outdated" ? " · outdated, code no longer present" : ""
+  const outdated = location.state === "outdated"
   const anchored = lineRange(anchor.lines)
-  if (!anchored) return `${location.path} (file)${outdated}`
-  const lines = lineRange(location.lines) ?? anchored
-  const old = location.side === "old" ? " (old side)" : ""
-  const moved = location.state === "moved" && span(lines) !== span(anchored) ? ` (moved from ${span(anchored)})` : ""
-  return `${location.path}:${span(lines)}${old}${moved}${outdated}`
+  // An outdated location has no lines; it names where the thread was written.
+  const lines = outdated ? anchored : lineRange(location.lines)
+  let label = !anchored ? `${location.path} (file)` : lines ? `${location.path}:${span(lines)}` : location.path
+  if (location.side === "old") label += " (old side)"
+  if (location.state === "moved" && anchored) label += ` (moved from ${span(anchored)})`
+  if (outdated) label += " · outdated, code no longer present"
+  return label
 }
 
 // anchorLabel names where a new thread goes: "a.go:7", "a.go:4-5 (old)", or
@@ -342,10 +344,6 @@ To raise something new: zero feedback comment ${id} --path <path> --lines <start
 ${http}`
 }
 
-// LanguageOf names a path's highlight language for Markdown fences, "" for
-// none.
-export type LanguageOf = (path: string) => string
-
 function two(value: number): string {
   return String(value).padStart(2, "0")
 }
@@ -361,43 +359,57 @@ const markdownStatus: Readonly<Record<FeedbackStatus, string>> = { open: "open",
 const messageStatus: Readonly<Record<FeedbackStatus, string>> = { open: "reopened", resolved: "resolved", wontfix: "won't fix" }
 
 function messageMarkdown(message: FeedbackMessage): string {
-  const author = message.author === "user" ? "**user**" : message.name ? `**agent (${message.name})**` : "**agent**"
-  const header = `${author} · ${utcTime(message.createdAt)}${message.status ? ` · ${messageStatus[message.status]}` : ""}`
-  const body = message.body.trimEnd()
+  const author = message.name ? `${message.author} (${message.name})` : message.author
+  const header = `**${author}** · ${utcTime(message.createdAt)}${message.status ? ` · ${messageStatus[message.status]}` : ""}`
+  const body = message.body.replace(/\n+$/, "")
   return body ? `${header}\n${body}` : header
 }
 
+// longestRun counts the longest run of character in text.
+function longestRun(text: string, character: string): number {
+  let longest = 0
+  let run = 0
+  for (const each of text) {
+    run = each === character ? run + 1 : 0
+    longest = Math.max(longest, run)
+  }
+  return longest
+}
+
 // threadMarkdown is one thread as `zero feedback show` prints it: heading,
-// the anchored text fenced in its language, then each message, a blank line
+// the anchored text fenced in the anchor's language (bare without one) by a
+// fence longer than any backtick run inside, then each message, a blank line
 // between messages.
-export function threadMarkdown(thread: FeedbackThread, languageOf: LanguageOf): string {
+export function threadMarkdown(thread: FeedbackThread): string {
   const parts = [`## Thread ${thread.number} · ${markdownStatus[thread.status]} · ${locationLabel(thread)}`]
-  const text = thread.anchor.text ?? []
-  if (lineRange(thread.anchor.lines) && text.length > 0) parts.push(`\`\`\`${languageOf(thread.anchor.path)}\n${text.join("\n")}\n\`\`\``)
+  const text = (thread.anchor.text ?? []).join("\n")
+  if (thread.anchor.text && thread.anchor.text.length > 0) {
+    const fence = "`".repeat(Math.max(3, longestRun(text, "`") + 1))
+    parts.push(`${fence}${thread.anchor.language ?? ""}\n${text}\n${fence}`)
+  }
   parts.push(thread.messages.map(messageMarkdown).join("\n\n"))
   return parts.join("\n")
 }
 
-// feedbackMarkdown is `zero feedback show`'s Markdown for threads of
+// feedbackMarkdown is `zero feedback show --all`'s Markdown for threads of
 // feedback: a heading, the branch, project, and how many threads await the
-// agent, the reply command, then each thread.
-export function feedbackMarkdown(feedback: Feedback, threads: readonly FeedbackThread[], languageOf: LanguageOf): string {
-  const awaiting = feedback.threads.filter((thread) => thread.awaiting === "agent").length
+// agent, the reply command, then each thread (testdata/feedback/markdown.md
+// pins it to the CLI's).
+export function feedbackMarkdown(feedback: Feedback, threads: readonly FeedbackThread[]): string {
   const branch = feedback.branch ? `Branch ${feedback.branch}` : "Detached HEAD"
-  const head = `# Feedback ${feedback.id}
-${branch} · ${feedback.project} · ${plural(awaiting, "thread")} awaiting you
-
-Reply: zero feedback reply ${feedback.id} <thread> -m "<what you did>" [--resolve | --wontfix]`
-  return `${[head, ...threads.map((thread) => threadMarkdown(thread, languageOf))].join("\n\n")}\n`
+  if (!feedback.id) return `No feedback for ${branch[0]?.toLowerCase() ?? ""}${branch.slice(1)} in ${feedback.project} yet.\n`
+  const waiting = feedback.threads.filter((thread) => thread.awaiting === "agent").length
+  const awaiting = waiting === 0 ? "no threads awaiting you" : `${waiting} thread${waiting === 1 ? "" : "s"} awaiting you`
+  const header = `# Feedback ${feedback.id}\n${branch} · ${feedback.project} · ${awaiting}\n`
+  if (threads.length === 0) return `${header}\nNo threads yet.\n`
+  const reply = `Reply: zero feedback reply ${feedback.id} <thread> -m "<what you did>" [--resolve | --wontfix]`
+  return `${header}\n${[reply, ...threads.map(threadMarkdown)].join("\n\n")}\n`
 }
 
 // threadPrompt is what a thread's Copy Thread for Agent copies.
-export function threadPrompt(feedback: Feedback, thread: FeedbackThread, languageOf: LanguageOf): string {
+export function threadPrompt(feedback: Feedback, thread: FeedbackThread): string {
   return `Feedback ${feedback.id} thread ${thread.number} in ${feedback.project}. Reply with: zero feedback reply ${feedback.id} ${thread.number} -m "…" [--resolve | --wontfix]
 
-${threadMarkdown(thread, languageOf)}
+${threadMarkdown(thread)}
 `
 }
-
-// noLanguage leaves fences unlabelled: the contract names no language.
-export const noLanguage: LanguageOf = () => ""

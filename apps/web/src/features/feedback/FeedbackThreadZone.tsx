@@ -13,7 +13,7 @@ import { DocumentPreview } from "../documents/DocumentPreview.tsx"
 import { commitAge, commitDate } from "../source-control/compare.ts"
 import { readDraft, replyKey, writeDraft } from "./feedback-drafts.ts"
 import {
-  authorLabel, isClosed, lastAuthor, noLanguage, placeLabel, statusChange, statusLabels, threadPrompt, threadTitle,
+  authorLabel, isClosed, lastAuthor, placeLabel, statusChange, statusLabels, threadPrompt, threadTitle,
 } from "./feedback-model.ts"
 import { markFeedbackSeen } from "./use-feedback-seen.ts"
 import type { FeedbackSession } from "./use-feedback.ts"
@@ -134,7 +134,7 @@ export function FeedbackThreadZone({ before, feedback, navigate, session, thread
         <span className="feedback-thread-number">Thread {thread.number}</span>
         <span className="feedback-thread-place" title={place}>{place}</span>
         <div className="feedback-thread-actions">
-          <CopyThread text={() => threadPrompt(feedback, thread, noLanguage)} />
+          <CopyThread text={() => threadPrompt(feedback, thread)} />
           <Button size="sm" variant="ghost" disabled={busy || !id} onClick={() => send(closed ? "open" : "resolved")}>
             {closed ? "Reopen" : "Resolve"}
           </Button>

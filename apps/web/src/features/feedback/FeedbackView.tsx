@@ -17,7 +17,7 @@ import { shareableOrigin } from "../../lib/shareable-origin.ts"
 import { useRovingRows } from "../../lib/use-roving-rows.ts"
 import { commitAge, commitDate } from "../source-control/compare.ts"
 import {
-  activity, branchLabel, feedbackMarkdown, feedbackMeta, feedbackPrompt, filterChoices, groupByFile, isUnseen, matchesFilter, noLanguage,
+  activity, branchLabel, feedbackMarkdown, feedbackMeta, feedbackPrompt, filterChoices, groupByFile, isUnseen, matchesFilter,
   placeLabel, statusLabels, threadRoute, threadTitle, type ThreadRoute,
 } from "./feedback-model.ts"
 import { FeedbackStatusIcon, FeedbackThreadZone } from "./FeedbackThreadZone.tsx"
@@ -138,7 +138,7 @@ export function FeedbackView({ branch, mobile, navigate, onDismiss, onOpenThread
             <Menu.Positioner className={menuPositionerClass} sideOffset={4} align="end">
               <Menu.Popup className={menuPopupClass} aria-label="Feedback actions">
                 <Menu.Item className={menuItemClass} disabled={!feedback || shownThreads.length === 0}
-                  onClick={() => { if (feedback) void markdown.copy(feedbackMarkdown(feedback, shownThreads, noLanguage)) }}>
+                  onClick={() => { if (feedback) void markdown.copy(feedbackMarkdown(feedback, shownThreads)) }}>
                   Copy as Markdown
                 </Menu.Item>
                 <Menu.Separator className={menuSeparatorClass} />

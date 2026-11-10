@@ -3,11 +3,10 @@ import { readFile } from "node:fs/promises"
 import test from "node:test"
 
 import { isFeedback, type Feedback, type FeedbackThread } from "@zero/contracts"
-import { isRecord } from "../../api/http.ts"
 import {
   activity, anchorKey, anchorLabel, authorLabel, feedbackCompare, feedbackMarkdown, feedbackMeta, feedbackPrompt, groupByFile, inlineThreads, isUnseen,
   locationLabel, markSeen, matchesFilter, openCounts, outdatedCount, parseSeen, placeLabel, reviewCompareOf, routeFeedback, statusChange,
-  threadPrompt, threadRoute, threadTitle, unseenCount, utcTime, type LanguageOf,
+  threadPrompt, threadRoute, threadTitle, unseenCount, utcTime,
 } from "./feedback-model.ts"
 
 async function repositoryFile(path: string): Promise<string> {
@@ -26,26 +25,30 @@ function thread(feedback: Feedback, number: number): FeedbackThread {
   return found
 }
 
-// The registry's highlight languages (testdata/document-families.json) for
-// the fixture's files' families, as the CLI fences them.
-async function registryLanguages(): Promise<LanguageOf> {
-  const families: unknown = JSON.parse(await repositoryFile("testdata/document-families.json"))
-  assert.ok(Array.isArray(families))
-  const languages = new Map<string, string>()
-  for (const family of families) {
-    if (isRecord(family) && typeof family.id === "string" && typeof family.language === "string") languages.set(family.id, family.language)
-  }
-  const familyOf = new Map([["code/main.go", "go"], ["code/app.js", "javascript"], ["config/zero.toml", "toml"], ["guides/getting-started.md", "markdown"]])
-  return (path) => {
-    const language = languages.get(familyOf.get(path) ?? "") ?? ""
-    return language === "text" ? "" : language
-  }
-}
-
 test("Markdown export matches the CLI's output for every thread", async () => {
   const feedback = await fixture()
   const expected = await repositoryFile("testdata/feedback/markdown.md")
-  assert.equal(feedbackMarkdown(feedback, feedback.threads, await registryLanguages()), expected)
+  assert.equal(feedbackMarkdown(feedback, feedback.threads), expected)
+})
+
+test("Markdown fences outlast backtick runs and go bare without a language", async () => {
+  const feedback = await fixture()
+  const first = thread(feedback, 1)
+  const ticks = { ...first, anchor: { ...first.anchor, text: ["const fence = `````"], language: "" } }
+  assert.ok(threadPrompt(feedback, ticks).includes("\n``````\nconst fence = `````\n``````\n"))
+  const bare = { ...first, anchor: { ...first.anchor, language: undefined } }
+  assert.ok(threadPrompt(feedback, bare).includes("code/main.go:7\n```\n"))
+  const body = { ...first, messages: first.messages.map((message) => ({ ...message, body: "Trailing  \n\n" })) }
+  assert.ok(threadPrompt(feedback, body).endsWith("UTC\nTrailing  \n"))
+})
+
+test("Markdown export names empty feedback as the CLI does", async () => {
+  const feedback = await fixture()
+  assert.equal(feedbackMarkdown({ ...feedback, id: "", threads: [] }, []), "No feedback for branch feature/greeting in /home/user/markdown yet.\n")
+  assert.equal(feedbackMarkdown({ ...feedback, id: "", branch: "", threads: [] }, []), "No feedback for detached HEAD in /home/user/markdown yet.\n")
+  const closed = feedback.threads.filter((entry) => entry.awaiting !== "agent")
+  assert.equal(feedbackMarkdown({ ...feedback, threads: closed }, []),
+    "# Feedback fb-3k2q8m\nBranch feature/greeting · /home/user/markdown · no threads awaiting you\n\nNo threads yet.\n")
 })
 
 test("location labels follow lines, sides, moves, and outdated text", async () => {
@@ -193,7 +196,7 @@ and reply with POST http://127.0.0.1:8080/api/feedback-messages, JSON {"project"
 
 test("Copy Thread for Agent leads the thread's Markdown with how to reply", async () => {
   const feedback = await fixture()
-  const prompt = threadPrompt(feedback, thread(feedback, 1), () => "go")
+  const prompt = threadPrompt(feedback, thread(feedback, 1))
   assert.equal(prompt.split("\n")[0], 'Feedback fb-3k2q8m thread 1 in /home/user/markdown. Reply with: zero feedback reply fb-3k2q8m 1 -m "…" [--resolve | --wontfix]')
   assert.ok(prompt.includes("## Thread 1 · open · code/main.go:7\n```go\n"))
 })
