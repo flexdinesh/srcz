@@ -1021,7 +1021,7 @@ test("marking a file Viewed closes it and moves to the next file not yet viewed"
 
 test("] and [ move between a review's files and v toggles Viewed on the file in view", async ({ page }) => {
   await openReview(page, "review=working#f=README.md")
-  await expect(page.getByRole("main").locator(".review")).toHaveAttribute("aria-keyshortcuts", "] [ v")
+  await expect(page.getByRole("main").locator(".review")).toHaveAttribute("aria-keyshortcuts", "] [ v c")
   await expect(reviewFile(page, "README.md").getByRole("button", { name: "Viewed" })).toBeEnabled()
   await page.getByRole("main").focus()
   await page.keyboard.press("]")

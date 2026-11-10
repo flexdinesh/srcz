@@ -75,9 +75,6 @@ test("lines in a review take a comment, replies, an agent's answer, and resolve"
   await expect(page.getByRole("textbox", { name: "Comment on src/app.ts:3" })).toHaveValue("Draft")
   await page.getByRole("button", { name: "Cancel" }).click()
 
-  // The Files rail counts each file's open threads.
-  await expect(page.locator('[data-item-path="src/app.ts"]').getByTitle("2 open threads")).toBeAttached()
-
   // A reply sends with Cmd/Ctrl+Enter.
   const reply = page.getByRole("textbox", { name: "Reply to thread 1" })
   await reply.fill("Maybe `count`?")
@@ -97,7 +94,7 @@ test("lines in a review take a comment, replies, an agent's answer, and resolve"
   // Resolve collapses the thread to one line; Show resolved comments hides it.
   await first.getByRole("button", { name: "Resolve" }).click()
   await expect(first).toHaveAccessibleName("Thread 1: Resolved, src/app.ts:1")
-  await expect(first.getByRole("button", { name: /Name the answer after what it counts\./ })).toBeVisible()
+  await expect(first.getByRole("button", { name: /after what it counts\./ })).toBeVisible()
   await page.getByRole("button", { name: "View options" }).click()
   await page.getByRole("menuitemcheckbox", { name: "Show resolved comments" }).click()
   await page.keyboard.press("Escape")
@@ -108,7 +105,7 @@ test("lines in a review take a comment, replies, an agent's answer, and resolve"
   await page.keyboard.press("Escape")
 
   // A collapsed thread expands on click and reopens.
-  await first.getByRole("button", { name: /Name the answer/ }).click()
+  await first.getByRole("button", { name: /after what it counts/ }).click()
   await first.getByRole("button", { name: "Reopen" }).click()
   await expect(first).toHaveAccessibleName("Thread 1: Open, src/app.ts:1")
   await expect(first.locator(".feedback-message-status").last()).toHaveText("reopened this")
@@ -121,6 +118,13 @@ test("lines in a review take a comment, replies, an agent's answer, and resolve"
   // Threads persist across a reload.
   await page.reload()
   await expect(thread(page, 1)).toBeVisible({ timeout: 20_000 })
+
+  // A branch review with uncommitted changes shows them, and its Files rail
+  // counts each file's open threads.
+  await page.goto(`${live.origin}/view?project=${project}&review=branch&uncommitted=1#f=src/app.ts`)
+  await expect(thread(page, 1)).toBeVisible({ timeout: 20_000 })
+  const railFile = page.getByRole("complementary", { name: "Review files" }).getByRole("treeitem", { name: "app.ts", exact: true })
+  await expect(railFile.getByTitle("1 open thread")).toBeAttached()
 })
 
 test("a whole file takes a comment from its band", async ({ page, live }) => {
