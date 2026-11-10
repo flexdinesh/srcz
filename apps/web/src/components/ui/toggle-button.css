@@ -20,6 +20,21 @@
   flex: none;
 }
 
+/* Letters in the UI face, metadata size, medium weight (decision 0122). */
+.ui-toggle-glyph {
+  font-family: var(--font-sans);
+  font-size: var(--text-metadata);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.ui-toggle-glyph[data-underline] {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
 .ui-toggle[data-size="text"] {
   width: auto;
   height: max(var(--control-md), var(--toggle-min, 0px));

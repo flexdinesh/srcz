@@ -43,13 +43,13 @@
   --trees-padding-inline-override: 0.5rem;
   --trees-bg-override: var(--color-surface-secondary);
   --trees-bg-muted-override: var(--color-hover);
-  --trees-fg-override: var(--color-text-secondary);
+  --trees-fg-override: var(--color-text-primary);
   --trees-fg-muted-override: var(--color-text-muted);
   --trees-accent-override: var(--color-accent);
   --trees-border-color-override: var(--color-border);
   --trees-border-radius-override: 0px;
   --trees-font-family-override: var(--font-sans);
-  --trees-font-size-override: var(--text-label);
+  --trees-font-size-override: var(--text-list);
   --trees-selected-bg-override: var(--color-selected);
   --trees-selected-fg-override: var(--color-selected-text);
   --trees-focus-ring-color-override: var(--color-focus);

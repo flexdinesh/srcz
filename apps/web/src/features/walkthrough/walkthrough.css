@@ -7,7 +7,7 @@
   flex: 1;
   flex-direction: column;
   color: var(--color-text-secondary);
-  font-size: var(--text-label);
+  font-size: var(--text-list);
 }
 
 .walkthroughs-view > .explorer-header {
@@ -482,7 +482,7 @@ main:not(.source-mode, .image-mode) > .annotated-document > .document-annotation
   display: block;
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: var(--text-code);
 }
 
 /* Present mode (decision 0047): the document fills the canvas; the activity

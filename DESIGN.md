@@ -87,6 +87,10 @@ typography:
     fontFamily: "\"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 400
+  list:
+    fontFamily: "\"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
   supporting:
     fontFamily: "\"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
@@ -300,8 +304,8 @@ Implementation authority (decision 0033): tokens in `apps/web/src/styles/tokens.
 ### Token tiers
 
 1. **Theme values**: `light-dark()` colors in Tailwind's `@theme`, resolved by the root `color-scheme`; named themes override them in `themes.css`.
-2. **Semantic roles**: state layers, selection, focus, field colors, type roles (`--text-badge`, `--text-status` (11px git status letters), `--text-metadata`, `--text-label`, `--text-supporting`, `--text-code`, `--font-chrome` and `--text-chrome` for chrome labels), motion (`--duration-fast` 100ms, `--duration-base` 120ms, `--delay-progress` 150ms, `--duration-feedback` 1.6s), and z-index (`--z-behind`, `--z-raised`, `--z-sticky`, `--z-popover`, `--z-progress`, `--z-menu`). There are no radius tokens.
-3. **Component tokens**: controls (`--control-xs` 20, `sm` 24, `md` 28, `lg` 32, `touch` 44px), icons (`--icon-xs` 12, `sm` 14, `md` 16, `lg` 18px), rows (`--row-list` 22, `--row-menu` 28, `--row-pick` 32, `--row-drawer` 32px; list 32 and pick/menu 44px on narrow screens), `--chrome-height`, `--field-height`, `--field-height-palette` (40px; 44px narrow), `--status-height`.
+2. **Semantic roles**: state layers, selection, focus, field colors, type roles (`--text-badge` (10px), `--text-metadata`, `--text-label`, `--text-list` (14px sidebar rows), `--text-supporting`, `--text-code`, `--font-chrome` and `--text-chrome` for chrome labels), motion (`--duration-fast` 100ms, `--duration-base` 120ms, `--delay-progress` 150ms, `--duration-feedback` 1.6s), and z-index (`--z-behind`, `--z-raised`, `--z-sticky`, `--z-popover`, `--z-progress`, `--z-menu`). There are no radius tokens.
+3. **Component tokens**: controls (`--control-xs` 20, `sm` 24, `md` 28, `lg` 32, `touch` 44px), icons (`--icon-xs` 12, `sm` 14, `md` 16, `lg` 18px), rows (`--row-list` 24, `--row-menu` 28, `--row-pick` 32, `--row-drawer` 32px; list 32 and pick/menu 44px on narrow screens), `--chrome-height`, `--field-height`, `--field-height-palette` (40px; 44px narrow), `--status-height`.
 
 Feature CSS references tokens only; stylelint rejects color literals, raw font sizes, z-indexes, durations, px above 2, and any `border-radius` other than `0`. Raw `button`, `input`, `select`, `textarea`, and `dialog` elements live only in `components/ui/`; oxlint rejects them elsewhere.
 
@@ -334,23 +338,23 @@ One base size drives the whole scale: the Font Size setting (default 13px, 10–
 | Role | Effective size / line-height | Treatment |
 | --- | --- | --- |
 | Preview H1 / H2 / H3 / H4 | 26 / 21 / 17 / 15px; 1.25 | 600 weight, -0.02em tracking |
-| Labels, fields, rows, buttons (`--text-label`) | 13px (= base) | Buttons 500 weight |
+| Labels, fields, buttons, controls (`--text-label`) | 13px (= base) | Buttons 500 weight; segmented items, small buttons, notices, and status messages too |
 | View and dialog titles, pane headers (`--text-chrome`) | 12px | Monospace, 600 weight |
 | Tabs (`--text-chrome`) | 12px | Monospace |
 | Preview prose | 14px / 1.6 desktop; 15px / 1.6 mobile | 400 weight, 75ch maximum |
-| Explorer / result names | 13px (= base) | Compact labels |
+| Sidebar rows: Explorer, Search, Source Control, Walkthroughs, Feedback (`--text-list`) | 14px | `text-primary` names |
 | Supporting UI / search input / tables | 14px / 20px | Shared small text role |
-| Footer / metadata | 12px | Sans; footer line-height 1 |
+| Footer / metadata | 12px | Sans; footer line-height 1; counts, ages, folders beside names, stats, git status letters (600), kbd, toggle glyphs |
 | Source | 13px / 22px (= base) | Monospace, fixed line rows |
 | Preview code | 13px | Monospace; block line-height 1.6 |
 
-Source matches the explorer so code never looks oversized beside the tree; prose sits one step above. Project name uses 12px and 600 weight. UI uses the `--text-*` roles; preview uses `--preview-*` roles.
+The UI uses three steps, 12, 13, and 14px, and carries further hierarchy in weight and color; the activity badge's 10px is the one smaller size (decision 0122). Sidebar rows sit at 14px Inter, which matches the optical size of 13px monospace source and of 14px prose, so the sidebar never reads a step smaller than the document beside it. Monospace content inside the UI (review file paths, navigation snippets, branch names, walkthrough targets) uses `--text-code`. Project name uses 12px and 600 weight. UI uses the `--text-*` roles; preview uses `--preview-*` roles.
 
 ## Layout
 
 Desktop: square panes edge to edge, with no canvas gaps (decision 0102). The navigation pane groups a 2.5rem activity bar and the full-height sidebar (Explorer, Search, or Source Control); the document pane groups tabs and content. The full-width footer sits on `workspace-chrome` under a 1px top hairline, with its 28px controls centered. Document status aligns to the document pane. With the sidebar hidden the navigation pane becomes the activity rail and the footer's left section takes its natural width. No app header. In the macOS desktop app a title band takes the hidden native title bar's place (decision 0119): the height mygo reports (32px; none in browsers, on other platforms, and in full screen), on `workspace-chrome` closed by a 1px `border` hairline like the footer's. It drags the window and shows the window title centered in 12px chrome mono, `text-secondary`, `text-muted` while the window is in the background, clipped clear of the traffic lights. The window background follows the theme's canvas, and native menus and window controls its polarity. The sidebar defaults to 18rem, resizes within 13–30rem, persists locally, and resets on separator double-click. The separator is the 1px hairline between the panes with a 5px hit area; hover and keyboard focus reveal a centered 2px accent line. Explorer and document scroll independently.
 
-Tabs and explorer headers are 32px tall at every viewport width and share the workspace-chrome surface; a 1px hairline ends the tab strip. Activity rows are squares the rail's width; header labels and actions center vertically in the 32px band. List rows (Explorer, Search, Source Control) are 22px on desktop. Preview uses a 32px inset, left alignment, and 75ch maximum. Article, errors, and empty-state containers share the measure; the empty state centers horizontally and vertically within the document pane. Source mode removes preview padding.
+Tabs and explorer headers are 32px tall at every viewport width and share the workspace-chrome surface; a 1px hairline ends the tab strip. Activity rows are squares the rail's width; header labels and actions center vertically in the 32px band. List rows (Explorer, Search, Source Control) are 24px on desktop. Preview uses a 32px inset, left alignment, and 75ch maximum. Article, errors, and empty-state containers share the measure; the empty state centers horizontally and vertically within the document pane. Source mode removes preview padding.
 
 At `max-width: 48rem`, the document pane fills the workspace edge to edge. The sidebar opens in a native modal drawer (`DialogShell` drawer: overlay surface), `min(85vw, 22rem)` wide, full height against the leading edge, activity bar (32px items) at its left edge, toolbar trigger (a project picker trigger sits beside it), close control, backdrop, and 32px tree/search rows. Tabs and explorer headers stay 32px; footer controls remain 44px. Fields grow to 44px touch height; their trailing actions to 32px. Prose becomes 16px with 24px vertical / 16px horizontal insets. Footer keeps a compact app section and flexible document section; filename truncates while Find in files and the Settings gear remain visible. Size/count, type label, image details, process details, and shortcut hints hide. Print removes all workspace chrome.
 
@@ -390,12 +394,12 @@ Every view composes these from `apps/web/src/components/ui/`; a missing capabili
 
 - **Button**: primary, outline, ghost, plain, destructive, link. md 28px default, sm 24, lg 32, `inline` for text-flow actions; 44px on narrow screens. 13px 500 label. Outline and ghost hover add the state layer; plain is ghost without hover or press layers, its pointer cursor the only hover cue (review file headers); disabled is 50% opacity. Actions such as Retry, Open File, and Clear filter are outline md.
 - **IconButton**: icon-only, required `label` (also the tooltip). xs 20px (12px glyph) in rows and tabs, sm 24px (16px) in headers, toolbars, and fields, md 28px (16px) in panels, `bar` fills its band (`--bar-size`, 14px glyph) in the status bar, activity bar, and toolbar. The `gutter` variant floats over code: `surface-raised`, a strong border, and the control shadow. `disabledReason` keeps it focusable and explains why. With `aria-pressed`, the pressed state takes the selection tint. Dialogs raise targets to 44px on narrow screens.
-- **ToggleButton**: independent on/off options (match case, Show modified). Pressed uses an accent border with the selection fill and ink.
+- **ToggleButton**: independent on/off options (match case, Show modified). Pressed uses an accent border with the selection fill and ink. **ToggleGlyph** sets a letter face (`Aa`, `ab`, `.*`) as type in the UI face at 12px 500, hidden from assistive technology; the toggle's label names it.
 - **SegmentedControl**: mutually exclusive modes (Preview/Source, zoom, diff layout, Branch/All). `sm` (view headers): a translucent `--color-hover` track; the pressed item lifts onto `surface` with the control shadow. `md` (document toolbar): square segments fill the 32px strip like tabs, hover takes `--color-chrome-hover`, and the pressed one takes `surface` as the active tab does (decision 0046). Icon-only items are square.
 - **Slider**: one value on a 2px `border-strong` track whose filled part is `accent`, with a square 12px thumb on `surface-raised` (accent border on hover and drag, 1px accent focus ring); the hit area is 24px tall, 44px with an 18px thumb on narrow screens. Base UI's slider: arrows step, Page Up/Down step by ten, Home/End jump to the ends; `label` names it and `valueText` reads its value (decision 0116).
 - **TextField** and **Select**: 28px fields with icon, leading, and trailing slots; the palette variant is borderless, 40px (44px mobile), with an accent underline. **TextArea** shares the field's border, focus, and selection, grows with its content to 16rem, and resizes vertically.
-- **ListRow** / **ListButton**: list density 22px, pick 32px, menu, and drawer. Hover adds the state layer; active and selected rows use the selection fill and ink; disabled (`aria-disabled`) rows take no hover.
-- **SectionToggle** and **Chevron**: 22px disclosure rows; the chevron rotates inside any `aria-expanded="true"` row.
+- **ListRow** / **ListButton**: `text-primary` ink; list density 24px, pick 32px, menu, and drawer. Hover adds the state layer; active and selected rows use the selection fill and ink; disabled (`aria-disabled`) rows take no hover.
+- **SectionToggle** and **Chevron**: 24px disclosure rows; the chevron rotates inside any `aria-expanded="true"` row.
 - **ViewHeader**: the 32px band naming a view or dialog: 12px 600 monospace title, actions at the end.
 - **ChangeMark**: a line gutter's change marker filling the gutter's end inset: a 3px bar (`success` added, `accent` modified) or a `destructive` wedge between rows (deleted). It needs a label (title and accessible name), is no Tab stop, and keeps its presses out of the gutter.
 - **Badge** (neutral counts, accent activity), **Kbd**, **Notice** (info, warning, error; bar or block; errors are alerts), **StatusMessage**, **ProgressBar** (2px sweep, edge or page), **CopyButton** (plain, raised, chip, gutter; check or X feedback for 1.6s, announced), **DialogShell** (palette, panel, viewer, drawer), and the Menu class names for Base UI menus.
@@ -404,11 +408,11 @@ Activity bar, tab strip, Pierre trees and diffs, prose, and the Mermaid canvas a
 
 ### Activity bar
 
-A 2.5rem column on `workspace-chrome` with a 1px right border and 40px-square rows from the top: Explorer (files icon, Cmd/Ctrl+Shift+E), Search (Cmd/Ctrl+Shift+F), then Source Control (git-branch icon, Cmd/Ctrl+Shift+G), then Walkthroughs (route icon, no shortcut), then Feedback (message-square icon, no shortcut). Source Control carries a count badge of pending changes (`99+` above 99), named “Source Control, 4 pending changes”; no badge at zero. Walkthroughs counts walkthroughs published since the view last showed, named “Walkthroughs, 2 new walkthroughs”. Feedback counts agent replies this browser has not shown, named “Feedback, 1 new reply”. The badge sits at the row's lower right: 14px tall, `accent` fill with `surface` text (contrast holds in every theme), 9px 600 tabular figures as in VS Code. Items show 18px icons in `text-secondary`; hover and the active item use `text-primary`, and the active item fills its whole row on `surface` with a 2px leading `accent` edge and `aria-pressed` (decision 0102); hover fills the row with the `--color-hover` layer. The full button remains the click target; keyboard focus draws the 1px inset outline. Clicking the active item, or Cmd/Ctrl+B, hides the sidebar on desktop (the resizer hides with it); clicking any item restores it. All views stay mounted so switching keeps tree, search, and change-list state. View and visibility persist under `zero-sidebar`. Mobile puts the bar inside the drawer with 32px-square items; the drawer is named after the active view.
+A 2.5rem column on `workspace-chrome` with a 1px right border and 40px-square rows from the top: Explorer (files icon, Cmd/Ctrl+Shift+E), Search (Cmd/Ctrl+Shift+F), then Source Control (git-branch icon, Cmd/Ctrl+Shift+G), then Walkthroughs (route icon, no shortcut), then Feedback (message-square icon, no shortcut). Source Control carries a count badge of pending changes (`99+` above 99), named “Source Control, 4 pending changes”; no badge at zero. Walkthroughs counts walkthroughs published since the view last showed, named “Walkthroughs, 2 new walkthroughs”. Feedback counts agent replies this browser has not shown, named “Feedback, 1 new reply”. The badge sits at the row's lower right: 16px tall, `accent` fill with `surface` text (contrast holds in every theme), 10px 600 tabular figures (decision 0122). Items show 18px icons in `text-secondary`; hover and the active item use `text-primary`, and the active item fills its whole row on `surface` with a 2px leading `accent` edge and `aria-pressed` (decision 0102); hover fills the row with the `--color-hover` layer. The full button remains the click target; keyboard focus draws the 1px inset outline. Clicking the active item, or Cmd/Ctrl+B, hides the sidebar on desktop (the resizer hides with it); clicking any item restores it. All views stay mounted so switching keeps tree, search, and change-list state. View and visibility persist under `zero-sidebar`. Mobile puts the bar inside the drawer with 32px-square items; the drawer is named after the active view.
 
 ### Explorer
 
-Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons, square rows, semantic token overrides, 22px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
+Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons, square rows, semantic token overrides, 14px `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
 
 Below the header, a shelf on the same `workspace-chrome` band holds the explorer's
 query fields (4px top, 8px bottom, 12px sides, 4px between fields) and ends in a
@@ -530,11 +534,11 @@ The Color Theme quick pick reuses the frame with the placeholder “Select Color
 
 ### Content search
 
-Ctrl/Cmd+Shift+F or Find in files reveals the Search view and focuses its field, seeding it from a single-line document selection. The 32px header reads “Search” (12px, 600) with Refresh, Clear Search Results, and Collapse All/Expand All icon actions (Close on mobile). The field matches the filename filter (1.75rem, 1px border, accent focus ring; 28px at every viewport width), placeholder “Search”, with inline 20px toggles: Match Case, Match Whole Word, Use Regular Expression (Alt+C/W/R); pressed toggles use the accent border with the selection fill and ink. A right-aligned “…” Toggle Search Details reveals “files to include” and “files to exclude” (12px labels, same field style, placeholders “e.g. *.ts, src/**/include”). Invalid regexes or globs mark the field `aria-invalid` with a destructive border and a 12px destructive message.
+Ctrl/Cmd+Shift+F or Find in files reveals the Search view and focuses its field, seeding it from a single-line document selection. The 32px header reads “Search” (12px, 600) with Refresh, Clear Search Results, and Collapse All/Expand All icon actions (Close on mobile). The field matches the filename filter (1.75rem, 1px border, accent focus ring; 28px at every viewport width), placeholder “Search”, with inline 20px toggles: Match Case, Match Whole Word, Use Regular Expression (Alt+C/W/R), whose faces are set as type (`ToggleGlyph`: `Aa`, underlined `ab`, `.*` in Inter 500 at 12px) rather than drawn icons; pressed toggles use the accent border with the selection fill and ink. A right-aligned “…” Toggle Search Details reveals “files to include” and “files to exclude” (12px labels, same field style, placeholders “e.g. *.ts, src/**/include”). Invalid regexes or globs mark the field `aria-invalid` with a destructive border and a 12px destructive message.
 
 A 2px accent progress bar runs after 150ms while searching; previous results stay until new ones arrive. A polite 12px message reads “3 results in 2 files” (“2,000+ results” when truncated), then any notice: “No results found[ in '…' excluding '…'].”, unreadable-file warnings, the truncation advice, or “Search is unavailable.” with Retry search.
 
-Results are a `role="tree"` with 22px rows (32px narrow): file rows show a 12px chevron, the Pierre file icon, the name in `text-primary`, the muted 12px folder, and a right-aligned count badge on `border`; match rows indent 2.5rem and show a trimmed line preview whose match uses `warning-subtle`. Hover uses the state layer; keyboard focus a 1px inset accent outline; the opened match the selection fill and ink. Arrows, Home/End, Left/Right (collapse, parent, expand, first child), Space (open, keep focus), Enter (open, focus document), click (open, keep focus), double-click (open, focus document), F4/Shift+F4 (next/previous match). ArrowDown from the field enters the tree; ArrowUp from the first row returns. Escape leaves for the document (closes the drawer on mobile). Opening a match navigates to `#L<line>`, which selects that source line.
+Results are a `role="tree"` with 24px rows (32px narrow): file rows show a 12px chevron, the Pierre file icon, the name in `text-primary`, the muted 12px folder, and a right-aligned count badge on `border`; match rows indent 2.5rem and show a trimmed line preview whose match uses `warning-subtle`. Hover uses the state layer; keyboard focus a 1px inset accent outline; the opened match the selection fill and ink. Arrows, Home/End, Left/Right (collapse, parent, expand, first child), Space (open, keep focus), Enter (open, focus document), click (open, keep focus), double-click (open, focus document), F4/Shift+F4 (next/previous match). ArrowDown from the field enters the tree; ArrowUp from the first row returns. Escape leaves for the document (closes the drawer on mobile). Opening a match navigates to `#L<line>`, which selects that source line.
 
 ### Source Control
 
@@ -543,7 +547,7 @@ Ctrl/Cmd+Shift+G or the activity item reveals the view (decision 0040). The
 commits, the stack, and branch files; Close on mobile), ending on a 1px
 `border` line as the Explorer and Search shelves do. Three panes stack
 below, always in this order: Uncommitted, Commits, Branches. Each opens on a
-22px header (32px narrow) whose heading holds a section toggle (12px chevron,
+24px header (32px narrow) whose heading holds a section toggle (12px chevron,
 the name in 12px 600), then a note and right-aligned 20px icon actions; panes
 divide with a 1px `border-strong` line, drawn whether or not a sash sits
 between them. Empty panes start closed (no changes, no
@@ -562,12 +566,12 @@ Each Uncommitted file's Source marks its changes in the gutter, and a mark opens
 Uncommitted carries the Search count badge (named “4 files”) and actions View
 as Tree / View as List (persisted; list by default), Collapse/Expand All
 Folders in tree mode, and Open Changes. The list is a `role="listbox"` named
-“Uncommitted changes” of 22px rows (32px narrow) indented to the pane title:
+“Uncommitted changes” of 24px rows (32px narrow) indented to the pane title:
 the Pierre file icon, the name in `text-primary` (struck through when
 deleted), the folder in muted 12px, `+N −M` (or “binary”, “large”, or a
 muted “renamed” for a rename without line changes) in 12px tabular figures,
 additions `success` and deletions `destructive` (zero stays muted), and the
-11px status letter. Rows follow the review's tree order (folders first, by
+12px 600 status letter. Rows follow the review's tree order (folders first, by
 name; decision 0117). Rows are named “path, Modified, +2 −1” (a pure rename
 “path, Renamed”); the title adds “Renamed from <old path>”. Tree mode renders the Files
 tree described below. Click or Space opens the file in the Uncommitted review
@@ -582,7 +586,7 @@ Filter Commits search icon (`aria-pressed` while the filter row shows), and a
 [Branch][All] small `SegmentedControl` (12px, 20px tall, 28px narrow); when
 HEAD is the base branch both items are disabled, All shows pressed, and the
 title says “HEAD is the base branch, so all history shows”. A `role="listbox"`
-named “Commits” (`aria-multiselectable` on desktop) holds 22px rows (32px
+named “Commits” (`aria-multiselectable` on desktop) holds 24px rows (32px
 narrow) with the Search view's state treatment: a leading 20px chevron
 (“Show commit details”, in the pane title's chevron column), the subject in
 `text-primary` on the other rows' indent, and a muted right-aligned compact
@@ -635,7 +639,7 @@ combined diff; Shift+Arrow extends without opening; arrows, Home/End move
 and select; Space selects; Enter opens the selection's review and focuses
 it; Escape narrows a range to its anchor; Ctrl/Cmd+C on a commit copies its
 full hash. Pages hold 50 commits; a
-Load more row ends the list and scrolls with it, as in VS Code: a 22px
+Load more row ends the list and scrolls with it, as in VS Code: a 24px
 `ListButton` with a chevrons-down icon and a secondary label (primary on
 hover), reading Loading… while it reads (`aria-disabled`, so focus stays) and
 Retry with a refresh icon under the error after a failure. States: “No

@@ -4,7 +4,7 @@
   flex: 1;
   flex-direction: column;
   color: var(--color-text-secondary);
-  font-size: var(--text-label);
+  font-size: var(--text-list);
 }
 
 /* The header ends on a divider, as Explorer's and Search's shelves do; an
@@ -511,7 +511,7 @@
   width: 1rem;
   flex: none;
   margin-left: auto;
-  font-size: var(--text-status);
+  font-size: var(--text-metadata);
   font-weight: 600;
   text-align: center;
 }

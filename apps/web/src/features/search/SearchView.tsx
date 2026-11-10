@@ -1,6 +1,5 @@
 import {
-  CaseSensitiveIcon, EllipsisIcon, FoldVerticalIcon, ListXIcon, RefreshCwIcon, RegexIcon,
-  UnfoldVerticalIcon, WholeWordIcon, XIcon,
+  EllipsisIcon, FoldVerticalIcon, ListXIcon, RefreshCwIcon, UnfoldVerticalIcon, XIcon,
 } from "lucide-react"
 import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
 
@@ -12,7 +11,7 @@ import { StatusMessage } from "../../components/ui/notice.tsx"
 import { ProgressBar } from "../../components/ui/progress-bar.tsx"
 import { Chevron } from "../../components/ui/section-toggle.tsx"
 import { TextField } from "../../components/ui/text-field.tsx"
-import { ToggleButton } from "../../components/ui/toggle-button.tsx"
+import { ToggleButton, ToggleGlyph } from "../../components/ui/toggle-button.tsx"
 import { ViewHeader } from "../../components/ui/view-header.tsx"
 import { FileIcon } from "../../components/FileIcon.tsx"
 import type { SearchQuery } from "./search-engine.ts"
@@ -23,9 +22,9 @@ import type { SearchSession } from "./use-search-session.ts"
 type Toggle = "matchCase" | "wholeWord" | "regex"
 
 const toggles: ReadonlyArray<{ option: Toggle; label: string; code: string; icon: ReactNode }> = [
-  { option: "matchCase", label: "Match Case", code: "KeyC", icon: <CaseSensitiveIcon aria-hidden="true" /> },
-  { option: "wholeWord", label: "Match Whole Word", code: "KeyW", icon: <WholeWordIcon aria-hidden="true" /> },
-  { option: "regex", label: "Use Regular Expression", code: "KeyR", icon: <RegexIcon aria-hidden="true" /> },
+  { option: "matchCase", label: "Match Case", code: "KeyC", icon: <ToggleGlyph>Aa</ToggleGlyph> },
+  { option: "wholeWord", label: "Match Whole Word", code: "KeyW", icon: <ToggleGlyph underline>ab</ToggleGlyph> },
+  { option: "regex", label: "Use Regular Expression", code: "KeyR", icon: <ToggleGlyph>.*</ToggleGlyph> },
 ]
 
 const altLabel = typeof navigator !== "undefined" && navigator.platform.includes("Mac") ? "⌥" : "Alt+"

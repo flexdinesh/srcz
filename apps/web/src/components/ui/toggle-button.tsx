@@ -35,3 +35,15 @@ export function ToggleButton({
     </button>
   )
 }
+
+export interface ToggleGlyphProps {
+  children: string
+  underline?: boolean
+}
+
+// ToggleGlyph is a toggle's face set as type rather than drawn: letters such
+// as Aa, ab, and .* in the UI face, so they keep real letterforms at 12px.
+// The toggle's label names it; the glyph is hidden from assistive technology.
+export function ToggleGlyph({ children, underline = false }: ToggleGlyphProps) {
+  return <span className="ui-toggle-glyph" data-underline={underline || undefined} aria-hidden="true">{children}</span>
+}
