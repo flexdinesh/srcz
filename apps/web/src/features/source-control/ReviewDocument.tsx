@@ -985,13 +985,16 @@ function DiffView({ annotation, rendered, lines, narrow, options, path, referenc
     })
     return () => register(path, null)
   }, [instance, path, register, rendered, scrollRoot])
-  // Escape clears the selection while focus is in the pane, as in Source.
+  // Escape clears the selection while focus is in the pane, as in Source. A
+  // text field's Escape is its own: a comment's field cancels or blurs, and
+  // this listener runs before React's.
   const hasSelection = lines !== null
   useEffect(() => {
     const root = scrollRoot.current
     if (!root || !hasSelection) return
     const clear = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return
+      if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return
       event.preventDefault()
       onSelectLines(null)
     }

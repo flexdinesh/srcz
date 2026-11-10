@@ -200,11 +200,13 @@
   display: block;
 }
 
-/* The gutter's Comment sits left of Copy at the selection's last line. */
+/* The gutter's Comment floats just past the line numbers at the selection's
+   last line, over the line's start: the number cell holds only Copy, and its
+   column clips anything left of it. */
 .diff-line-comment {
   position: absolute;
   top: 1px;
-  right: calc(var(--control-xs) + var(--space-1));
+  left: 2px;
 }
 
 /* A file band's outdated threads read as a quiet link to the view. */
