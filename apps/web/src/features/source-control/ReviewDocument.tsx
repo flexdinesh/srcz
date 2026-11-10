@@ -282,6 +282,22 @@ function ReviewBody({
     }
   }, [scrollRoot, virtualizer])
 
+  // scrollPane scrolls the pane through the virtualizer, which places files
+  // by a cached scroll position. A plain scrollTo updates that cache only
+  // when the scroll event arrives, and WebKit sends it after the
+  // virtualizer's next frame: that frame then measures files from the old
+  // position, off by the jump, and renders none of the target's rows. So
+  // the cache is marked stale first, as the virtualizer's own scroll fixes
+  // do. Before setup there is nothing to place yet.
+  const scrollPane = useCallback((root: HTMLElement, top: number) => {
+    if (!virtualizer.getRoot()) {
+      root.scrollTo({ top })
+      return
+    }
+    virtualizer.markDOMDirty()
+    virtualizer.scrollTo({ top })
+  }, [virtualizer])
+
   // Workers render with pool-wide options, so inline emphasis goes there.
   const inline = lineDiffType(options.inline)
   useEffect(() => {
@@ -396,7 +412,7 @@ function ReviewBody({
       const box = lineBox()
       const top = box ? box.top - root.clientHeight * revealTop
         : section.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop
-      if (Math.abs(root.scrollTop - top) > 1) root.scrollTo({ top })
+      if (Math.abs(root.scrollTop - top) > 1) scrollPane(root, top)
     }
     pinned.current = target
     repin.current = { path: target, pin }
@@ -420,7 +436,7 @@ function ReviewBody({
     }
     for (const type of events) root.addEventListener(type, onInput, { passive: true })
     return release
-  }, [anchor, ready, scrollRoot, target])
+  }, [anchor, ready, scrollPane, scrollRoot, target])
 
   // The pinned file, else the one whose section holds the pane's top edge, is
   // the one in view.
@@ -544,8 +560,8 @@ function ReviewBody({
     if (path !== latestGo.current.target || latestGo.current.anchor) return onSelectLines(path, null)
     const section = container.current?.querySelector(`[data-review-path="${CSS.escape(path)}"]`)
     if (!root || !(section instanceof HTMLElement)) return
-    root.scrollTo({ top: section.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop })
-  }, [onSelectLines, scrollRoot])
+    scrollPane(root, section.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop)
+  }, [onSelectLines, scrollPane, scrollRoot])
 
   // Marking a file Viewed closes it and moves on to the next file not yet
   // viewed, as a pull request review does (decision 0117).

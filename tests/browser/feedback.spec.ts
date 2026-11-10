@@ -4,7 +4,7 @@ import path from "node:path"
 import { expect, type APIRequestContext, type Page } from "@playwright/test"
 import { test } from "./live-test.ts"
 
-import { grantClipboard } from "./clipboard.ts"
+import { copiedText, grantClipboard, recordClipboard } from "./clipboard.ts"
 import { gitFixtureRoot } from "./git-fixture.ts"
 
 // Review feedback threads (decision 0120). Each test serves its own copy of
@@ -22,10 +22,6 @@ function gutter(page: Page, file: string, side: "deletions" | "additions", line:
 
 function thread(page: Page, number: number) {
   return page.getByRole("region", { name: new RegExp(`^Thread ${number}: `) })
-}
-
-function clipboard(page: Page): Promise<string> {
-  return page.evaluate(() => navigator.clipboard.readText())
 }
 
 async function feedbackId(request: APIRequestContext, origin: string, root: string): Promise<string> {
@@ -46,6 +42,8 @@ async function comment(page: Page, file: string, line: number, body: string) {
 }
 
 test("lines in a review take a comment, replies, an agent's answer, and resolve", async ({ page, request, live }) => {
+  // A long walk through one review: WebKit takes most of the default 30 s.
+  test.setTimeout(60_000)
   const project = encodeURIComponent(live.root)
   await page.goto(`${live.origin}/view?project=${project}&review=working#f=src/app.ts`)
   await expect(gutter(page, "src/app.ts", "additions", 1)).toBeVisible({ timeout: 20_000 })
@@ -140,6 +138,7 @@ test("a whole file takes a comment from its band", async ({ page, live }) => {
 
 test("the Feedback view lists, filters, opens, and copies threads", async ({ page, request, live }) => {
   await grantClipboard(page)
+  await recordClipboard(page)
   const project = encodeURIComponent(live.root)
   await page.goto(`${live.origin}/view?project=${project}&review=working#f=src/app.ts`)
   await expect(gutter(page, "src/app.ts", "additions", 1)).toBeVisible({ timeout: 20_000 })
@@ -170,16 +169,19 @@ test("the Feedback view lists, filters, opens, and copies threads", async ({ pag
   await view.getByRole("button", { name: "All", exact: true }).click()
   await expect(rows).toHaveCount(2)
 
-  // Copy Prompt sends an agent to the CLI.
-  await view.getByRole("button", { name: "Copy Prompt" }).click()
-  await expect.poll(() => clipboard(page)).toContain(`Read the threads waiting on you: zero feedback show ${id}`)
-  expect(await clipboard(page)).toContain(`in ${live.root}.`)
+  // Copy Prompt sends an agent to the CLI; the copy succeeds.
+  const copyPrompt = view.getByRole("button", { name: "Copy Prompt" })
+  await copyPrompt.click()
+  await expect(copyPrompt).toHaveAttribute("data-status", "copied")
+  await expect.poll(() => copiedText(page)).toContain(`Read the threads waiting on you: zero feedback show ${id}`)
+  expect(await copiedText(page)).toContain(`in ${live.root}.`)
 
   // Copy as Markdown copies the filtered threads.
   await view.getByRole("button", { name: "More Feedback Actions" }).click()
   await page.getByRole("menuitem", { name: "Copy as Markdown" }).click()
-  await expect.poll(() => clipboard(page)).toMatch(new RegExp(`^# Feedback ${id}\\n`))
-  expect(await clipboard(page)).toContain("## Thread 2 · resolved · src/app.ts:4")
+  await expect(view.getByRole("status").filter({ hasText: "Threads copied as Markdown" })).toBeAttached()
+  await expect.poll(() => copiedText(page)).toMatch(new RegExp(`^# Feedback ${id}\\n`))
+  expect(await copiedText(page)).toContain("## Thread 2 · resolved · src/app.ts:4")
 
   // A row opens its thread in the review it was written in.
   await rows.first().click()
