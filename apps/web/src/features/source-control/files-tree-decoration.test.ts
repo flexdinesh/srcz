@@ -3,7 +3,7 @@ import test from "node:test"
 
 import type { FileStats } from "@zero/contracts"
 import { pureRename } from "./diff-stats.ts"
-import { fileDecoration, viewedCSS } from "./files-tree-decoration.ts"
+import { fileDecoration, threadsCSS, viewedCSS } from "./files-tree-decoration.ts"
 
 test("counted stats report additions and deletions, including zero", () => {
   assert.equal(fileDecoration({ path: "a.ts", status: "counted", additions: 1200, deletions: 0, blob: "b" }, undefined)?.text, "+1,200 −0")
@@ -72,4 +72,20 @@ test("pureRename needs a rename and counted zero lines", () => {
   assert.equal(pureRename({ ...stats, deletions: 1 }, "b.md"), false)
   assert.equal(pureRename({ path: "a.md", status: "binary", blob: "b" }, "b.md"), false)
   assert.equal(pureRename(undefined, "b.md"), false)
+})
+
+test("open threads lead the decoration with their count, before marks and stats", () => {
+  const decoration = fileDecoration({ path: "a.ts", status: "counted", additions: 2, deletions: 1, blob: "b" }, undefined, { marked: true, threads: 3 })
+  assert.equal(decoration?.text, "3 ● +2 −1")
+  assert.deepEqual(decoration?.parts?.[0], { text: "3", color: "var(--color-text-muted)" })
+  assert.ok(decoration?.title.startsWith("3 open threads"))
+  assert.deepEqual(fileDecoration(undefined, undefined, { threads: 1 }), { text: "1", title: "1 open thread", parts: [{ text: "1", color: "var(--color-text-muted)" }] })
+  assert.equal(fileDecoration(undefined, undefined, { threads: 0 }), null)
+})
+
+test("threads CSS draws the icon on the count of each quoted path", () => {
+  assert.equal(threadsCSS([]), "")
+  const css = threadsCSS(['odd"name.md'])
+  assert.ok(css.includes('[data-item-path="odd\\"name.md"]) > [data-item-section="decoration"] > span > span:first-child::before'))
+  assert.ok(css.includes("mask: url("))
 })

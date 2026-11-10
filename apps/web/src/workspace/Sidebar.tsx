@@ -1,4 +1,4 @@
-import { FilesIcon, GitBranchIcon, RouteIcon, SearchIcon } from "lucide-react"
+import { FilesIcon, GitBranchIcon, MessageSquareIcon, RouteIcon, SearchIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { DialogShell } from "../components/ui/dialog-shell.tsx"
@@ -12,9 +12,12 @@ const activities: ReadonlyArray<{ view: SidebarView; label: string; shortcut?: s
   { view: "search", label: "Search", shortcut: mac ? "⇧⌘F" : "Ctrl+Shift+F", keys: "Control+Shift+F Meta+Shift+F", icon: <SearchIcon aria-hidden="true" /> },
   { view: "source-control", label: "Source Control", shortcut: mac ? "⌃⇧G" : "Ctrl+Shift+G", keys: "Control+Shift+G Meta+Shift+G", icon: <GitBranchIcon aria-hidden="true" /> },
   { view: "walkthroughs", label: "Walkthroughs", icon: <RouteIcon aria-hidden="true" /> },
+  { view: "feedback", label: "Feedback", icon: <MessageSquareIcon aria-hidden="true" /> },
 ]
 
-const viewNames: Record<SidebarView, string> = { explorer: "Files", search: "Search", "source-control": "Source Control", walkthroughs: "Walkthroughs" }
+const viewNames: Record<SidebarView, string> = {
+  explorer: "Files", search: "Search", "source-control": "Source Control", walkthroughs: "Walkthroughs", feedback: "Feedback",
+}
 
 // sidebarViewName names a view as its mobile drawer does.
 export function sidebarViewName(view: SidebarView): string {
@@ -31,18 +34,22 @@ interface SidebarProps {
   search: ReactNode
   sourceControl: ReactNode
   walkthroughs: ReactNode
+  feedback: ReactNode
   // pendingChanges counts Source Control's changes; 0 shows no badge.
   pendingChanges: number
   // unseenWalkthroughs counts walkthroughs published since the view last
   // showed; 0 shows no badge.
   unseenWalkthroughs: number
+  // unseenFeedback counts agent replies this browser has not shown; 0
+  // shows no badge (decision 0120).
+  unseenFeedback: number
   sidebar: SidebarState
 }
 
 // Sidebar groups the VS Code activity bar and its views into one desktop
 // pane; mobile opens it as a modal drawer. All views
 // stay mounted so switching keeps tree, search, and change-list state.
-export function Sidebar({ explorer, pendingChanges, search, sidebar, sourceControl, unseenWalkthroughs, walkthroughs }: SidebarProps) {
+export function Sidebar({ explorer, feedback, pendingChanges, search, sidebar, sourceControl, unseenFeedback, unseenWalkthroughs, walkthroughs }: SidebarProps) {
   const { drawer, hidden, mobile, view } = sidebar
   // Only the mobile drawer is a dialog; inline, the element is presentational.
   return (
@@ -51,10 +58,12 @@ export function Sidebar({ explorer, pendingChanges, search, sidebar, sourceContr
       onClick={(event) => { if (event.target === drawer.current) sidebar.dismiss() }}>
       <nav className="activity-bar" aria-label="Views">
         {activities.map((activity) => {
-          const count = activity.view === "source-control" ? pendingChanges : activity.view === "walkthroughs" ? unseenWalkthroughs : 0
+          const count = activity.view === "source-control" ? pendingChanges : activity.view === "walkthroughs" ? unseenWalkthroughs
+            : activity.view === "feedback" ? unseenFeedback : 0
           const badge = count > 0 ? badgeLabel(count) : ""
-          const noun = activity.view === "source-control" ? "pending change" : "new walkthrough"
-          const label = badge ? `${activity.label}, ${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}` : activity.label
+          const noun = activity.view === "source-control" ? "pending change" : activity.view === "feedback" ? "new reply" : "new walkthrough"
+          const nouns = count === 1 ? noun : noun === "new reply" ? "new replies" : `${noun}s`
+          const label = badge ? `${activity.label}, ${count.toLocaleString()} ${nouns}` : activity.label
           return (
             <IconButton key={activity.view} size="bar" className="activity-item" data-view={activity.view}
               label={label} aria-pressed={!hidden && view === activity.view}
@@ -72,6 +81,7 @@ export function Sidebar({ explorer, pendingChanges, search, sidebar, sourceContr
         <div className="sidebar-view" hidden={view !== "search"}>{search}</div>
         <div className="sidebar-view" hidden={view !== "source-control"}>{sourceControl}</div>
         <div className="sidebar-view" hidden={view !== "walkthroughs"}>{walkthroughs}</div>
+        <div className="sidebar-view" hidden={view !== "feedback"}>{feedback}</div>
       </div>
     </DialogShell>
   )

@@ -12,6 +12,8 @@ export interface DiffOptions {
   ignoreWhitespace: boolean
   inline: InlineChanges
   expandUnchanged: boolean
+  // showResolved shows closed feedback threads inline (decision 0120).
+  showResolved: boolean
 }
 
 export const defaultDiffOptions: DiffOptions = {
@@ -20,6 +22,7 @@ export const defaultDiffOptions: DiffOptions = {
   ignoreWhitespace: false,
   inline: "word",
   expandUnchanged: false,
+  showResolved: true,
 }
 
 export const inlineChoices: ReadonlyArray<{ value: InlineChanges; label: string }> = [
@@ -42,6 +45,7 @@ export function parseDiffOptions(value: unknown): DiffOptions {
     ignoreWhitespace: typeof stored.ignoreWhitespace === "boolean" ? stored.ignoreWhitespace : defaultDiffOptions.ignoreWhitespace,
     inline: isInlineChanges(stored.inline) ? stored.inline : defaultDiffOptions.inline,
     expandUnchanged: typeof stored.expandUnchanged === "boolean" ? stored.expandUnchanged : defaultDiffOptions.expandUnchanged,
+    showResolved: typeof stored.showResolved === "boolean" ? stored.showResolved : defaultDiffOptions.showResolved,
   }
 }
 
@@ -50,6 +54,7 @@ export function parseDiffOptions(value: unknown): DiffOptions {
 export function diffOptionsModified(options: DiffOptions): boolean {
   return options.wrap !== defaultDiffOptions.wrap || options.ignoreWhitespace !== defaultDiffOptions.ignoreWhitespace
     || options.inline !== defaultDiffOptions.inline || options.expandUnchanged !== defaultDiffOptions.expandUnchanged
+    || options.showResolved !== defaultDiffOptions.showResolved
 }
 
 // splitMinimumWidth is the diff area's width, in rem, below which Split has

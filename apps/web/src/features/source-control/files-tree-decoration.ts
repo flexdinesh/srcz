@@ -21,23 +21,26 @@ function stat(sign: string, count: number, color: string): DecorationPart {
 }
 
 // RowMarks are a row's review marks: uncommitted edits in a review that
-// includes them (decision 0051), and the Viewed mark (decision 0053).
+// includes them (decision 0051), the Viewed mark (decision 0053), and the
+// count of open feedback threads (decision 0120).
 export interface RowMarks {
   marked?: boolean
   viewed?: boolean
+  threads?: number
 }
 
 // fileDecoration is a changed file's row decoration: line stats with
 // additions in success and deletions in destructive, as elsewhere in Source
 // Control; "binary" or "large" as plain notes; a muted "renamed" for a rename
 // without line changes (decision 0117); or, for a renamed file without stats,
-// where it came from. A marked file leads with an accent dot. The
-// title names the marks, the rename, and the lines; a viewed file keeps a
-// lane for viewedCSS's check.
-export function fileDecoration(stats: FileStats | undefined, oldPath: string | undefined, { marked = false, viewed = false }: RowMarks = {}): FileDecoration | null {
+// where it came from. A marked file leads with an accent dot, and a file with
+// open threads with their count in muted ink, which threadsCSS gives its
+// message icon. The title names the marks, the rename, and the lines; a
+// viewed file keeps a lane for viewedCSS's check.
+export function fileDecoration(stats: FileStats | undefined, oldPath: string | undefined, { marked = false, viewed = false, threads = 0 }: RowMarks = {}): FileDecoration | null {
   const renamed = pureRename(stats, oldPath)
   const lines = renamed ? "" : statsLabel(stats)
-  const title = [marked ? "Has uncommitted changes" : "", oldPath ? `Renamed from ${oldPath}` : "", lines ? `${lines} lines` : "", viewed ? "Viewed" : ""]
+  const title = [threads > 0 ? `${threads.toLocaleString()} open ${threads === 1 ? "thread" : "threads"}` : "", marked ? "Has uncommitted changes" : "", oldPath ? `Renamed from ${oldPath}` : "", lines ? `${lines} lines` : "", viewed ? "Viewed" : ""]
     .filter(Boolean).join(", ")
   const text = renamed ? "renamed" : lines || (oldPath ? `from ${oldPath}` : "")
   // Pierre lays parts out as flex items, which drop a plain space.
@@ -47,9 +50,10 @@ export function fileDecoration(stats: FileStats | undefined, oldPath: string | u
     : renamed ? [{ text, color: "var(--color-text-muted)" }]
     : text ? [{ text }] : []
   if (marked) parts.unshift({ text: "●", color: "var(--color-accent)" }, ...(parts.length > 0 ? [{ text: "\u00a0" }] : []))
+  if (threads > 0) parts.unshift({ text: threads.toLocaleString(), color: "var(--color-text-muted)" }, ...(parts.length > 0 ? [{ text: "\u00a0" }] : []))
   if (parts.length === 0) return viewed ? { text: "", title } : null
-  if (!counted && !marked && !renamed) return { text, title }
-  return { text: [marked ? "●" : "", text].filter(Boolean).join(" "), title, parts }
+  if (!counted && !marked && !renamed && threads === 0) return { text, title }
+  return { text: [threads > 0 ? threads.toLocaleString() : "", marked ? "●" : "", text].filter(Boolean).join(" "), title, parts }
 }
 
 // attributeValue quotes text as a CSS attribute selector's value.
@@ -64,6 +68,19 @@ const viewedIconOpacity = 0.6
 
 // checkIcon is lucide's Check, the Viewed toggle's icon, as a mask.
 const checkIcon = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>')}")`
+
+// messageIcon is lucide's MessageSquare, the threads count's icon, as a mask.
+const messageIcon = `url("data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></svg>')}")`
+
+// threadsCSS draws a 12px message icon before the open-thread count that
+// leads the decoration of each path (decision 0120).
+export function threadsCSS(paths: readonly string[]): string {
+  if (paths.length === 0) return ""
+  const counts = `:is(${paths.map((path) => `[data-item-path=${attributeValue(path)}]`).join(", ")}) > [data-item-section="decoration"] > span > span:first-child`
+  return `
+${counts} { display: inline-flex; align-items: center; gap: 2px; }
+${counts}::before { content: ""; flex: none; width: var(--icon-xs); height: var(--icon-xs); background: currentColor; mask: ${messageIcon} center / contain no-repeat; }`
+}
 
 // viewedCSS checks the tree rows of viewed files, before their stats in the
 // lane's muted ink, and dims them, except the selected file in view, which

@@ -7,7 +7,9 @@ test("stored diff options keep valid values and default the rest", () => {
   assert.deepEqual(parseDiffOptions(null), defaultDiffOptions)
   assert.deepEqual(parseDiffOptions(["unified"]), defaultDiffOptions)
   assert.deepEqual(parseDiffOptions({ style: "unified", wrap: true, ignoreWhitespace: true, inline: "char", expandUnchanged: true }),
-    { style: "unified", wrap: true, ignoreWhitespace: true, inline: "char", expandUnchanged: true })
+    { style: "unified", wrap: true, ignoreWhitespace: true, inline: "char", expandUnchanged: true, showResolved: true })
+  assert.deepEqual(parseDiffOptions({ showResolved: false }), { ...defaultDiffOptions, showResolved: false })
+  assert.deepEqual(parseDiffOptions({ showResolved: "no" }), defaultDiffOptions)
   assert.deepEqual(parseDiffOptions({ style: "stacked", wrap: "yes", inline: "line", expandUnchanged: 1 }), defaultDiffOptions)
   assert.deepEqual(parseDiffOptions({ inline: "none" }), { ...defaultDiffOptions, inline: "none" })
 })
@@ -27,4 +29,5 @@ test("View options read as changed only when a menu choice leaves its default", 
   assert.equal(diffOptionsModified({ ...defaultDiffOptions, ignoreWhitespace: true }), true)
   assert.equal(diffOptionsModified({ ...defaultDiffOptions, inline: "none" }), true)
   assert.equal(diffOptionsModified({ ...defaultDiffOptions, expandUnchanged: true }), true)
+  assert.equal(diffOptionsModified({ ...defaultDiffOptions, showResolved: false }), true)
 })

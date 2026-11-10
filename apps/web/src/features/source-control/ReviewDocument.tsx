@@ -8,9 +8,9 @@ import {
   type FileDiffOptions, type WorkerInitializationRenderOptions, type WorkerPoolOptions,
 } from "@pierre/diffs/react"
 import workerUrl from "@pierre/diffs/worker/worker.js?worker&url"
-import { CheckIcon, FileInputIcon } from "lucide-react"
+import { CheckIcon, FileInputIcon, MessageSquarePlusIcon } from "lucide-react"
 import {
-  createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject,
+  createContext, Fragment, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject,
 } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -94,6 +94,30 @@ export interface ReviewAnnotation {
   render(lineAt: ((line: number) => string | undefined) | null): ReactNode
 }
 
+// ReviewZone is a band in a file's diff after a line on side, or under the
+// file's band when line is 0: a feedback thread or the comment composer
+// (decision 0120). Several may share a line.
+export interface ReviewZone {
+  key: string
+  side: SelectionSide
+  line: number
+  node: ReactNode
+}
+
+// ReviewComments places feedback threads in a review and starts new ones
+// (decision 0120).
+export interface ReviewComments {
+  // zones are a file's threads and composer, in order.
+  zones(path: string): readonly ReviewZone[]
+  // outdated counts a file's threads whose code is gone.
+  outdated(path: string): number
+  onShowOutdated(path: string): void
+  // onComment opens the composer at lines of a side, or for the whole file.
+  onComment(path: string, side: "old" | "new", lines: readonly [number, number] | null): void
+}
+
+const noZones: readonly ReviewZone[] = []
+
 // sideLines reads a diff side's lines by number.
 function sideLines(fileDiff: FileDiffMetadata | null, side: SelectionSide): (line: number) => string | undefined {
   const lines = fileDiff ? side === "deletions" ? fileDiff.deletionLines : fileDiff.additionLines : []
@@ -136,6 +160,8 @@ interface ReviewDocumentProps {
   // and null when the review is gone.
   onRegisterHunkStep(step: HunkStep | null): void
   annotation?: ReviewAnnotation
+  // comments places feedback threads and starts new ones (decision 0120).
+  comments?: ReviewComments
   // scope offers HEAD's branch review the Committed / + Uncommitted switch
   // (decision 0051); absent for other reviews.
   scope?: ReviewScope
@@ -210,7 +236,7 @@ export function ReviewDocument(props: ReviewDocumentProps) {
 }
 
 function ReviewBody({
-  annotation, compare, data, expandRequest, marked, name, narrow, options, project, scope, scrollRoot, selection, treeFiles,
+  annotation, comments, compare, data, expandRequest, marked, name, narrow, options, project, scope, scrollRoot, selection, treeFiles,
   onAllExpandedChange, onCurrentFile, onOpenFile, onRegisterHunkStep, onSelectLines, onStatus, onViewedChange, viewedState,
 }: ReviewDocumentProps) {
   const pool = useWorkerPool()
@@ -533,16 +559,30 @@ function ReviewBody({
     if (following) goToFile(following)
   }, [blobOf, files, goToFile, onViewedChange, setFileOpen, viewed])
 
+  // The selection's target, as the file holding it reports it, is what c
+  // comments on.
+  const selectedStatus = useRef<ReviewStatus | null>(null)
+  const reportStatus = useCallback((status: ReviewStatus | null) => {
+    selectedStatus.current = status
+    onStatus(status)
+  }, [onStatus])
+
   // ] and [ go to the next and previous file, and v toggles Viewed on the
-  // file in view, outside text fields (decision 0117).
-  const latestKeys = useRef({ files, markViewed, goToFile, viewed })
-  useLayoutEffect(() => { latestKeys.current = { files, markViewed, goToFile, viewed } })
+  // file in view, outside text fields (decision 0117); c comments on the
+  // selected lines (decision 0120).
+  const latestKeys = useRef({ files, markViewed, goToFile, viewed, comments })
+  useLayoutEffect(() => { latestKeys.current = { files, markViewed, goToFile, viewed, comments } })
   useEffect(() => {
     const root = scrollRoot.current
     if (!root) return
     const run = (command: ReviewKeyCommand) => {
-      const { files: all, markViewed: mark, goToFile: go, viewed: isViewed } = latestKeys.current
+      const { files: all, markViewed: mark, goToFile: go, viewed: isViewed, comments: commenting } = latestKeys.current
       const path = currentFile.current
+      if (command === "comment") {
+        const status = selectedStatus.current
+        if (commenting && status?.target) commenting.onComment(status.path, status.target.side, [status.target.range.start, status.target.range.end])
+        return
+      }
       if (command === "toggleViewed") {
         if (path) mark(path, !isViewed(path))
         return
@@ -572,7 +612,7 @@ function ReviewBody({
       <ShownContext.Provider value={registerShown}>
       <VirtualizerContext.Provider value={virtualizer}>
         <div ref={container} className="review"
-          aria-keyshortcuts={`${reviewKeyShortcuts.nextFile} ${reviewKeyShortcuts.previousFile} ${reviewKeyShortcuts.toggleViewed}`}>
+          aria-keyshortcuts={`${reviewKeyShortcuts.nextFile} ${reviewKeyShortcuts.previousFile} ${reviewKeyShortcuts.toggleViewed}${comments ? ` ${reviewKeyShortcuts.comment}` : ""}`}>
           <header className="review-header">
             <h1 className="review-title" title={name.title}>{reviewHeading(data, name)}</h1>
             <ReviewMeta compare={compare} data={data} />
@@ -606,6 +646,9 @@ function ReviewBody({
                 open={isOpen(file)} viewed={viewedState(file.path, fileStats?.blob ?? "")} options={options} narrow={narrow} scrollRoot={scrollRoot}
                 lines={selection?.path === file.path ? selection.lines : null}
                 annotation={annotation?.path === file.path ? annotation : undefined}
+                zones={comments?.zones(file.path) ?? noZones} outdated={comments?.outdated(file.path) ?? 0}
+                onShowOutdated={() => comments?.onShowOutdated(file.path)}
+                onComment={comments ? (side, lines) => comments.onComment(file.path, side, lines) : undefined}
                 openFileReason={file.status === "deleted" ? "This file was deleted; there's no working copy to open"
                   : treeFiles.has(file.path) ? "" : "This file isn't in the working tree"}
                 onOpenChange={(next) => setFileOpen(file.path, next)}
@@ -614,7 +657,7 @@ function ReviewBody({
                   pointer.current = `${file.path}#${lines ? diffLineAnchor(lines) : ""}`
                   onSelectLines(file.path, lines)
                 }}
-                onStatus={onStatus} onOpenFile={() => onOpenFile(file.path)} />
+                onStatus={reportStatus} onOpenFile={() => onOpenFile(file.path)} />
             )
           })}</div>}
         </div>
@@ -713,6 +756,11 @@ interface ReviewFileProps {
   scrollRoot: RefObject<HTMLElement | null>
   lines: SelectedLineRange | null
   annotation: ReviewAnnotation | undefined
+  zones: readonly ReviewZone[]
+  outdated: number
+  onShowOutdated(): void
+  // onComment opens the composer; absent without feedback.
+  onComment?: (side: "old" | "new", lines: readonly [number, number] | null) => void
   openFileReason: string
   onOpenChange(open: boolean): void
   onViewedChange(viewed: boolean): void
@@ -723,8 +771,8 @@ interface ReviewFileProps {
 
 // ReviewFile is one file's sticky header and collapsible diff.
 function ReviewFile({
-  annotation, compare, file, lines, narrow, open, openFileReason, options, project, scrollRoot, stats, uncommitted, version, viewed,
-  onOpenChange, onOpenFile, onSelectLines, onStatus, onViewedChange,
+  annotation, compare, file, lines, narrow, open, openFileReason, options, outdated, project, scrollRoot, stats, uncommitted, version, viewed, zones,
+  onComment, onOpenChange, onOpenFile, onSelectLines, onShowOutdated, onStatus, onViewedChange,
 }: ReviewFileProps) {
   const observe = useContext(ObserveContext)
   const section = useRef<HTMLElement>(null)
@@ -766,6 +814,12 @@ function ReviewFile({
     return () => onStatus(null)
   }, [file.path, onStatus, selected, targetEnd, targetSide, targetStart, typeLabel])
 
+  const commentLines = onComment && target ? () => onComment(target.side, [target.range.start, target.range.end]) : null
+  const commentFile = onComment ? () => {
+    if (!open) onOpenChange(true)
+    onComment(file.status === "deleted" ? "old" : "new", null)
+  } : null
+
   const label = statsLabel(stats)
   const bodyId = `review-${encodeURIComponent(file.path)}`
   return (
@@ -786,20 +840,27 @@ function ReviewFile({
             Changed<span className="review-file-changed-rest"> since viewed</span>
           </span>
         )}
+        {outdated > 0 && (
+          <Button variant="link" size="inline" className="review-file-outdated"
+            title={`${outdated.toLocaleString()} ${outdated === 1 ? "thread's" : "threads'"} code is gone: show in Feedback`} onClick={onShowOutdated}>
+            {outdated.toLocaleString()} outdated
+          </Button>
+        )}
         <ToggleButton size="text" className="review-viewed" pressed={viewed === "viewed"} disabled={!stats?.blob}
           aria-keyshortcuts={reviewKeyShortcuts.toggleViewed}
           title={stats?.blob ? "Mark as viewed (V)" : "Waiting for the file's content hash"}
           onPressedChange={onViewedChange}>
           {viewed === "viewed" && <CheckIcon aria-hidden="true" />}Viewed
         </ToggleButton>
+        {commentFile && <IconButton size="xs" label="Comment on File" icon={<MessageSquarePlusIcon aria-hidden="true" />} onClick={commentFile} />}
         <IconButton size="xs" label="Open File" icon={<FileInputIcon aria-hidden="true" />}
           disabledReason={openFileReason || undefined} onClick={onOpenFile} />
       </div>
       <div id={bodyId} ref={body} className="review-file-body" hidden={!open}
         style={open && !wanted && height > 0 ? { minHeight: height } : undefined}>
         {wanted && <FileBody diff={diff} file={file} compare={compare} rendered={rendered} options={options} narrow={narrow}
-          scrollRoot={scrollRoot} lines={lines} reference={reference} annotation={annotation} onRetry={retry}
-          onSelectLines={onSelectLines} />}
+          scrollRoot={scrollRoot} lines={lines} reference={reference} annotation={annotation} zones={zones} onComment={commentLines}
+          onRetry={retry} onSelectLines={onSelectLines} />}
       </div>
     </section>
   )
@@ -816,24 +877,32 @@ interface FileBodyProps {
   lines: SelectedLineRange | null
   reference: string
   annotation: ReviewAnnotation | undefined
+  zones: readonly ReviewZone[]
+  // onComment opens the composer at the selected lines; null without them.
+  onComment: (() => void) | null
   onRetry(): void
   onSelectLines(lines: SelectedLineRange | null): void
 }
 
 function FileBody(props: FileBodyProps) {
-  const { annotation, rendered } = props
-  // The annotation follows its line in the diff; without a line or a shown
-  // diff it leads the file.
-  const inDiff = annotation !== undefined && annotation.line > 0 && rendered !== null && rendered.lineDiff.hunks.length > 0
+  const { annotation, rendered, zones } = props
+  // The annotation and zones follow their lines in the diff; without a line
+  // or a shown diff they lead the file.
+  const shown = rendered !== null && rendered.lineDiff.hunks.length > 0
+  const inDiff = annotation !== undefined && annotation.line > 0 && shown
+  const leading = zones.filter((zone) => zone.line === 0 || !shown)
   return <>
     {annotation && !inDiff && (
       <div className="review-annotation">{annotation.render(sideLines(rendered?.fileDiff ?? null, annotation.side))}</div>
     )}
-    <FileContent {...props} annotation={inDiff ? annotation : undefined} />
+    {leading.length > 0 && <div className="review-zones">{leading.map((zone) => <Fragment key={zone.key}>{zone.node}</Fragment>)}</div>}
+    <FileContent {...props} annotation={inDiff ? annotation : undefined} zones={shown ? zones.filter((zone) => zone.line > 0) : noZones} />
   </>
 }
 
-function FileContent({ annotation, compare, diff, file, rendered, lines, narrow, options, reference, scrollRoot, onRetry, onSelectLines }: FileBodyProps) {
+function FileContent({
+  annotation, compare, diff, file, rendered, lines, narrow, options, reference, scrollRoot, zones, onComment, onRetry, onSelectLines,
+}: FileBodyProps) {
   if (diff.kind === "loading") return <StatusMessage className="review-file-note">Loading diff…</StatusMessage>
   if (diff.kind === "error") {
     return (
@@ -858,7 +927,7 @@ function FileContent({ annotation, compare, diff, file, rendered, lines, narrow,
       <Notice layout="bar" role="note">{options.ignoreWhitespace ? "No changes apart from whitespace." : "File contents are unchanged."}</Notice>
     )}
     {rendered && rendered.lineDiff.hunks.length > 0 && <DiffView path={file.path} rendered={rendered} narrow={narrow} options={options} scrollRoot={scrollRoot}
-      lines={lines} reference={reference} annotation={annotation} onSelectLines={onSelectLines} />}
+      lines={lines} reference={reference} annotation={annotation} zones={zones} onComment={onComment} onSelectLines={onSelectLines} />}
   </>
 }
 
@@ -871,13 +940,21 @@ interface DiffViewProps {
   lines: SelectedLineRange | null
   reference: string
   annotation: ReviewAnnotation | undefined
+  zones: readonly ReviewZone[]
+  onComment: (() => void) | null
   onSelectLines(lines: SelectedLineRange | null): void
+}
+
+// lineKey names an annotation slot: one per side and line, whatever it
+// holds.
+function lineKey(side: SelectionSide, line: number): string {
+  return `${side}:${line}`
 }
 
 type DiffInstance = VirtualizedFileDiff<undefined, undefined>
 
 // DiffView renders only the rows near the pane's viewport.
-function DiffView({ annotation, rendered, lines, narrow, options, path, reference, scrollRoot, onSelectLines }: DiffViewProps) {
+function DiffView({ annotation, rendered, lines, narrow, options, path, reference, scrollRoot, zones, onComment, onSelectLines }: DiffViewProps) {
   const { resolvedTheme } = useTheme()
   // Pierre hands over its virtualized instance, which places and expands
   // rows; the review reveals and steps through it.
@@ -929,14 +1006,18 @@ function DiffView({ annotation, rendered, lines, narrow, options, path, referenc
   const scale = uiScale(useSettings().settings)
   const metrics = useMemo(() => diffMetrics(scale), [scale])
   const inline = lineDiffType(options.inline)
+  // Pierre's options follow only the choices it renders: a new object would
+  // close opened gaps (Show resolved comments is not one).
+  const style = effectiveDiffStyle(options, narrow)
+  const { expandUnchanged, wrap } = options
   const diffOptions = useMemo((): FileDiffOptions<undefined, undefined> => ({
     theme,
     themeType: resolvedTheme,
     preferredHighlighter: "highlights",
-    diffStyle: effectiveDiffStyle(options, narrow),
-    overflow: options.wrap ? "wrap" : "scroll",
+    diffStyle: style,
+    overflow: wrap ? "wrap" : "scroll",
     lineDiffType: inline,
-    expandUnchanged: options.expandUnchanged,
+    expandUnchanged,
     disableFileHeader: true,
     unsafeCSS: diffCSS,
     // Line numbers select lines: click, drag, or Shift-click to extend.
@@ -951,22 +1032,63 @@ function DiffView({ annotation, rendered, lines, narrow, options, path, referenc
       scrollRoot.current?.focus({ preventScroll: true })
       select.current(range)
     },
-  }), [inline, narrow, options, resolvedTheme, scrollRoot])
-  const annotationSide = annotation?.side ?? "additions"
-  const annotationLine = annotation?.line ?? 0
-  const lineAnnotations = useMemo((): DiffLineAnnotation<undefined>[] => annotationLine > 0
-    ? [{ side: annotationSide, lineNumber: annotationLine }]
-    : [], [annotationLine, annotationSide])
+  }), [expandUnchanged, inline, resolvedTheme, scrollRoot, style, wrap])
+  // One annotation per side and line holds the walkthrough's narration and
+  // every zone there, so several threads can share a line. Slots change
+  // only when lines do; their content follows each render.
+  const slots = [
+    ...(annotation && annotation.line > 0 ? [lineKey(annotation.side, annotation.line)] : []),
+    ...zones.map((zone) => lineKey(zone.side, zone.line)),
+  ]
+  const slotKey = [...new Set(slots)].join(" ")
+  const lineAnnotations = useMemo((): DiffLineAnnotation<undefined>[] => slotKey.split(" ").filter(Boolean).map((key) => {
+    const [side, line] = key.split(":")
+    return { side: side === "deletions" ? "deletions" : "additions", lineNumber: Number(line) }
+  }), [slotKey])
+  // A zone's line in a collapsed gap opens the gap, so the zone shows.
+  useEffect(() => {
+    if (!instance) return
+    for (const key of slotKey.split(" ").filter(Boolean)) {
+      const [side, line] = key.split(":")
+      const gap = gapForLine(rendered.lineDiff, side === "deletions" ? "deletions" : "additions", Number(line))
+      if (gap && !instance.isLineRenderable(gap.newLine)) instance.expandHunk(gap.hunkIndex, "up", gap.lines)
+    }
+  }, [instance, rendered, slotKey])
   return (
     <div ref={host}>
       <FileDiff key={metrics.lineHeight} className="diff-view" fileDiff={rendered.fileDiff} options={diffOptions} metrics={metrics}
         selectedLines={lines} onInstance={onInstance} lineAnnotations={lineAnnotations}
-        renderAnnotation={() => annotation
-          ? <div className="review-annotation">{annotation.render(sideLines(rendered.fileDiff, annotation.side))}</div>
-          : null}
+        renderAnnotation={(slot) => {
+          const key = lineKey(slot.side, slot.lineNumber)
+          const narration = annotation && annotation.line > 0 && lineKey(annotation.side, annotation.line) === key
+          const here = zones.filter((zone) => lineKey(zone.side, zone.line) === key)
+          return <>
+            {narration && <div className="review-annotation">{annotation.render(sideLines(rendered.fileDiff, annotation.side))}</div>}
+            {here.length > 0 && <div className="review-zones">{here.map((zone) => <Fragment key={zone.key}>{zone.node}</Fragment>)}</div>}
+          </>
+        }}
         renderGutterUtility={() => lines && reference
-          ? <span className="diff-line-copy"><LineCopyButton reference={reference} /></span>
+          ? <span className="diff-line-copy">
+            {onComment && <DiffLineComment onComment={onComment} />}
+            <LineCopyButton reference={reference} />
+          </span>
           : null} />
     </div>
+  )
+}
+
+// DiffLineComment opens the composer from the gutter at the selection's last
+// line, beside Copy. Its presses stay out of the gutter, which selects lines.
+function DiffLineComment({ onComment }: { onComment(): void }) {
+  const stop = (event: { stopPropagation(): void }) => event.stopPropagation()
+  return (
+    <span className="diff-line-comment" onPointerDown={stop} onMouseDown={stop}>
+      <IconButton size="xs" variant="gutter" label="Comment on Lines" title="Comment on lines (C)" aria-keyshortcuts="c"
+        icon={<MessageSquarePlusIcon aria-hidden="true" />}
+        onClick={(event) => {
+          event.stopPropagation()
+          onComment()
+        }} />
+    </span>
   )
 }

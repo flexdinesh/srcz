@@ -25,16 +25,17 @@ const splitUnavailable = "Split view needs a wider window"
 const noChanges = "No changes to step through"
 
 // toggles are the View options menu's on/off options.
-const toggles: ReadonlyArray<{ option: "wrap" | "ignoreWhitespace" | "expandUnchanged"; label: string; title: string }> = [
+const toggles: ReadonlyArray<{ option: "wrap" | "ignoreWhitespace" | "expandUnchanged" | "showResolved"; label: string; title: string }> = [
   { option: "wrap", label: "Wrap lines", title: "Wrap long lines" },
   { option: "ignoreWhitespace", label: "Ignore whitespace", title: "Ignore leading and trailing whitespace" },
   { option: "expandUnchanged", label: "Expand unchanged lines", title: "Show every unchanged line" },
+  { option: "showResolved", label: "Show resolved comments", title: "Show resolved and won't-fix threads in the diff" },
 ]
 
 // DiffToolbar sits in the document mode-toggle slot for a review tab:
 // layout, change steps, Collapse All, and Files stay on the bar; Wrap,
-// Ignore whitespace, Expand unchanged, and Inline changes share one View
-// options menu (decision 0117).
+// Ignore whitespace, Expand unchanged, Show resolved comments (decision
+// 0120), and Inline changes share one View options menu (decision 0117).
 export function DiffToolbar({ anyExpanded, files, hasChanges, narrow, onChange, onExpandAll, onStepHunk, options }: DiffToolbarProps) {
   const style = effectiveDiffStyle(options, narrow)
   const modified = diffOptionsModified(options)

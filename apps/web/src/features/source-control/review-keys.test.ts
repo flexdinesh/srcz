@@ -10,11 +10,13 @@ test("] and [ move between files and v toggles Viewed", () => {
   assert.equal(reviewKeyCommand({ ...plain, key: "[" }), "previousFile")
   assert.equal(reviewKeyCommand({ ...plain, key: "v" }), "toggleViewed")
   assert.equal(reviewKeyCommand({ ...plain, key: "V" }), null)
+  assert.equal(reviewKeyCommand({ ...plain, key: "c" }), "comment")
+  assert.equal(reviewKeyCommand({ ...plain, key: "C" }), null)
   assert.equal(reviewKeyCommand({ ...plain, key: "j" }), null)
 })
 
 test("review keys never fire in text fields, while composing, or with modifiers", () => {
-  for (const key of ["]", "[", "v"]) {
+  for (const key of ["]", "[", "v", "c"]) {
     assert.equal(reviewKeyCommand({ ...plain, key, textField: true }), null)
     assert.equal(reviewKeyCommand({ ...plain, key, isComposing: true }), null)
     assert.equal(reviewKeyCommand({ ...plain, key, ctrlKey: true }), null)

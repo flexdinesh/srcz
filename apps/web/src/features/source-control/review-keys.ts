@@ -1,10 +1,11 @@
 // Review keys (decision 0117): outside text fields, ] and [ go to the next
-// and previous file, and v toggles Viewed on the file in view. Pure.
+// and previous file, and v toggles Viewed on the file in view; c comments
+// on the selected lines (decision 0120). Pure.
 
-export type ReviewKeyCommand = "nextFile" | "previousFile" | "toggleViewed"
+export type ReviewKeyCommand = "nextFile" | "previousFile" | "toggleViewed" | "comment"
 
 // reviewKeyShortcuts are the keys as aria-keyshortcuts names them.
-export const reviewKeyShortcuts: Readonly<Record<ReviewKeyCommand, string>> = { nextFile: "]", previousFile: "[", toggleViewed: "v" }
+export const reviewKeyShortcuts: Readonly<Record<ReviewKeyCommand, string>> = { nextFile: "]", previousFile: "[", toggleViewed: "v", comment: "c" }
 
 export interface ReviewKeyEvent {
   key: string
@@ -23,6 +24,7 @@ export function reviewKeyCommand(event: ReviewKeyEvent): ReviewKeyCommand | null
   if (event.key === "]") return "nextFile"
   if (event.key === "[") return "previousFile"
   if (event.key === "v") return "toggleViewed"
+  if (event.key === "c") return "comment"
   return null
 }
 
