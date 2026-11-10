@@ -1,10 +1,14 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
+
+import { isErrorResponse, isFeedback, isFeedbackSummary, isFeedbackThread, type Feedback, type FeedbackSummary } from "@zero/contracts"
 
 import {
   devServerPort,
   devServerUrls,
   formatDevServerUrl,
+  mockFeedbackStore,
   mockFixtureName,
   primaryLanIpv4,
   shouldOpenBrowser,
@@ -198,4 +202,108 @@ test("mockFixtureName maps supported API scenarios", () => {
   assert.deepEqual(mockFixtureName("GET", "/directories?path=zero"), { name: "directories.json", status: 200 })
   assert.equal(mockFixtureName("POST", "/page"), undefined)
   assert.equal(mockFixtureName("GET", "/unknown"), undefined)
+})
+
+function feedbackFixtures(): { current: Feedback, listed: FeedbackSummary[] } {
+  const read = (name: string): unknown => JSON.parse(readFileSync(new URL(`../../testdata/api/default/${name}`, import.meta.url), "utf8"))
+  const current = read("feedback.json")
+  const listed = read("feedback-list.json")
+  assert.ok(isFeedback(current))
+  assert.ok(Array.isArray(listed) && listed.every(isFeedbackSummary))
+  return { current, listed: listed.filter(isFeedbackSummary) }
+}
+
+function feedbackStore() {
+  const { current, listed } = feedbackFixtures()
+  return mockFeedbackStore(current, listed, () => "2026-11-10T12:00:00Z")
+}
+
+function answer(store: ReturnType<typeof feedbackStore>, method: string, url: string, body: unknown = undefined) {
+  const response = store.handle({ method, url, body: body === undefined ? "" : JSON.stringify(body) })
+  assert.ok(response)
+  const value: unknown = response.body ? JSON.parse(response.body) : undefined
+  return { status: response.status, value }
+}
+
+const feedbackProject = "project=%2Fhome%2Fuser%2Fmarkdown"
+
+test("mock feedback reads the checkout's branch, lists, and rejects unknown ids", () => {
+  const store = feedbackStore()
+  const current = answer(store, "GET", `/feedback?${feedbackProject}&base=main`)
+  assert.equal(current.status, 200)
+  assert.ok(isFeedback(current.value))
+  assert.equal(current.value.id, "fb-3k2q8m")
+  assert.equal(current.value.threads.length, 4)
+
+  const listed = answer(store, "GET", `/feedback-list?${feedbackProject}`)
+  assert.ok(Array.isArray(listed.value) && listed.value.every(isFeedbackSummary))
+  assert.deepEqual(listed.value.map((summary) => summary.id), ["fb-3k2q8m", "fb-7h4n2p"])
+
+  const other = answer(store, "GET", `/feedback?${feedbackProject}&id=fb-7h4n2p`)
+  assert.ok(isFeedback(other.value))
+  assert.equal(other.value.branch, "main")
+
+  const missing = answer(store, "GET", `/feedback?${feedbackProject}&id=fb-zzzzzz`)
+  assert.equal(missing.status, 404)
+  assert.ok(isErrorResponse(missing.value))
+  assert.equal(missing.value.code, "feedbackUnavailable")
+  assert.equal(store.handle({ method: "GET", url: "/feedbacks", body: "" }), undefined)
+})
+
+test("mock feedback starts threads, replies, resolves, and reopens", () => {
+  const store = feedbackStore()
+  const started = answer(store, "POST", "/feedback-threads", {
+    project: "/home/user/markdown", id: "fb-3k2q8m", path: "code/app.js", side: "new", lines: [1, 2], body: "Use <strong>",
+  })
+  assert.equal(started.status, 200)
+  assert.ok(isFeedbackThread(started.value))
+  assert.equal(started.value.number, 5)
+  assert.equal(started.value.awaiting, "agent")
+  assert.deepEqual(started.value.location.lines, [1, 2])
+  assert.equal(started.value.messages[0]?.bodyHTML, "<p>Use &lt;strong&gt;</p>\n")
+
+  const replied = answer(store, "POST", "/feedback-messages", { project: "/home/user/markdown", id: "fb-3k2q8m", thread: 5, body: "Done.", author: "agent", name: "codex" })
+  assert.ok(isFeedbackThread(replied.value))
+  assert.equal(replied.value.awaiting, "user")
+  assert.equal(replied.value.messages[1]?.name, "codex")
+
+  const resolved = answer(store, "POST", "/feedback-messages", { project: "/home/user/markdown", id: "fb-3k2q8m", thread: 5, status: "resolved" })
+  assert.ok(isFeedbackThread(resolved.value))
+  assert.equal(resolved.value.status, "resolved")
+  assert.equal(resolved.value.awaiting, "none")
+
+  const reopened = answer(store, "POST", "/feedback-messages", { project: "/home/user/markdown", id: "fb-3k2q8m", thread: 5, body: "Not quite." })
+  assert.ok(isFeedbackThread(reopened.value))
+  assert.equal(reopened.value.status, "open")
+  assert.equal(reopened.value.awaiting, "agent")
+
+  const read = answer(store, "GET", `/feedback?${feedbackProject}&id=fb-3k2q8m`)
+  assert.ok(isFeedback(read.value))
+  assert.equal(read.value.threads.at(-1)?.messages.length, 4)
+  assert.equal(read.value.updatedAt, "2026-11-10T12:00:00Z")
+})
+
+test("mock feedback rejects invalid drafts", () => {
+  const store = feedbackStore()
+  const empty = answer(store, "POST", "/feedback-threads", { project: "/home/user/markdown", path: "code/app.js", body: " " })
+  assert.equal(empty.status, 400)
+  assert.ok(isErrorResponse(empty.value))
+  assert.equal(empty.value.code, "invalidFeedback")
+  assert.equal(answer(store, "POST", "/feedback-messages", { project: "/home/user/markdown", id: "fb-3k2q8m", thread: 99, body: "x" }).status, 400)
+  assert.equal(store.handle({ method: "POST", url: "/feedback-threads", body: "[" })?.status, 400)
+})
+
+test("mock feedback deletes a thread, then the feedback", () => {
+  const store = feedbackStore()
+  assert.equal(answer(store, "DELETE", `/feedback-threads?${feedbackProject}&id=fb-3k2q8m&thread=1`).status, 204)
+  const read = answer(store, "GET", `/feedback?${feedbackProject}`)
+  assert.ok(isFeedback(read.value))
+  assert.deepEqual(read.value.threads.map((thread) => thread.number), [2, 3, 4])
+
+  assert.equal(answer(store, "DELETE", `/feedback?${feedbackProject}&id=fb-3k2q8m`).status, 204)
+  assert.equal(answer(store, "DELETE", `/feedback?${feedbackProject}&id=fb-3k2q8m`).status, 404)
+  const fresh = answer(store, "GET", `/feedback?${feedbackProject}`)
+  assert.ok(isFeedback(fresh.value))
+  assert.equal(fresh.value.id, "")
+  assert.deepEqual(fresh.value.threads, [])
 })
