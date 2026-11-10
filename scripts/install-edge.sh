@@ -183,7 +183,7 @@ init_records() {
   [ ! -L "$ZERO_CONFIG" ] || fail "refusing symlink configuration directory $ZERO_CONFIG"
   if occupied "$ZERO_CONFIG" && [ ! -d "$ZERO_CONFIG" ]; then fail "configuration path is not a directory: $ZERO_CONFIG"; fi
   if occupied "$RECORD"; then
-    [ -f "$RECORD" ] && [ ! -L "$RECORD" ] || fail "invalid ownership record $RECORD"
+    { [ -f "$RECORD" ] && [ ! -L "$RECORD" ]; } || fail "invalid ownership record $RECORD"
     {
       IFS= read -r header || fail "invalid ownership record $RECORD"
       [ "$header" = zero-install-v1 ] || fail "invalid ownership record $RECORD"
@@ -193,7 +193,7 @@ init_records() {
       fi
       seen=' '
       while IFS="$TAB" read -r role path digest extra; do
-        [ -n "$digest" ] && [ -z "$extra" ] || fail "invalid ownership row in $RECORD"
+        { [ -n "$digest" ] && [ -z "$extra" ]; } || fail "invalid ownership row in $RECORD"
         case "$seen" in *" $role "*) fail "duplicate ownership role in $RECORD" ;; esac
         seen="$seen$role "
         case "$role:$path" in
@@ -550,12 +550,12 @@ download_desktop() {
     fi
   fi
   if [ "$OS" = linux ]; then
-    [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
+    { [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
       [ -f "$TMP/desktop/bin/zero" ] && [ -x "$TMP/desktop/bin/zero" ] &&
-      [ -f "$TMP/desktop/zero-desktop.png" ] || fail "$package has no valid zero-desktop app"
+      [ -f "$TMP/desktop/zero-desktop.png" ]; } || fail "$package has no valid zero-desktop app"
   else
-    [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
-      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ] || fail "$package has no valid zero-desktop.app"
+    { [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
+      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ]; } || fail "$package has no valid zero-desktop.app"
   fi
 }
 
@@ -597,7 +597,7 @@ download_cli() {
   mkdir -p "$TMP/cli"
   tar -xzf "$TMP/$name.tar.gz" -C "$TMP/cli"
   CLI="$TMP/cli/$name/zero"
-  [ -f "$CLI" ] && [ -x "$CLI" ] && [ ! -L "$CLI" ] || fail "$name.tar.gz has no executable zero binary"
+  { [ -f "$CLI" ] && [ -x "$CLI" ] && [ ! -L "$CLI" ]; } || fail "$name.tar.gz has no executable zero binary"
 }
 # shared:release:end
 

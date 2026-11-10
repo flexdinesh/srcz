@@ -173,7 +173,7 @@ init_records() {
   [ ! -L "$ZERO_CONFIG" ] || fail "refusing symlink configuration directory $ZERO_CONFIG"
   if occupied "$ZERO_CONFIG" && [ ! -d "$ZERO_CONFIG" ]; then fail "configuration path is not a directory: $ZERO_CONFIG"; fi
   if occupied "$RECORD"; then
-    [ -f "$RECORD" ] && [ ! -L "$RECORD" ] || fail "invalid ownership record $RECORD"
+    { [ -f "$RECORD" ] && [ ! -L "$RECORD" ]; } || fail "invalid ownership record $RECORD"
     {
       IFS= read -r header || fail "invalid ownership record $RECORD"
       [ "$header" = zero-install-v1 ] || fail "invalid ownership record $RECORD"
@@ -183,7 +183,7 @@ init_records() {
       fi
       seen=' '
       while IFS="$TAB" read -r role path digest extra; do
-        [ -n "$digest" ] && [ -z "$extra" ] || fail "invalid ownership row in $RECORD"
+        { [ -n "$digest" ] && [ -z "$extra" ]; } || fail "invalid ownership row in $RECORD"
         case "$seen" in *" $role "*) fail "duplicate ownership role in $RECORD" ;; esac
         seen="$seen$role "
         case "$role:$path" in
