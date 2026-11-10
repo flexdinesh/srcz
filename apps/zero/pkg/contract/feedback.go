@@ -75,16 +75,19 @@ type FeedbackCompare struct {
 // 1-based [start, end], absent for a file-level thread. Text holds the
 // anchored lines as written, Before and After up to three lines around them,
 // and Blob the side's git blob hash then. Compare is the compare it was
-// written in, absent for Source.
+// written in, absent for Source. Language is the document registry's
+// highlight language for the thread's current path, "" when it has none;
+// the server fills it when it answers and never stores it.
 type FeedbackAnchor struct {
-	Path    string           `json:"path"`
-	Side    FeedbackSide     `json:"side"`
-	Lines   []int            `json:"lines,omitempty"`
-	Text    []string         `json:"text,omitempty"`
-	Before  []string         `json:"before,omitempty"`
-	After   []string         `json:"after,omitempty"`
-	Blob    string           `json:"blob,omitempty"`
-	Compare *FeedbackCompare `json:"compare,omitempty"`
+	Path     string           `json:"path"`
+	Side     FeedbackSide     `json:"side"`
+	Lines    []int            `json:"lines,omitempty"`
+	Text     []string         `json:"text,omitempty"`
+	Before   []string         `json:"before,omitempty"`
+	After    []string         `json:"after,omitempty"`
+	Blob     string           `json:"blob,omitempty"`
+	Compare  *FeedbackCompare `json:"compare,omitempty"`
+	Language string           `json:"language,omitempty"`
 }
 
 // FeedbackLocation is a thread's anchor resolved against what a request

@@ -77,7 +77,9 @@ export function isFeedbackCompare(value: unknown): value is FeedbackCompare {
 // 1-based [start, end], absent for a file-level thread. Text holds the
 // anchored lines as written, Before and After up to three lines around them,
 // and Blob the side's git blob hash then. Compare is the compare it was
-// written in, absent for Source.
+// written in, absent for Source. Language is the document registry's
+// highlight language for the thread's current path, "" when it has none;
+// the server fills it when it answers and never stores it.
 export interface FeedbackAnchor {
   path: string
   side: FeedbackSide
@@ -87,6 +89,7 @@ export interface FeedbackAnchor {
   after?: string[]
   blob?: string
   compare?: FeedbackCompare
+  language?: string
 }
 
 export function isFeedbackAnchor(value: unknown): value is FeedbackAnchor {
@@ -99,6 +102,7 @@ export function isFeedbackAnchor(value: unknown): value is FeedbackAnchor {
     && (value.after === undefined || isArrayOf(value.after, isString))
     && (value.blob === undefined || isString(value.blob))
     && (value.compare === undefined || isFeedbackCompare(value.compare))
+    && (value.language === undefined || isString(value.language))
 }
 
 // FeedbackLocation is a thread's anchor resolved against what a request

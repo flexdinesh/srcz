@@ -15,7 +15,8 @@
         "before": ["", "func main() {"],
         "after": ["}"],
         "blob": "9f3b5c1d2e4a6b7c8d9e0f1a2b3c4d5e6f708192",
-        "compare": {"kind": "working", "uncommitted": false}
+        "compare": {"kind": "working", "uncommitted": false},
+        "language": "go"
       },
       "location": {"state": "anchored", "path": "code/main.go", "side": "new", "lines": [7, 7]},
       "messages": [
@@ -42,7 +43,8 @@
         "before": ["// app.js"],
         "after": [""],
         "blob": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
-        "compare": {"kind": "branch", "base": "main", "head": "feature/greeting", "uncommitted": false}
+        "compare": {"kind": "branch", "base": "main", "head": "feature/greeting", "uncommitted": false},
+        "language": "js"
       },
       "location": {"state": "moved", "path": "code/app.js", "side": "new", "lines": [4, 5]},
       "messages": [
@@ -76,7 +78,8 @@
         "lines": [4, 4],
         "text": ["depth = 3"],
         "blob": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c",
-        "compare": {"kind": "branch", "base": "main", "head": "feature/greeting", "uncommitted": false}
+        "compare": {"kind": "branch", "base": "main", "head": "feature/greeting", "uncommitted": false},
+        "language": "toml"
       },
       "location": {"state": "outdated", "path": "config/zero.toml", "side": "old"},
       "messages": [
@@ -97,7 +100,8 @@
       "awaiting": "user",
       "anchor": {
         "path": "guides/getting-started.md",
-        "side": "new"
+        "side": "new",
+        "language": "markdown"
       },
       "location": {"state": "anchored", "path": "guides/getting-started.md", "side": "new"},
       "messages": [
