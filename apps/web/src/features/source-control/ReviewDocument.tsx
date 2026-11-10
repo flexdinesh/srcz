@@ -44,6 +44,7 @@ import { DIFF_THEME } from "./diff-theme.ts"
 import type { CollapseRequest } from "./FilesTree.tsx"
 import { ImageDiff, ImageDiffProvider } from "./ImageDiff.tsx"
 import { loadReviewDiff, useReviewDiff, type RenderedDiff } from "./review-diffs.ts"
+import { pinSettled, pinWait } from "./review-pin.ts"
 import { adjacentFile, nextUnviewed, reviewKeyCommand, reviewKeyShortcuts, type ReviewKeyCommand } from "./review-keys.ts"
 import type { ViewedState } from "./review-viewed.ts"
 import type { CompareData } from "./use-compare-data.ts"
@@ -155,6 +156,10 @@ interface ReviewDocumentProps {
   onViewedChange(path: string, blob: string, viewed: boolean): void
   // onSelectLines replaces the fragment; null lines keep only the file.
   onSelectLines(path: string, lines: SelectedLineRange | null): void
+  // revealRequest is the last explicit request to show a file (a Files
+  // click): it reveals that file again once selected, even after the user
+  // scrolled away from it.
+  revealRequest: RevealRequest
   onCurrentFile(path: string): void
   onStatus(status: ReviewStatus | null): void
   onOpenFile(path: string): void
@@ -172,6 +177,12 @@ interface ReviewDocumentProps {
   // marked are files with uncommitted edits, dotted while uncommitted
   // changes are included.
   marked?: ReadonlySet<string>
+}
+
+// RevealRequest asks to reveal path; id makes a repeat request distinct.
+export interface RevealRequest {
+  id: number
+  path: string
 }
 
 // ReviewScope is whether a branch review includes the working tree, and how
@@ -240,7 +251,7 @@ export function ReviewDocument(props: ReviewDocumentProps) {
 }
 
 function ReviewBody({
-  annotation, comments, compare, data, expandRequest, marked, name, narrow, options, project, scope, scrollRoot, selection, treeFiles,
+  annotation, comments, compare, data, expandRequest, marked, name, narrow, options, project, revealRequest, scope, scrollRoot, selection, treeFiles,
   onAllExpandedChange, onCurrentFile, onOpenFile, onRegisterHunkStep, onSelectLines, onStatus, onViewedChange, viewedState,
 }: ReviewDocumentProps) {
   const pool = useWorkerPool()
@@ -370,8 +381,12 @@ function ReviewBody({
   // collapsed gaps open (decision 0034), unless already in view. While
   // pinned it is the file in view, even when too near the end to reach the
   // top. A gutter selection is where the pointer is, so it never scrolls.
-  // Showing a hidden review again at the fragment it last revealed pins it
-  // again only if the user had not scrolled away (decision 0048).
+  // Showing a hidden review again at the fragment it last revealed, or the
+  // file list reloading, pins it again only if the user had not scrolled
+  // away (decision 0048); a reveal request (a Files click) always does. The
+  // pin also ends once the reveal settles: WebKit sends no input for a
+  // scrollbar drag or a kinetic scroll, and after that nothing pulls the pane
+  // back; the file in view stays an output (decision 0135).
   const target = selection?.path ?? ""
   const anchor = selection?.lines ? diffLineAnchor(selection.lines) : ""
   const latestLines = useRef(selection?.lines ?? null)
@@ -379,71 +394,107 @@ function ReviewBody({
   // pointer is the last gutter selection as `path#anchor`.
   const pointer = useRef("")
   // revealed is the fragment last revealed, as `path#anchor`, and whether
-  // user input released its pin.
+  // its pin ended, by user input or by settling.
   const revealed = useRef({ key: "", released: false })
   const ready = files.length > 0
   const pinned = useRef("")
+  // settled is the file whose pin settled and where the pane was then; it is
+  // the file in view while the pane is there.
+  const settled = useRef<{ path: string; top: number } | null>(null)
+  // handledRequest is the id of the last reveal request acted on; a request
+  // waits until the fragment selects its file.
+  const handledRequest = useRef(revealRequest.id)
+  const request = revealRequest.path === target ? revealRequest.id : 0
   useEffect(() => {
     const root = scrollRoot.current
     const content = container.current
-    if (!target || !ready || !root || !content) {
+    if (!target) {
       revealed.current = { key: "", released: false }
       return
     }
+    if (!ready || !root || !content) return
     const key = `${target}#${anchor}`
+    const requested = request !== 0 && handledRequest.current !== request
+    if (requested) handledRequest.current = request
     const fromPointer = pointer.current === key
     pointer.current = ""
     const scrolledAway = revealed.current.key === key && revealed.current.released
     revealed.current = { key, released: false }
-    if (fromPointer || scrolledAway) {
+    if (!requested && (fromPointer || scrolledAway)) {
       revealed.current.released = true
       return
     }
-    const lineBox = () => {
+    // place is where the pinned file or line sits in the scroll content;
+    // expanding opens the line's collapsed gaps first.
+    const place = (expand: boolean) => {
+      const section = content.querySelector(`[data-review-path="${CSS.escape(target)}"]`)
+      if (!(section instanceof HTMLElement)) return null
       const range = latestLines.current
       const view = shown.current.get(target)
-      if (!range || !view) return null
-      const side = range.side ?? "additions"
-      view.expandTo(side, range.start)
-      view.expandTo(range.endSide ?? side, range.end)
-      return view.lineBox(side, range.start)
+      if (range && view) {
+        const side = range.side ?? "additions"
+        if (expand) {
+          view.expandTo(side, range.start)
+          view.expandTo(range.endSide ?? side, range.end)
+        }
+        const box = view.lineBox(side, range.start)
+        if (box) return { top: box.top - root.clientHeight * revealTop, line: box }
+      }
+      return { top: section.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop, line: null }
     }
-    const line = lineBox()
+    const line = place(true)?.line
     if (line && line.top >= root.scrollTop && line.top + line.height <= root.scrollTop + root.clientHeight) return
+    // clock times the pin: a content size change or the pinned diff showing
+    // restarts the quiet wait (review-pin.ts).
+    const clock = { pinnedAt: performance.now(), changedAt: performance.now() }
+    let timer = 0
+    const settle = () => {
+      window.clearTimeout(timer)
+      const now = performance.now()
+      const state = { ...clock, shows: shown.current.has(target) }
+      if (!pinSettled(now, state)) {
+        timer = window.setTimeout(settle, pinWait(now, state))
+        return
+      }
+      end()
+      settled.current = { path: target, top: root.scrollTop }
+    }
     const pin = () => {
-      const section = content.querySelector(`[data-review-path="${CSS.escape(target)}"]`)
-      if (!(section instanceof HTMLElement)) return
-      const box = lineBox()
-      const top = box ? box.top - root.clientHeight * revealTop
-        : section.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop
-      if (Math.abs(root.scrollTop - top) > 1) scrollPane(root, top)
+      clock.changedAt = performance.now()
+      const top = place(true)?.top
+      if (top !== undefined && Math.abs(root.scrollTop - top) > 1) scrollPane(root, top)
+      settle()
     }
     pinned.current = target
+    settled.current = null
     repin.current = { path: target, pin }
-    pin()
     const observer = new ResizeObserver(pin)
-    observer.observe(content)
     const events: ReadonlyArray<keyof HTMLElementEventMap> = ["wheel", "pointerdown", "keydown", "touchstart"]
     const release = () => {
       pinned.current = ""
       repin.current = null
+      window.clearTimeout(timer)
       observer.disconnect()
       for (const type of events) root.removeEventListener(type, onInput)
+    }
+    const end = () => {
+      revealed.current.released = true
+      release()
     }
     // A press inside the content (selecting lines, toggling Viewed) keeps the
     // pin; one on the pane itself is its scrollbar.
     const onInput = (event: Event) => {
-      if (event.type !== "pointerdown" || event.target === root) {
-        revealed.current.released = true
-        release()
-      }
+      if (event.type !== "pointerdown" || event.target === root) end()
     }
+    pin()
+    observer.observe(content)
     for (const type of events) root.addEventListener(type, onInput, { passive: true })
     return release
-  }, [anchor, ready, scrollPane, scrollRoot, target])
+  }, [anchor, ready, request, scrollPane, scrollRoot, target])
 
-  // The pinned file, else the one whose section holds the pane's top edge, is
-  // the one in view.
+  // The pinned file, else the settled one while the pane is where it
+  // settled, else the one whose section holds the pane's top edge, is the
+  // one in view.
   const currentFile = useRef("")
   useEffect(() => {
     const root = scrollRoot.current
@@ -452,8 +503,9 @@ function ReviewBody({
     const update = () => {
       frame = 0
       const top = root.getBoundingClientRect().top + 1
-      let path = pinned.current
-      for (const section of pinned.current ? [] : container.current?.querySelectorAll<HTMLElement>("[data-review-path]") ?? []) {
+      const held = settled.current
+      let path = pinned.current || (held && Math.abs(root.scrollTop - held.top) <= 1 ? held.path : "")
+      for (const section of path ? [] : container.current?.querySelectorAll<HTMLElement>("[data-review-path]") ?? []) {
         if (section.getBoundingClientRect().top > top) break
         path = section.dataset.reviewPath ?? ""
       }

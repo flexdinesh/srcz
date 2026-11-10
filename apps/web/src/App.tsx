@@ -33,7 +33,7 @@ import type { SearchMatch } from "./features/search/search-engine.ts"
 import { SearchView } from "./features/search/SearchView.tsx"
 import { Sidebar, sidebarViewName } from "./workspace/Sidebar.tsx"
 import { SourceControlView } from "./features/source-control/SourceControlView.tsx"
-import { ReviewDocument, type HunkStep, type ReviewStatus } from "./features/source-control/ReviewDocument.tsx"
+import { ReviewDocument, type HunkStep, type ReviewStatus, type RevealRequest } from "./features/source-control/ReviewDocument.tsx"
 import { DiffToolbar } from "./features/source-control/DiffToolbar.tsx"
 import { countedLines } from "./features/source-control/diff-stats.ts"
 import type { CollapseRequest } from "./features/source-control/FilesTree.tsx"
@@ -42,7 +42,7 @@ import {
   workingCompare, type Compare, type CompareContext,
 } from "./features/source-control/compare.ts"
 import { uncommittedPaths } from "./features/source-control/compare-files.ts"
-import { splitMinimumWidth } from "./features/source-control/diff-options.ts"
+import { splitMinimumWidth, stepDiffOptions, type DiffOptions, type DiffStyle } from "./features/source-control/diff-options.ts"
 import { ReviewFilesRail, ReviewFilesSheet } from "./features/source-control/ReviewFilesRail.tsx"
 import { defaultRailWidth } from "./features/source-control/source-control-layout.ts"
 import { onBaseBranch } from "./features/source-control/source-control-panes.ts"
@@ -106,10 +106,11 @@ import { useLiveUpdates } from "./features/live-updates/use-live-updates.ts"
 import { usePresence } from "./features/live-updates/use-presence.ts"
 import { useNotificationSync } from "./features/notifications/use-notification-sync.ts"
 import { useSidebar } from "./workspace/use-sidebar.ts"
-import { Narration } from "./features/walkthrough/Narration.tsx"
+import { StepMarker } from "./features/walkthrough/Narration.tsx"
+import { NarrationPanel } from "./features/walkthrough/NarrationPanel.tsx"
 import { WalkthroughsView } from "./features/walkthrough/WalkthroughsView.tsx"
 import { WalkthroughTab } from "./features/walkthrough/WalkthroughTab.tsx"
-import { WalkthroughStepBar } from "./features/walkthrough/WalkthroughStepBar.tsx"
+import { useNarrationCollapsed } from "./features/walkthrough/use-narration-collapsed.ts"
 import { useWalkthroughSession } from "./features/walkthrough/use-walkthrough-session.ts"
 import {
   missingStep, routeStep, routeWalkthrough, stepCheck, stepLabel, stepRoute, stepTarget, uncheckedStep, type StepCheck, type StepRoute,
@@ -505,11 +506,15 @@ export function App({ project }: AppProps) {
 
   // openReview opens a compare's review tab; focusDocument moves focus to it.
   // lines selects lines in path, as a change marker does (decision 0115).
+  // A path is an explicit request to reveal that file, even one the review
+  // already selects and the user scrolled away from (decision 0135).
+  const [revealRequest, setRevealRequest] = useState<RevealRequest>({ id: 0, path: "" })
   const openReview = useCallback((compare: Compare, focusDocument: boolean, path = "", lines: Parameters<typeof reviewFragment>[1] = null) => {
     if (reviewCompare && sameCompare(compare, reviewCompare) && !path) {
       if (focusDocument) main.current?.focus({ preventScroll: true })
       return
     }
+    if (path) setRevealRequest((request) => ({ id: request.id + 1, path }))
     if (focusDocument) prepareDocumentNavigation()
     // The kept review returns at the fragment it still shows.
     const keptHash = kept && sameCompare(compare, kept.compare) ? kept.hash : ""
@@ -781,15 +786,26 @@ export function App({ project }: AppProps) {
     }
   })
 
-  // The routed step's narration sits in the code it explains.
+  // The routed step's narration sits in one panel above the document, the
+  // same place for every step; the code it explains keeps a marker under the
+  // step's lines, which reads the step's drift for the panel (decision 0135).
   const stepWalkthrough = walkthroughs.routed ? walkthroughs.walkthrough : null
   const stepIndex = walkthroughs.position
   const narrationStep = stepWalkthrough && stepIndex !== null ? stepWalkthrough.steps[stepIndex] : undefined
   const narrationTarget = narrationStep ? stepTarget(narrationStep) : null
-  const stepBarShown = walkthroughs.walkthrough !== null && (presenting || (sidebar.mobile && walkthroughs.routed))
-  const narrate = (check: StepCheck) => stepWalkthrough && narrationStep && stepIndex !== null
-    ? <Narration step={narrationStep} index={stepIndex} count={stepWalkthrough.steps.length} visited={walkthroughs.visited} check={check}
-      controls={!stepBarShown} canMove={walkthroughs.canMove} onMove={walkthroughs.move} onFinish={finishWalkthrough} onExit={closeWalkthrough}
+  const narrationKey = stepWalkthrough && stepIndex !== null ? `${stepWalkthrough.id}#${stepIndex}` : ""
+  const [markerCheck, setMarkerCheck] = useState<{ key: string; check: StepCheck } | null>(null)
+  const reportCheck = useCallback((check: StepCheck) => setMarkerCheck({ key: narrationKey, check }), [narrationKey])
+  const narrationCheck = markerCheck?.key === narrationKey ? markerCheck.check : uncheckedStep
+  const narration = useNarrationCollapsed(sidebar.mobile)
+  const mark = (check: StepCheck, lines: boolean) => stepIndex !== null
+    ? <StepMarker index={stepIndex} check={check} lines={lines} onCheck={reportCheck} />
+    : null
+  const narrationPanel = stepWalkthrough && narrationStep && stepIndex !== null
+    ? <NarrationPanel step={narrationStep} index={stepIndex} count={stepWalkthrough.steps.length} visited={walkthroughs.visited}
+      check={narrationCheck} presenting={presenting} collapsed={narration.collapsed} onCollapsedChange={narration.change}
+      canMove={walkthroughs.canMove} onMove={walkthroughs.move} onFinish={finishWalkthrough} onExit={closeWalkthrough}
+      onStopPresenting={() => setPresentRequested(false)} onSteps={sidebar.mobile ? () => revealSidebar("walkthroughs") : undefined}
       prompt={() => stepPrompt({
         origin: shareableOrigin(window.location.origin),
         project,
@@ -812,7 +828,7 @@ export function App({ project }: AppProps) {
       focus: narrationTarget.lines,
       render: (lineAt) => {
         const lines = narrationTarget.lines
-        return narrate(lines && lineAt ? stepCheck(narrationTarget.expect, lineAt(lines.start)) : uncheckedStep)
+        return lines && lineAt ? mark(stepCheck(narrationTarget.expect, lineAt(lines.start)), true) : mark(uncheckedStep, false)
       },
     } : undefined
   const reviewAnnotation: ReviewAnnotation | undefined = narrationTarget?.kind === "diff" && reviewCompare
@@ -822,10 +838,23 @@ export function App({ project }: AppProps) {
       line: narrationTarget.lines?.end ?? 0,
       render: (lineAt) => {
         const lines = narrationTarget.lines
-        if (!lineAt) return narrate(missingStep)
-        return narrate(lines ? stepCheck(narrationTarget.expect, lineAt(lines.start)) : uncheckedStep)
+        if (!lineAt) return mark(missingStep, false)
+        return lines ? mark(stepCheck(narrationTarget.expect, lineAt(lines.start)), true) : mark(uncheckedStep, false)
       },
     } : undefined
+  // A diff step shows Unified unless the reader picks a style during this
+  // walkthrough; the saved style is left alone (decision 0135).
+  const [stepStyle, setStepStyle] = useState<{ walkthrough: string; style: DiffStyle } | null>(null)
+  const diffStep = reviewAnnotation !== undefined && stepWalkthrough !== null
+  const stepStyleOverride = stepWalkthrough && stepStyle?.walkthrough === stepWalkthrough.id ? stepStyle.style : null
+  const shownDiffOptions = stepDiffOptions(diffOptions.options, stepStyleOverride, diffStep)
+  const { change: changeDiffOptions } = diffOptions
+  const changeShownDiffOptions = useCallback((update: Partial<DiffOptions>) => {
+    const { style, ...rest } = update
+    if (style && diffStep && stepWalkthrough) setStepStyle({ walkthrough: stepWalkthrough.id, style })
+    else if (style) changeDiffOptions({ style })
+    if (Object.keys(rest).length > 0) changeDiffOptions(rest)
+  }, [changeDiffOptions, diffStep, stepWalkthrough])
 
   const documentTitle = activeTab ? nameTab(activeTab).title : ""
   const windowTitle = `${documentTitle ? `${documentTitle} · ` : ""}Zero`
@@ -891,7 +920,7 @@ export function App({ project }: AppProps) {
               onShowHistory={showFileHistory}
             />
             {reviewCompare ? (
-              <DiffToolbar options={diffOptions.options} narrow={diffNarrow} onChange={diffOptions.change}
+              <DiffToolbar options={shownDiffOptions} narrow={diffNarrow} onChange={changeShownDiffOptions}
                 hasChanges={reviewData?.list.kind === "ready" && reviewData.list.files.length > 0}
                 anyExpanded={anyFileExpanded} onStepHunk={(direction) => stepHunk.current(direction)}
                 onExpandAll={(expand) => setExpandRequest({ expand, id: (expandRequest?.id ?? 0) + 1 })}
@@ -908,19 +937,20 @@ export function App({ project }: AppProps) {
               {showImage && <ImageZoomControls viewer={image} />}
             </>}
           </div>
+          {narrationPanel}
           <div className="workspace-body">
           <DocumentPane
             diff={shownReview ? <ReviewDocument key={compareKey(shownReview)} project={project} compare={shownReview}
-              name={nameTab(reviewTab(shownReview))} data={reviewData} options={diffOptions.options} narrow={diffNarrow}
+              name={nameTab(reviewTab(shownReview))} data={reviewData} options={shownDiffOptions} narrow={diffNarrow}
               scrollRoot={main} selection={fragment} expandRequest={expandRequest} treeFiles={treeFiles}
               viewedState={viewed.state} onViewedChange={viewed.mark} onSelectLines={selectReviewLines}
               onCurrentFile={setCurrentFile} onStatus={setReviewStatus} onOpenFile={openReviewFile}
               onAllExpandedChange={setAnyFileExpanded} onRegisterHunkStep={registerHunkStep} annotation={reviewAnnotation}
               comments={reviewFeedback.comments}
-              scope={scope} marked={markedPaths} /> : undefined}
+              scope={scope} marked={markedPaths} revealRequest={revealRequest} /> : undefined}
             diffShown={reviewCompare !== null}
             walkthrough={walkthroughRoute ? <WalkthroughTab detail={walkthroughs.detail} position={walkthroughs.position}
-              context={compareContext} note={narrationTarget?.kind === "note" ? narrate(uncheckedStep) : null}
+              context={compareContext} note={narrationTarget?.kind === "note"}
               visited={walkthroughs.visited} resume={walkthroughs.resume} finished={walkthroughs.finished}
               justFinished={walkthroughs.justFinished} nextUnread={walkthroughs.nextUnread} onGoTo={walkthroughs.goTo}
               onOpen={walkthroughs.open} onShowList={showWalkthroughList} onRetry={walkthroughs.retry} navigate={navigateToHref} /> : undefined}
@@ -968,12 +998,6 @@ export function App({ project }: AppProps) {
               hideViewed={sourceControlLayout.railHideViewed} onHideViewedChange={sourceControlLayout.setRailHideViewed} itemHeight={treeRowHeight(true, uiScale(settings))}
               onClose={() => setFilesSheet(false)}
               onOpen={(path, focusDocument) => openReview(reviewCompare, focusDocument, path)} />
-          )}
-          {walkthroughs.walkthrough && stepBarShown && (
-            <WalkthroughStepBar walkthrough={walkthroughs.walkthrough} position={walkthroughs.position} presenting={presenting}
-              visited={walkthroughs.visited} canMove={walkthroughs.canMove} onMove={walkthroughs.move} onFinish={finishWalkthrough}
-              onSteps={sidebar.mobile ? () => revealSidebar("walkthroughs") : undefined}
-              onStopPresenting={() => setPresentRequested(false)} />
           )}
         </section>
       </div>

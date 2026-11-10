@@ -54,6 +54,10 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
   const previousPaths = useRef(paths)
   const syncing = useRef(false)
   const threadPaths = useMemo(() => paths.filter((path) => (threads?.get(path) ?? 0) > 0), [paths, threads])
+  // input is set while a click or key press is dispatched in the tree: only
+  // those open a file. Selection that follows the file in view never does,
+  // so the review's scroll never comes back to it (decision 0135).
+  const input = useRef(false)
   const current = useRef({ activePath, byPath, marked, stats, threads, viewedPaths, onOpen })
   useLayoutEffect(() => { current.current = { activePath, byPath, marked, stats, threads, viewedPaths, onOpen } }, [activePath, byPath, marked, stats, threads, viewedPaths, onOpen])
 
@@ -80,7 +84,7 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
       })
     },
     onSelectionChange(selected) {
-      if (syncing.current) return
+      if (syncing.current || !input.current) return
       const focused = model.getFocusedPath()
       const path = focused && selected.includes(focused) ? focused : selected.at(-1)
       if (!path || model.getItem(path)?.isDirectory()) return
@@ -161,7 +165,14 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
     if (focused && !model.getItem(focused)?.isDirectory()) current.current.onOpen(focused, true)
   }
 
+  // The tree selects within the event's own dispatch; the flag clears after it.
+  const markInput = () => {
+    input.current = true
+    setTimeout(() => { input.current = false }, 0)
+  }
+
   return <PierreFileTree model={model} className="file-tree-host" aria-label={label}
+    onClickCapture={markInput} onKeyDownCapture={markInput}
     onKeyDown={(event: KeyboardEvent<HTMLElement>) => { if (event.key === "Enter") openFocused() }}
     onDoubleClick={openFocused} />
 }

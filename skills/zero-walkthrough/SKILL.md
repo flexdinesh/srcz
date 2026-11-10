@@ -18,9 +18,9 @@ narration, and at most one target:
 - **diff**: a file and line range in a compare: uncommitted changes, a
   branch, a commit, or a commit range.
 
-Zero opens each target in an ordinary tab, selects the lines, and inserts
-the narration right after them. The user steps with Ctrl/Cmd+Right and
-Ctrl/Cmd+Left.
+Zero opens each target in an ordinary tab, selects the lines, marks them
+with the step's number, and shows the narration in a panel above the code.
+The user steps with Ctrl/Cmd+Right and Ctrl/Cmd+Left.
 
 ## 1. Find the project and the format
 

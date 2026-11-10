@@ -1,5 +1,5 @@
 import { CircleCheckIcon } from "lucide-react"
-import { useMemo, type ReactNode } from "react"
+import { useMemo } from "react"
 
 import { Button } from "../../components/ui/button.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
@@ -14,8 +14,9 @@ interface WalkthroughTabProps {
   // position is the route's step, null for the cover.
   position: StepPosition
   context: CompareContext
-  // note is a note step's narration; the tab shows it alone (decision 0113).
-  note: ReactNode
+  // note is whether the step is a note: its narration is in the panel above
+  // (decision 0135), so the tab shows only the way back to the overview.
+  note: boolean
   visited: ReadonlySet<number>
   // resume is where an unfinished walkthrough was left, or null.
   resume: StepPosition
@@ -63,7 +64,6 @@ export function WalkthroughTab(props: WalkthroughTabProps) {
   if (note && position !== null) {
     return (
       <div className="walkthrough-tab walkthrough-note">
-        {note}
         <Button variant="link" size="inline" className="walkthrough-note-overview" onClick={() => onGoTo(null)}>
           {walkthrough.title}: overview
         </Button>

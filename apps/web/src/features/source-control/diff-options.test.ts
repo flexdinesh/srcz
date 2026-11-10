@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { defaultDiffOptions, diffOptionsModified, effectiveDiffStyle, parseDiffOptions, type DiffOptions } from "./diff-options.ts"
+import { defaultDiffOptions, diffOptionsModified, effectiveDiffStyle, parseDiffOptions, stepDiffOptions, type DiffOptions } from "./diff-options.ts"
 
 test("stored diff options keep valid values and default the rest", () => {
   assert.deepEqual(parseDiffOptions(null), defaultDiffOptions)
@@ -30,4 +30,14 @@ test("View options read as changed only when a menu choice leaves its default", 
   assert.equal(diffOptionsModified({ ...defaultDiffOptions, inline: "none" }), true)
   assert.equal(diffOptionsModified({ ...defaultDiffOptions, expandUnchanged: true }), true)
   assert.equal(diffOptionsModified({ ...defaultDiffOptions, showResolved: false }), true)
+})
+
+test("a walkthrough's diff steps show Unified without touching the saved style", () => {
+  const split: DiffOptions = { ...defaultDiffOptions, style: "split", wrap: true }
+  assert.deepEqual(stepDiffOptions(split, null, true), { ...split, style: "unified" })
+  // A style chosen during the walkthrough holds for it.
+  assert.deepEqual(stepDiffOptions(split, "split", true), split)
+  // Outside a diff step the saved options apply, as they were.
+  assert.equal(stepDiffOptions(split, "unified", false), split)
+  assert.equal(split.style, "split")
 })

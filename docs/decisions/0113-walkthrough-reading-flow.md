@@ -1,6 +1,6 @@
 # 0113: Walkthrough reading flow
 
-- Status: Accepted
+- Status: Accepted; step bar superseded by the narration panel of [0135](0135-walkthrough-narration-panel-and-one-way-review-scroll.md)
 - Date: 2026-11-09
 - Extends: [0047](0047-walkthroughs.md), [0049](0049-copyable-agent-instructions.md)
 
