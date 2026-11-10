@@ -584,9 +584,9 @@ since last commit.”, “Showing the first 5,000 changes.”, the read error wi
 Retry, and unreadable paths under a “Some paths could not be read”
 disclosure.
 
-Commits' header adds a muted “2 ahead of main” in the branch range, a 20px
-Filter Commits search icon (`aria-pressed` while the filter row shows), and a
-[Branch][All] small `SegmentedControl` (12px, 20px tall, 28px narrow); when
+Commits' header adds a muted “2 ahead of main” in the branch range. Its
+action row is the filter row (below) with a [Branch][All] small
+`SegmentedControl` (12px) beside the field at the field's height; when
 HEAD is the base branch both items are disabled, All shows pressed, and the
 title says “HEAD is the base branch, so all history shows”. A `role="listbox"`
 named “Commits” (`aria-multiselectable` on desktop) holds 24px rows (32px
@@ -595,14 +595,24 @@ narrow) with the Search view's state treatment: a leading 20px chevron
 `text-primary` on the other rows' indent, and a muted right-aligned compact
 age (`3h`, `2d`, `4mo`). The title adds author, absolute date, and short
 hash; the name reads “subject, author, 3 hours ago, branch”. Selected rows
-take the selection fill and ink with `aria-selected`.
+take the selection fill and ink with `aria-selected`. Rows take two lines
+(decision 0123): the subject, then the author in secondary, the age muted,
+and the short hash in `--color-commit-hash` (`warning`), which keeps its hue
+when selected. Branch chips for stack layer tips end the subject line.
+
+Stack lanes (decision 0129): HEAD's layer is lane 0 (`accent`); the other
+layers cycle lanes 1 to 3 top to bottom (`syntax-function`,
+`syntax-keyword`, `success`; `--color-lane-0` to `-3`). A layer's commits,
+from its tip for its own commit count up to the merge-base, draw a 2px rail
+in its hue on their leading edge, through their expanded details; filtered
+lists draw none. Branch chips take their lane's hue for border and text.
 
 The chevron, or Right and Left on the focused row, shows and hides a
 commit's details under it, on the subject's indent (decision 0042): the
 message body (secondary, line breaks kept), `author <email>`, the absolute
 date, the short hash chip with a 20px Copy action for the full hash, and,
 for stack layer tips, a 12px git-branch icon and branch-name chips (12px
-monospace, 1px `border`; HEAD's branch in `accent`). Details are
+monospace, 1px border, both in the layer's lane hue). Details are
 12px muted lines; items wrap whole and truncate when wider than the pane.
 Last come the commit's files (decision 0112), read on expand: Uncommitted's
 flat rows (Pierre icon, name in `text-primary` at body size, muted 12px
@@ -619,17 +629,16 @@ hover and keyboard focus and stays on the selection; on a range it sits on
 the newest selected commit only. It is not a control: it says a click opens
 the diff.
 
-The filter row (decision 0114) sits above the list on the pane's surface
-(4px top, 8px bottom, 12px sides, 4px between its parts) and ends in a 1px
-`border` divider: a field with a search icon, placeholder “Message, author,
-or hash”, and a Clear query action, then, when a path filters the list, a
-removable chip: 1px `border`, 12px monospace path in `text-primary` truncated
+The filter row (decisions 0114, 0129) is Commits' action row and always
+shows while the pane is open: a field filling the row with a search icon,
+placeholder “Filter commits” (named “Filter commits by message, author, or
+hash”), and a Clear query action, Branch/All beside it, then, when a path
+filters the list, a removable chip under both: 1px `border`, 12px monospace path in `text-primary` truncated
 from the start so the file name stays visible, a 12px Pierre icon, and a 20px
 remove action (32px on phones). Typing applies after 200ms; Enter or
 ArrowDown moves to the list; Escape anywhere in the row clears the query and
-path, hides the row, and returns focus to the search icon. Show File History
-(Explorer and tab menus, command palette) opens the row on a path, opens
-the pane, and focuses the field except on phones. Branch/All and paging still
+path and, once the list rereads, moves focus to its row. Show File History (Explorer and tab menus, command palette) sets
+a path, opens the pane, and focuses the field except on phones. Branch/All and paging still
 apply. States: “No commits match.”, and “No commits match in the 10,000 most
 recent commits.” when a page stopped on the scan cap, whose more row reads
 “Search older commits”; a polite live region announces “3 commits match.”.
@@ -653,12 +662,12 @@ it with a dashed accent outline and “Tap another commit to compare a
 range.”, and that tap opens the range's diff. Opening a diff closes the
 drawer.
 
-Branches' header adds a muted “base main” and the base picker. A
+Branches' header adds a muted “base main”; Branches has no action row. A
 `role="listbox"` named “Branches” lists the stack top to bottom: layers above
-HEAD, HEAD's layer (accent git-branch icon, the name in 600, a muted “HEAD”),
-the layers below, each with a 14px git-branch icon, the name, and a muted
-`+N` of its own commits; then a non-interactive base row with the base name,
-the merge-base short-hash chip, and a muted “merge-base”. Rows are named
+HEAD, HEAD's layer (the name in 600, then a “HEAD” chip: 12px monospace,
+1px `accent` border and text), the layers below, each with its lane's 2px
+rail, a 14px git-branch icon in its lane hue, the name, and `+N` of its own
+commits in `success`; then the base row, which opens the base picker. Rows are named
 “feat-b, checked out, 2 commits on feat-a (also feat-b2)”. Hover and focus
 replace `+N` with 20px actions: Diff layer (layers icon, “Open changes on
 feat-b since feat-a”; absent on the lowest layer) and Diff vs base (file-diff
@@ -667,8 +676,12 @@ base diff; arrows and Home/End move. States: “On main.”, “Nothing ahead of
 main.”, “No base branch found to compare with.”, the read error with Retry,
 and “Some local branches weren't checked.” when the stack is truncated.
 
-The base picker is a 20px icon action (“Change base branch”) opening an 18rem
-overlay: a “Filter branches” combobox, then a “Branches” listbox of picker
+The base picker's trigger is the base row (decision 0129), a 24px list
+button named “Change base branch, main”: a muted git-branch icon, the base
+name in secondary, a 12px muted chevron (primary on hover), the merge-base
+short-hash chip in `--color-commit-hash`, and a right-aligned muted
+“merge-base”. It also follows the empty states and reads “Choose base
+branch” when no base was found. It opens an 18rem overlay: a “Filter branches” combobox, then a “Branches” listbox of picker
 rows (Default first, local branches, then remote-tracking ones); arrows move,
 Enter picks, Escape closes. States: “Loading branches…”, “No branches
 match.”, “Showing the first 1,000 branches.”, and the read error. Picking a

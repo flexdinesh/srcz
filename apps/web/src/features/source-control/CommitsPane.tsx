@@ -1,5 +1,5 @@
 import { ChevronsDownIcon, FileDiffIcon, GitBranchIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react"
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react"
 
 import { Button } from "../../components/ui/button.tsx"
 import { CopyButton } from "../../components/ui/copy-button.tsx"
@@ -12,7 +12,7 @@ import { FileIcon } from "../../components/FileIcon.tsx"
 import type { Commit } from "@zero/contracts"
 import { shortHash } from "../../lib/commit-hash.ts"
 import { useClipboardCopy } from "../../lib/clipboard.ts"
-import { emptyHistoryMessage, filterAnnouncement, moreLabel } from "./commit-filter.ts"
+import { emptyHistoryMessage, filterAnnouncement, isFiltered, moreLabel } from "./commit-filter.ts"
 import { commitAge, commitDate, selectedHashes, selectionCompare, type Compare } from "./compare.ts"
 import { statusLetters, type FileList } from "./compare-files.ts"
 import { detailsFiles, diffGlyph, fileParts, moreFilesLabel, type RefChip } from "./source-control-panes.ts"
@@ -24,10 +24,12 @@ const longPress = 500
 
 interface CommitsPaneProps {
   commits: Commits
-  // filter is the filter row's state (decision 0114).
+  // filter is the filter field's state (decisions 0114, 0129).
   filter: CommitFilterState
-  // onFilterClosed runs after Escape closes the filter row.
-  onFilterClosed(): void
+  // range is the Branch/All control, beside the field.
+  range: ReactNode
+  // lanes maps commits to their stack layer's lane (commitLanes).
+  lanes: ReadonlyMap<string, number>
   // selection is the selected commit or range, null for none.
   selection: Compare | null
   // chips name the stack's branches at their commits.
@@ -47,21 +49,20 @@ interface CommitsPaneProps {
 // contiguous run and opens the range's diff. Arrows, Home/End, and Space
 // only select; Enter opens the selection's diff and focuses it; Escape
 // narrows a range. With a path filter, opening a commit opens its review at
-// that file.
+// that file. The filter field and Branch/All head the pane (decision 0129).
 export function CommitsPane({
-  allOnly, chips, commits, filter, mobile, selection, onFilterClosed, onOpen, onSelect, onShowAll,
+  allOnly, chips, commits, filter, lanes, mobile, range, selection, onOpen, onSelect, onShowAll,
 }: CommitsPaneProps) {
   const { error, files, loadFiles, loadMore, loadingMore, moreError, refresh, result } = commits
   // at is the file a path-filtered list opens reviews at.
   const at = result?.path || undefined
   const filterInput = useRef<HTMLInputElement>(null)
   const { focusPending, focused } = filter
-  const filterOpen = filter.filter.open
   useEffect(() => {
-    if (!focusPending || !filterOpen || !filterInput.current) return
+    if (!focusPending || !filterInput.current) return
     filterInput.current.focus()
     focused()
-  }, [filterOpen, focusPending, focused])
+  }, [focusPending, focused])
   const list = useMemo(() => result?.commits ?? [], [result])
   const selected = useMemo(() => selectedHashes(list, selection), [list, selection])
   const container = useRef<HTMLDivElement>(null)
@@ -78,6 +79,16 @@ export function CommitsPane({
   const tabKey = list.some((commit) => commit.hash === focusedKey) ? focusedKey : selected[0] ?? list[0]?.hash ?? ""
   // now is read once per list so ages don't shift between renders.
   const now = useMemo(() => result ? Date.now() : 0, [result])
+  // focusListOnLoad moves focus to the list's row once Escape's cleared
+  // filter has reread it; the filtered rows unmount while it reloads.
+  const focusListOnLoad = useRef(false)
+  const unfiltered = result !== null && !isFiltered(result)
+  useEffect(() => {
+    if (!focusListOnLoad.current || !unfiltered || !tabKey) return
+    focusListOnLoad.current = false
+    const row = container.current?.querySelector(`[data-row-key="${CSS.escape(tabKey)}"]`)
+    if (row instanceof HTMLElement) row.focus()
+  }, [tabKey, unfiltered])
 
   function focusRow(hash: string) {
     setFocusedKey(hash)
@@ -192,44 +203,46 @@ export function CommitsPane({
 
   return (
     <div className="compare-list">
-      {filter.filter.open && (
-        <div className="commit-filter" role="search" aria-label="Filter commits"
+      <div className="scm-pane-actions commit-filter" role="search" aria-label="Filter commits"
+        onKeyDown={(event) => {
+          // Escape clears the query and path and returns to the list.
+          if (event.key !== "Escape") return
+          event.preventDefault()
+          event.stopPropagation()
+          filter.clear()
+          // A listed unfiltered page needs no reread.
+          if (!unfiltered) focusListOnLoad.current = true
+          else if (tabKey) focusRow(tabKey)
+        }}>
+        <TextField inputRef={filterInput} icon={<SearchIcon />} type="text" aria-label="Filter commits by message, author, or hash"
+          placeholder="Filter commits" value={filter.filter.query} spellCheck={false} autoComplete="off" autoCapitalize="off"
+          onChange={(event) => filter.setQuery(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key !== "Escape") return
+            if (event.key !== "ArrowDown" && event.key !== "Enter") return
+            const first = list[0]
+            if (!first) return
             event.preventDefault()
-            event.stopPropagation()
-            filter.close()
-            onFilterClosed()
-          }}>
-          <TextField inputRef={filterInput} icon={<SearchIcon />} type="text" aria-label="Filter commits by message, author, or hash"
-            placeholder="Message, author, or hash" value={filter.filter.query} spellCheck={false} autoComplete="off" autoCapitalize="off"
-            onChange={(event) => filter.setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "ArrowDown" && event.key !== "Enter") return
-              const first = list[0]
-              if (!first) return
-              event.preventDefault()
-              focusRow(tabKey || first.hash)
-            }}
-            trailing={filter.filter.query && <IconButton size="xs" label="Clear query" icon={<XIcon aria-hidden="true" />}
+            focusRow(tabKey || first.hash)
+          }}
+          trailing={filter.filter.query && <IconButton size="xs" label="Clear query" icon={<XIcon aria-hidden="true" />}
+            onClick={() => {
+              filter.setQuery("")
+              filterInput.current?.focus()
+            }} />} />
+        {range}
+        {filter.filter.path && (
+          <div className="commit-filter-path" title={`History of ${filter.filter.path}`}>
+            <FileIcon path={filter.filter.path} />
+            {/* Right-to-left flow truncates the start, keeping the file name. */}
+            <span className="commit-filter-path-text"><span dir="ltr">{filter.filter.path}</span></span>
+            <IconButton size="xs" label={`Remove path filter ${filter.filter.path}`} icon={<XIcon aria-hidden="true" />}
               onClick={() => {
-                filter.setQuery("")
+                filter.clearPath()
                 filterInput.current?.focus()
-              }} />} />
-          {filter.filter.path && (
-            <div className="commit-filter-path" title={`History of ${filter.filter.path}`}>
-              <FileIcon path={filter.filter.path} />
-              {/* Right-to-left flow truncates the start, keeping the file name. */}
-              <span className="commit-filter-path-text"><span dir="ltr">{filter.filter.path}</span></span>
-              <IconButton size="xs" label={`Remove path filter ${filter.filter.path}`} icon={<XIcon aria-hidden="true" />}
-                onClick={() => {
-                  filter.clearPath()
-                  filterInput.current?.focus()
-                }} />
-            </div>
-          )}
-        </div>
-      )}
+              }} />
+          </div>
+        )}
+      </div>
       {error && <div className="source-control-message">
         <StatusMessage tone="error" role="alert">{error}</StatusMessage>
         {!result && <Button variant="outline" onClick={refresh}>Retry</Button>}
@@ -241,6 +254,7 @@ export function CommitsPane({
           {list.map((commit) => <CommitRow key={commit.hash} commit={commit} now={now}
             selected={selected.includes(commit.hash)} inRange={selection?.kind === "range" && selected.includes(commit.hash)}
             pending={pending === commit.hash} focusable={commit.hash === tabKey} chips={chips.get(commit.hash) ?? []}
+            lane={lanes.get(commit.hash)}
             expanded={expanded.has(commit.hash)} onExpandedChange={(open) => setDetails(commit.hash, open)}
             files={files.get(commit.hash)} onRetryFiles={() => loadFiles(commit.hash, true)}
             glyph={diffGlyph(commit.hash, selection, selected)}
@@ -284,6 +298,8 @@ interface CommitRowProps {
   pending: boolean
   focusable: boolean
   chips: readonly RefChip[]
+  // lane is the commit's stack layer lane, undefined outside the stack.
+  lane: number | undefined
   glyph: ReturnType<typeof diffGlyph>
   expanded: boolean
   // files is the commit's file list, once its details asked for it.
@@ -301,7 +317,7 @@ interface CommitRowProps {
 // under it: message body, author, date, hash, the branches it tips, and its
 // files.
 function CommitRow({
-  chips, commit, expanded, files, focusable, glyph, inRange, now, pending, selected, onClick, onExpandedChange, onFocus, onOpenFile,
+  chips, commit, expanded, files, focusable, glyph, inRange, lane, now, pending, selected, onClick, onExpandedChange, onFocus, onOpenFile,
   onPointerDown, onPointerEnd, onRetryFiles,
 }: CommitRowProps) {
   const age = commitAge(commit.authorTime, now)
@@ -309,7 +325,7 @@ function CommitRow({
   return (<>
     <ListRow data-row-key={commit.hash} role="option" tabIndex={focusable ? 0 : -1} aria-selected={selected} selected={selected}
       className="compare-row compare-row-commit" data-range={inRange || undefined} data-pending={pending || undefined}
-      data-diff-pinned={glyph?.pinned || undefined} data-expanded={expanded || undefined}
+      data-diff-pinned={glyph?.pinned || undefined} data-expanded={expanded || undefined} data-lane={lane}
       aria-describedby={expanded ? detailsId : undefined}
       aria-label={`${commit.subject}, ${commit.author.name}, ${age.long}${chips.length ? `, ${chips.map((chip) => chip.name).join(", ")}` : ""}`}
       title={`${commit.subject}\n${commit.author.name} · ${commitDate(commit.authorTime)} · ${shortHash(commit.hash)}`}
@@ -323,9 +339,13 @@ function CommitRow({
           onExpandedChange(!expanded)
         }}
         onPointerDown={(event) => event.stopPropagation()} />
-      {/* Two lines: the subject, then author, age, and short hash. */}
+      {/* Two lines: the subject and the branches it tips, then author, age,
+          and short hash. */}
       <span className="commit-row-text">
-        <span className="compare-row-label">{commit.subject || "(no message)"}</span>
+        <span className="commit-row-subject">
+          <span className="compare-row-label">{commit.subject || "(no message)"}</span>
+          {chips.map((chip) => <RefChipView key={chip.name} chip={chip} />)}
+        </span>
         <span className="commit-row-meta">
           <span className="commit-row-author">{commit.author.name}</span>
           <span aria-hidden="true">·</span>
@@ -340,7 +360,7 @@ function CommitRow({
     {/* A listbox holds options only, so the row names these details through
         aria-describedby and they stay out of the accessibility tree. */}
     {expanded && (
-      <div id={detailsId} className="commit-details" aria-hidden="true">
+      <div id={detailsId} className="commit-details" aria-hidden="true" data-lane={lane}>
         {commit.body && <p className="commit-details-body">{commit.body}</p>}
         <p className="commit-details-line"><span>{commit.author.name} &lt;{commit.author.email}&gt;</span></p>
         <p className="commit-details-line"><time dateTime={commit.authorTime}>{commitDate(commit.authorTime)}</time></p>
@@ -351,13 +371,18 @@ function CommitRow({
         {chips.length > 0 && (
           <p className="commit-details-line">
             <GitBranchIcon className="commit-details-icon" />
-            {chips.map((chip) => <span key={chip.name} className="ref-chip" data-current={chip.current || undefined}>{chip.name}</span>)}
+            {chips.map((chip) => <RefChipView key={chip.name} chip={chip} />)}
           </p>
         )}
         <CommitFiles files={files} onRetry={onRetryFiles} onOpen={onOpenFile} />
       </div>
     )}
   </>)
+}
+
+// RefChipView is a branch name chip in its layer's lane.
+function RefChipView({ chip }: { chip: RefChip }) {
+  return <span className="ref-chip" data-lane={chip.lane} data-current={chip.current || undefined}>{chip.name}</span>
 }
 
 interface CommitFilesProps {

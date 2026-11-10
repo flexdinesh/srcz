@@ -338,8 +338,12 @@
   padding-block: var(--space-1);
 }
 
-.commit-row-text > .compare-row-label {
-  flex: none;
+/* The subject line ends on the branches the commit tips. */
+.commit-row-subject {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .commit-row-meta {
@@ -356,9 +360,11 @@
   color: inherit;
 }
 
+/* Meta reads by role: author in secondary ink, age muted, hash in its hue. */
 .commit-row-author {
   min-width: 0;
   overflow: hidden;
+  color: var(--color-text-secondary);
   text-overflow: ellipsis;
 }
 
@@ -369,6 +375,7 @@
 
 .commit-row-hash {
   flex: none;
+  color: var(--color-commit-hash);
   font-family: var(--font-mono);
 }
 
@@ -438,7 +445,7 @@
   color: var(--color-text-primary);
 }
 
-/* Branch names at a commit: bordered code chips; HEAD's branch in accent. */
+/* Branch names at a commit: bordered code chips in their layer's lane. */
 .ref-chip {
   min-width: 0;
   max-width: 45%;
@@ -453,48 +460,93 @@
   text-overflow: ellipsis;
 }
 
-.ref-chip[data-current] {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+.ref-chip[data-lane] {
+  border-color: var(--lane);
+  color: var(--lane);
 }
 
-.compare-row[data-selected] .ref-chip {
-  border-color: currentcolor;
-  color: inherit;
+.ref-chip-hash,
+.commit-details .commit-compare-hash {
+  color: var(--color-commit-hash);
+}
+
+/* Lanes (decision 0129): each stack layer's hue, on its Branches row and on
+   its commits, as a 2px rail down the leading edge that runs through their
+   details. HEAD's layer is lane 0. */
+[data-lane="0"] {
+  --lane: var(--color-lane-0);
+}
+
+[data-lane="1"] {
+  --lane: var(--color-lane-1);
+}
+
+[data-lane="2"] {
+  --lane: var(--color-lane-2);
+}
+
+[data-lane="3"] {
+  --lane: var(--color-lane-3);
+}
+
+:is(.compare-row, .commit-details)[data-lane] {
+  position: relative;
+}
+
+:is(.compare-row, .commit-details)[data-lane]::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--lane);
+  content: "";
+  pointer-events: none;
 }
 
 .branch-rows {
   padding-top: var(--space-1);
 }
 
-.branch-row[data-current] .branch-row-icon {
-  color: var(--color-accent);
+.branch-row[data-lane] .branch-row-icon {
+  color: var(--lane);
 }
 
 .branch-row[data-current] .compare-row-label {
   font-weight: 600;
 }
 
+/* HEAD's tag: an accent chip, as HEAD's branch chip reads in Commits. */
+.branch-row-head {
+  flex: none;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1rem;
+}
+
 .branch-row-ahead {
   flex: none;
-  color: var(--color-text-muted);
+  color: var(--color-success);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
-/* The base closes the stack: not a row to act on, so no hover layer. */
-.branch-row-base {
-  display: flex;
-  height: var(--row-list);
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0 var(--space-2) 0 var(--space-5);
-  white-space: nowrap;
-}
-
+/* The base closes the stack and opens the base picker (decision 0129). */
 .branch-row-base .compare-row-label {
   flex: 0 1 auto;
   color: var(--color-text-secondary);
+}
+
+.branch-row-base-chevron {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.branch-row-base:hover .branch-row-base-chevron {
+  color: var(--color-text-primary);
 }
 
 .branch-row-base .compare-row-age {
@@ -591,15 +643,22 @@
   line-height: 1rem;
 }
 
-/* The Commits filter row (decision 0114): the query field, then the path
-   chip, on the pane's surface above the list, set off by a hairline. */
+/* The Commits filter (decisions 0114, 0129) fills the pane's action row:
+   the query field, Branch/All beside it, and the path chip under both. */
 .commit-filter {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-3) var(--space-2);
-  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* Branch/All stretches to the field's height beside it, touch height too. */
+.commit-filter > .source-control-range {
+  height: auto;
+  align-self: stretch;
+}
+
+.commit-filter > .commit-filter-path {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 /* The path chip is a removable token: icon, path, remove. */

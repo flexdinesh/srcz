@@ -40,7 +40,7 @@ rewriting history; update `Status` on the old record.
 | [0032](0032-browser-tests-before-push.md) | Browser tests run before push, not in CI | Accepted; check commands superseded by 0038 |
 | [0033](0033-design-tokens-and-ui-primitives.md) | Design tokens and UI primitives | Accepted; radius tokens removed by 0102; selection fill revised by 0109 |
 | [0034](0034-diff-anchor-reveal-and-hunk-navigation.md) | Diff anchor reveal and hunk navigation | Accepted; extended to review tabs by 0035; step unit and F7 scope superseded by 0124 |
-| [0035](0035-compare-list-and-review-tab.md) | Compare list and review tab | Accepted; list and Files pane superseded by 0040; kept mounted by 0048; scroll anchor by 0111; change steps by 0124 |
+| [0035](0035-compare-list-and-review-tab.md) | Compare list and review tab | Accepted; list and Files pane superseded by 0040; kept mounted by 0048; scroll anchor by 0111; change steps by 0124; base picker trigger by 0129 |
 | [0036](0036-omarchy-themes.md) | Omarchy themes and the Color Theme quick pick | Accepted; built-in labels superseded by 0039 |
 | [0037](0037-dark-default-theme.md) | Dark is the default theme | Accepted; labels superseded by 0039 |
 | [0038](0038-mise-dev-tooling-and-env-ports.md) | mise owns dev tooling, tasks, and env-configured dev ports | Accepted |
@@ -116,7 +116,7 @@ rewriting history; update `Status` on the old record.
 | [0110](0110-compose-validation-runner.md) | Docker Compose validation runner | Accepted; supersedes Dagger execution in 0058, 0059, 0096 |
 | [0111](0111-review-pane-single-scroll-anchor.md) | One scroll anchor for the review pane | Accepted; extends 0035 |
 | [0112](0112-click-opens-commit-diff.md) | Click opens a commit's diff | Accepted; supersedes parts of 0040, 0042 |
-| [0114](0114-commit-search-and-file-history.md) | Commit search and file history | Accepted; extends 0027, 0040, 0112; revises 0081 |
+| [0114](0114-commit-search-and-file-history.md) | Commit search and file history | Accepted; extends 0027, 0040, 0112; revises 0081; filter toggle superseded by 0129 |
 | [0115](0115-source-change-markers.md) | Change markers in Source | Accepted; extends 0024, 0083 |
 | [0116](0116-image-diffs.md) | Image diffs | Accepted; extends 0004, 0035, 0083 |
 | [0117](0117-review-order-viewed-flow-and-view-options.md) | One review order, a quicker Viewed flow, and View options | Accepted; revises 0035, 0040, 0051 |
@@ -125,8 +125,9 @@ rewriting history; update `Status` on the old record.
 | [0120](0120-review-feedback-threads.md) | Review feedback threads | Accepted; extends 0028, 0035, 0047, 0050, 0066, 0080, 0099 |
 | [0121](0121-final-tab-close-keeps-window.md) | Closing the final tab keeps the desktop window | Accepted; supersedes 0097 final-tab close |
 | [0122](0122-type-roles-and-list-size.md) | Type roles and the list size | Accepted; revises 0033 |
-| [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112 |
+| [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112; Commits and Branches action rows superseded by 0129 |
 | [0124](0124-change-steps.md) | Change steps land on changes, answer anywhere in the review, and show their place | Accepted; supersedes 0034 step unit and F7 scope, extends 0117 |
 | [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098 |
 | [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098 |
 | [0128](0128-sandbox-connections-in-the-desktop-app.md) | Sandbox connections in the desktop app | Accepted; extends 0098, 0127 |
+| [0129](0129-base-row-picker-inline-commit-filter-and-lanes.md) | Base row picker, inline commit filter, and stack lanes | Accepted; supersedes 0035 and 0123 base picker trigger, 0114 filter toggle; extends 0040, 0042, 0123 |

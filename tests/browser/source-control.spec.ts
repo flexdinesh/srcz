@@ -751,11 +751,14 @@ test("HEAD's branch review adds uncommitted changes in place and marks their fil
   await expect(reviewFile(page, "README.md")).toHaveCount(0)
 })
 
-test("the base picker changes the stack's base and is remembered", async ({ page }) => {
+test("the base row opens the base picker, which changes the stack's base and is remembered", async ({ page }) => {
   await openSourceControl(page)
   const branches = pane(page, "Branches")
   await expect(branches.getByText("base main", { exact: true })).toBeVisible()
-  await branches.getByRole("button", { name: "Change base branch" }).click()
+  // The stack's base row is the picker's trigger (decision 0129).
+  const baseRow = branches.getByRole("button", { name: "Change base branch, main", exact: true })
+  await expect(baseRow).toContainText("merge-base")
+  await baseRow.click()
   const filter = page.getByRole("combobox", { name: "Filter branches" })
   await expect(filter).toBeFocused()
   const choices = page.getByRole("dialog", { name: "Base branch" }).getByRole("listbox", { name: "Branches" })
@@ -785,7 +788,7 @@ test("the base picker changes the stack's base and is remembered", async ({ page
   // The choice is remembered for the project.
   await page.reload()
   await expect(branches.getByText("base release", { exact: true })).toBeVisible()
-  await branches.getByRole("button", { name: "Change base branch" }).click()
+  await branches.getByRole("button", { name: "Change base branch, release", exact: true }).click()
   await expect(choices.getByRole("option", { name: "release" })).toHaveAttribute("aria-selected", "true")
 })
 
@@ -1153,17 +1156,13 @@ function commitsMessage(page: Page, text: string) {
   return pane(page, "Commits").locator(".source-control-message").getByText(text, { exact: true })
 }
 
-function filterButton(page: Page) {
-  return pane(page, "Commits").getByRole("button", { name: "Filter Commits" })
-}
-
-test("the commit filter matches messages and hashes, and Escape clears and hides it", async ({ page }) => {
+test("the commit filter heads the pane, matches messages and hashes, and Escape clears it", async ({ page }) => {
   await openSourceControl(page)
   await expect(commitRow(page, featureSubject)).toBeVisible()
-  await expect(commitFilter(page)).toHaveCount(0)
-  await filterButton(page).click()
-  await expect(filterButton(page)).toHaveAttribute("aria-pressed", "true")
-  await expect(commitQuery(page)).toBeFocused()
+  // The field and Branch/All share the pane's action row (decision 0129).
+  await expect(commitQuery(page)).toBeVisible()
+  await expect(commitFilter(page).getByRole("button", { name: "Branch", exact: true })).toBeVisible()
+  await commitQuery(page).click()
 
   await commitQuery(page).fill("GUIDE index")
   await expect(commitsList(page).getByRole("option")).toHaveCount(1)
@@ -1178,11 +1177,13 @@ test("the commit filter matches messages and hashes, and Escape clears and hides
   // A live region announces filtered results.
   await expect(pane(page, "Commits").locator('[aria-live="polite"]')).toHaveText("No commits match.")
 
+  // Escape clears the filter and moves to the list.
+  await commitQuery(page).fill("initial")
+  await expect(commitsList(page).getByRole("option")).toHaveCount(1)
   await commitQuery(page).press("Escape")
-  await expect(commitFilter(page)).toHaveCount(0)
-  await expect(filterButton(page)).toBeFocused()
-  await expect(filterButton(page)).toHaveAttribute("aria-pressed", "false")
+  await expect(commitQuery(page)).toHaveValue("")
   await expect(commitsList(page).getByRole("option")).toHaveCount(3)
+  await expect(commitsList(page).getByRole("option").first()).toBeFocused()
 })
 
 test("Show File History in the Explorer menu filters commits to the file and opens reviews at it", async ({ page }) => {
@@ -1222,7 +1223,7 @@ test("the tab menu and the command palette show a working-tree document's histor
   await expect(commitFilter(page).getByRole("button", { name: "Remove path filter clean.md" })).toBeVisible()
   await expect(commitQuery(page)).toBeFocused()
   await commitQuery(page).press("Escape")
-  await expect(commitFilter(page)).toHaveCount(0)
+  await expect(commitFilter(page).getByRole("button", { name: "Remove path filter clean.md" })).toHaveCount(0)
 
   await tab.click()
   await page.keyboard.press("F1")

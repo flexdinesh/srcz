@@ -562,13 +562,13 @@ export function App({ project }: AppProps) {
   useLayoutEffect(() => {
     openWelcomeCommand.current = openWelcome
     // The palette command acts on the working-tree file in view; without one
-    // it opens the filter row.
+    // it focuses the filter field.
     fileHistoryCommand.current = () => {
       if (activeDocument && !activeAt) {
         showFileHistory(activeDocument)
         return
       }
-      commitFilter.show()
+      if (!sidebar.mobile) commitFilter.requestFocus()
       setPaneCollapsed("commits", false)
       revealSidebar("source-control")
     }
