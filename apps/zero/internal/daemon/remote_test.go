@@ -149,7 +149,7 @@ func TestLifetimeRestartWithAUIKeepsWaiting(t *testing.T) {
 func remoteDaemon(t *testing.T, idleExit time.Duration) (*testDaemon, string) {
 	t.Helper()
 	config := daemonConfig(t)
-	config.IdleExit = idleExit
+	config.Lifetime = Lifetime{IdleExit: idleExit, FirstWait: DefaultRemoteFirstWait, Grace: DefaultRemoteGrace}
 	config.IdentityFile = filepath.Join(t.TempDir(), "remote", "identity.json")
 	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {

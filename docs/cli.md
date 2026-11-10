@@ -39,6 +39,7 @@ zero --scan-depth 4 ~/code   # depth to search for git repositories (default 10)
 zero ~/code/foo --remote          # on the server: serve over TLS, print a zero connect string
 zero ~/code/foo --remote --web    # also print a browser link
 zero --remote --host 10.0.0.5     # one address (default every interface)
+zero . --remote --foreground      # serve from this process until stopped, as in a container
 zero connect <string>             # on your computer: open it in the desktop app
 zero connect --host localhost <string>   # through your own ssh -L tunnel
 zero connect --no-open <string>   # save it and print the zero:// link

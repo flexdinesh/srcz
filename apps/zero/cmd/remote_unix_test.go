@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -218,6 +219,123 @@ func TestRemoteRequestFollowsTheFlags(t *testing.T) {
 	request = remoteRequest(opts)
 	if request.Host != "10.0.0.5" || request.Port == nil || *request.Port != 8000 {
 		t.Errorf("address flags: %+v", request)
+	}
+	opts.foreground = true
+	if request = remoteRequest(opts); request.FirstWait != "" || request.Grace != "" || request.Host != "10.0.0.5" {
+		t.Errorf("--foreground: %+v, want the daemon's own lifetime", request)
+	}
+}
+
+// syncBuffer is written by serveRemote while the test reads it.
+type syncBuffer struct {
+	mu     sync.Mutex
+	buffer bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.Write(p)
+}
+
+func (b *syncBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.String()
+}
+
+// foregroundRemote is the deps `zero --remote --foreground` uses, with no
+// daemon running and a private config directory.
+func foregroundRemote(t *testing.T) (remoteDeps, string) {
+	t.Helper()
+	socketDir, err := os.MkdirTemp("", "zero-fg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(socketDir) })
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	socket := filepath.Join(socketDir, "d.sock")
+	return remoteDeps{
+		roots: daemonRootsDeps{
+			socket: socket,
+			ensure: func(context.Context, daemonOptions) (daemon.Status, bool, error) {
+				t.Error("--foreground ensured a detached daemon")
+				return daemon.Status{}, false, errors.New("unexpected ensure")
+			},
+			openRoot: openDaemonRoot,
+		},
+		start:      startDaemonRemote,
+		served:     servedRoots,
+		candidates: func() []string { return []string{"127.0.0.1"} },
+		getenv:     func(string) string { return "" },
+		terminal:   func(io.Writer) bool { return false },
+		foreground: runForegroundDaemon,
+	}, socket
+}
+
+// --foreground serves from this process, never stops on its own, and
+// returns cleanly when its context ends (SIGINT, SIGTERM).
+func TestRemoteForegroundServesUntilStopped(t *testing.T) {
+	disableColor(t)
+	root := appRoot(t)
+	deps, socket := foregroundRemote(t)
+	opts := remoteOptions(root)
+	opts.foreground = true
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var printed, stderr syncBuffer
+	done := make(chan error, 1)
+	go func() { done <- serveRemote(ctx, opts, &printed, &stderr, deps) }()
+
+	deadline := time.Now().Add(10 * time.Second)
+	for !strings.Contains(printed.String(), "serves until this process stops") {
+		select {
+		case err := <-done:
+			t.Fatalf("serveRemote returned early: %v\n%s", err, stderr.String())
+		default:
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("no startup output: %q\n%s", printed.String(), stderr.String())
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if strings.Contains(printed.String(), "nothing connects") {
+		t.Errorf("output = %q, want no lifetime limits", printed.String())
+	}
+	client := daemon.NewClient(socket)
+	status, err := client.Status(ctx)
+	if err != nil || status.PID != os.Getpid() || status.IdleExit != "0s" {
+		t.Fatalf("status = %+v, %v; want this process with no idle exit", status, err)
+	}
+	if remote, err := client.RemoteStatus(ctx); err != nil || !remote.Listening {
+		t.Fatalf("remote = %+v, %v", remote, err)
+	}
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("serveRemote() = %v after stop", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("serveRemote did not return after stop")
+	}
+	if _, err := client.Status(context.Background()); !errors.Is(err, daemon.ErrNotRunning) {
+		t.Errorf("status after stop = %v, want not running", err)
+	}
+}
+
+// Another daemon on the socket is an error, never reused.
+func TestRemoteForegroundRefusesARunningDaemon(t *testing.T) {
+	root := appRoot(t)
+	deps, _ := realRemote(t)
+	deps.foreground = runForegroundDaemon
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	opts := remoteOptions(root)
+	opts.foreground = true
+	err := serveRemote(context.Background(), opts, io.Discard, io.Discard, deps)
+	if !errors.Is(err, daemon.ErrRunning) {
+		t.Errorf("serveRemote() = %v, want ErrRunning", err)
 	}
 }
 

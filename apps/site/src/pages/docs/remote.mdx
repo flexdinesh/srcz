@@ -92,6 +92,17 @@ zero remote status    # state, clients, and the string again
 zero remote stop      # stop now
 ```
 
+`--foreground` keeps the server in that command's process instead, with no
+time limits: it stops with the process (Ctrl+C, SIGTERM). Use it in a
+container or under a service manager:
+
+```sh
+zero ~/code/foo --remote --foreground
+```
+
+The `ghcr.io/flexdinesh/zero` image runs it; the README's Docker section has
+the recipe.
+
 ## Browser
 
 ```sh

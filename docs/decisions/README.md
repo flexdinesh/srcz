@@ -127,3 +127,4 @@ rewriting history; update `Status` on the old record.
 | [0122](0122-type-roles-and-list-size.md) | Type roles and the list size | Accepted; revises 0033 |
 | [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112 |
 | [0124](0124-change-steps.md) | Change steps land on changes, answer anywhere in the review, and show their place | Accepted; supersedes 0034 step unit and F7 scope, extends 0117 |
+| [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098 |
