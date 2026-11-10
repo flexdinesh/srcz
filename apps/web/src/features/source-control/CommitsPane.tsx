@@ -323,8 +323,17 @@ function CommitRow({
           onExpandedChange(!expanded)
         }}
         onPointerDown={(event) => event.stopPropagation()} />
-      <span className="compare-row-label">{commit.subject || "(no message)"}</span>
-      <span className="compare-row-age">{age.short}</span>
+      {/* Two lines: the subject, then author, age, and short hash. */}
+      <span className="commit-row-text">
+        <span className="compare-row-label">{commit.subject || "(no message)"}</span>
+        <span className="commit-row-meta">
+          <span className="commit-row-author">{commit.author.name}</span>
+          <span aria-hidden="true">·</span>
+          <span className="commit-row-age">{age.long}</span>
+          <span aria-hidden="true">·</span>
+          <span className="commit-row-hash">{shortHash(commit.hash)}</span>
+        </span>
+      </span>
       {/* The glyph only signals that a click opens the diff; clicks reach the row. */}
       {glyph && <FileDiffIcon className="commit-diff-glyph" aria-hidden="true" />}
     </ListRow>

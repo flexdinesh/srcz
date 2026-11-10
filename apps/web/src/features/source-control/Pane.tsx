@@ -12,25 +12,26 @@ interface PaneProps {
   onOpenChange(open: boolean): void
   // note follows the title: a count badge or a muted summary.
   note?: ReactNode
-  // actions sit at the header's end and do not toggle the pane.
+  // actions sit in a row at the top of the open pane's body.
   actions?: ReactNode
   children: ReactNode
 }
 
-// Pane is one collapsible Source Control section (decision 0040): a 22px
-// header that opens and closes it, then its body.
+// Pane is one collapsible Source Control section (decisions 0040, 0123): a
+// header that opens and closes it across its whole width, then, when open,
+// its actions row and body.
 export function Pane({ actions, children, mobile, note, open, title, weight, onOpenChange }: PaneProps) {
   return (
     <section className="scm-pane" aria-label={title} data-open={open || undefined}
       style={open && !mobile ? { flexGrow: weight } : undefined}>
-      <div className="scm-pane-header">
-        {/* An accordion header: the heading holds the toggle. */}
-        <h3 className="scm-pane-heading">
-          <SectionToggle className="scm-pane-toggle" expanded={open} onExpandedChange={onOpenChange}>{title}</SectionToggle>
-        </h3>
-        {note}
-        {actions && <div className="scm-pane-actions">{actions}</div>}
-      </div>
+      {/* An accordion header: the heading holds the toggle, which spans it. */}
+      <h3 className="scm-pane-heading">
+        <SectionToggle className="scm-pane-toggle" expanded={open} onExpandedChange={onOpenChange}>
+          <span className="scm-pane-title">{title}</span>
+          {note}
+        </SectionToggle>
+      </h3>
+      {open && actions && <div className="scm-pane-actions">{actions}</div>}
       {open && <div className="scm-pane-body">{children}</div>}
     </section>
   )
