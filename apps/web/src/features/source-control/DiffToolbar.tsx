@@ -5,6 +5,7 @@ import { IconButton } from "../../components/ui/icon-button.tsx"
 import { menuGroupLabelClass, menuItemClass, menuPopupClass, menuPositionerClass, menuSeparatorClass } from "../../components/ui/menu.ts"
 import { SegmentedControl, SegmentedItem } from "../../components/ui/segmented-control.tsx"
 import { diffOptionsModified, effectiveDiffStyle, inlineChoices, type DiffOptions } from "./diff-options.ts"
+import { reviewKeyShortcuts } from "./review-keys.ts"
 
 interface DiffToolbarProps {
   options: DiffOptions
@@ -89,10 +90,10 @@ export function DiffToolbar({ anyExpanded, files, hasChanges, narrow, onChange, 
         </Menu.Portal>
       </Menu.Root>
       <span className="diff-hunk-steps">
-        <IconButton label="Previous change" title="Previous change (Shift+F7)" aria-keyshortcuts="Shift+F7"
+        <IconButton label="Previous change" title="Previous change (P, Shift+F7)" aria-keyshortcuts={reviewKeyShortcuts.previousChange}
           icon={<ChevronUpIcon aria-hidden="true" />} disabledReason={hasChanges ? undefined : noChanges}
           onClick={() => onStepHunk(-1)} />
-        <IconButton label="Next change" title="Next change (F7)" aria-keyshortcuts="F7"
+        <IconButton label="Next change" title="Next change (N, F7)" aria-keyshortcuts={reviewKeyShortcuts.nextChange}
           icon={<ChevronDownIcon aria-hidden="true" />} disabledReason={hasChanges ? undefined : noChanges}
           onClick={() => onStepHunk(1)} />
       </span>

@@ -5,51 +5,78 @@ import type { DiffStyle } from "./diff-options.ts"
 
 // Hunks, blocks, and gaps come from the server's line diff (decision 0083),
 // numbered from 1 on each side; these functions place selections and steps
-// among them as the diff shows its rows.
+// among them as the diff shows its rows. A step lands on a change: one run
+// of deleted then added rows, without context (decision 0124).
 
-// hunkSelection selects a hunk's rows as shown, first to last, context
-// included. Unchanged rows and additions address the new side; an end on
-// deletions only addresses the old side, so the range can cross sides.
-export function hunkSelection(lineDiff: LineDiff, hunkIndex: number, style: DiffStyle): SelectedLineRange | null {
-  const hunk = lineDiff.hunks[hunkIndex]
-  const first = hunk?.blocks[0]
-  const last = hunk?.blocks.at(-1)
-  if (!hunk || !first || !last) return null
-  const oldEnd = hunk.oldStart + hunk.oldCount - 1
-  const newEnd = hunk.newStart + hunk.newCount - 1
+// A DiffChange is one change block: its hunk and its rows on each side.
+export interface DiffChange {
+  hunk: number
+  oldStart: number
+  oldCount: number
+  newStart: number
+  newCount: number
+}
+
+// diffChanges lists a file's change blocks in file order.
+export function diffChanges(lineDiff: LineDiff): DiffChange[] {
+  return lineDiff.hunks.flatMap((hunk, index) => hunk.blocks
+    .filter((block) => block.kind === "change")
+    .map((block) => ({ hunk: index, oldStart: block.oldStart, oldCount: block.oldCount, newStart: block.newStart, newCount: block.newCount })))
+}
+
+// changeSelection selects a change's rows as shown, first to last. Additions
+// address the new side; an end on deletions only addresses the old side, so
+// the range can cross sides.
+export function changeSelection(lineDiff: LineDiff, index: number, style: DiffStyle): SelectedLineRange | null {
+  const change = diffChanges(lineDiff)[index]
+  if (!change) return null
   // Unified lists a change's deletions first; Split pairs them with additions.
-  const startsOld = first.kind === "change" && (style === "unified" ? first.oldCount > 0 : first.newCount === 0)
-  const endsOld = last.kind === "change" && (style === "unified" ? last.newCount === 0 : last.oldCount > last.newCount)
+  const startsOld = style === "unified" ? change.oldCount > 0 : change.newCount === 0
+  const endsOld = style === "unified" ? change.newCount === 0 : change.oldCount > change.newCount
   const side: SelectionSide = startsOld ? "deletions" : "additions"
   const endSide: SelectionSide = endsOld ? "deletions" : "additions"
   return {
-    start: startsOld ? hunk.oldStart : hunk.newStart, side,
-    end: endsOld ? oldEnd : newEnd, endSide,
+    start: startsOld ? change.oldStart : change.newStart, side,
+    end: endsOld ? change.oldStart + change.oldCount - 1 : change.newStart + change.newCount - 1, endSide,
   }
 }
 
-// A HunkCursor places a position among hunks: inside one, or before one
-// (index equals the hunk count past the last).
-export type HunkCursor = { kind: "at" | "before"; index: number }
+// A ChangeCursor places a position among changes: inside one, or before one
+// (index equals the change count past the last).
+export type ChangeCursor = { kind: "at" | "before"; index: number }
 
-// hunkCursor places a line of either side among the hunks.
-export function hunkCursor(lineDiff: LineDiff, side: SelectionSide, line: number): HunkCursor {
-  for (const [index, hunk] of lineDiff.hunks.entries()) {
-    const start = side === "deletions" ? hunk.oldStart : hunk.newStart
-    const count = side === "deletions" ? hunk.oldCount : hunk.newCount
+// changeCursor places a line of either side among the changes. A change with
+// no rows on that side sits before its start line there.
+export function changeCursor(lineDiff: LineDiff, side: SelectionSide, line: number): ChangeCursor {
+  const changes = diffChanges(lineDiff)
+  for (const [index, change] of changes.entries()) {
+    const start = side === "deletions" ? change.oldStart : change.newStart
+    const count = side === "deletions" ? change.oldCount : change.newCount
     if (line < start) return { kind: "before", index }
     if (line < start + count) return { kind: "at", index }
   }
-  return { kind: "before", index: lineDiff.hunks.length }
+  return { kind: "before", index: changes.length }
 }
 
-// adjacentHunk steps to the next or previous hunk, wrapping within the file.
-export function adjacentHunk(count: number, cursor: HunkCursor, direction: 1 | -1): number | null {
-  if (count <= 0) return null
-  const next = direction === 1
-    ? cursor.kind === "at" ? cursor.index + 1 : cursor.index
-    : cursor.index - 1
-  return ((next % count) + count) % count
+// A ChangePosition is a change's place among its file's changes, from 1.
+export interface ChangePosition {
+  index: number
+  count: number
+}
+
+// changePosition finds the change a selection covers exactly, as a step
+// selects it; any other selection has none.
+export function changePosition(lineDiff: LineDiff, selection: SelectedLineRange, style: DiffStyle): ChangePosition | null {
+  const count = diffChanges(lineDiff).length
+  const side = selection.side ?? "additions"
+  const endSide = selection.endSide ?? side
+  for (let index = 0; index < count; index++) {
+    const change = changeSelection(lineDiff, index, style)
+    if (change && change.start === selection.start && change.end === selection.end && change.side === side && change.endSide === endSide) {
+      return { index: index + 1, count }
+    }
+  }
+  return null
 }
 
 // A CollapsedLine is a line inside an unchanged gap: the gap's hunk index
@@ -70,9 +97,10 @@ export function gapForLine(lineDiff: LineDiff, side: SelectionSide, line: number
   return null
 }
 
-// hunkInFile steps to the next or previous hunk without wrapping, null past
-// the file's ends; a review then moves on to another file.
-export function hunkInFile(count: number, cursor: HunkCursor, direction: 1 | -1): number | null {
+// hunkInFile steps to the next or previous of count changes without
+// wrapping, null past the file's ends; a review then moves on to another
+// file.
+export function hunkInFile(count: number, cursor: ChangeCursor, direction: 1 | -1): number | null {
   const next = direction === 1
     ? cursor.kind === "at" ? cursor.index + 1 : cursor.index
     : cursor.index - 1

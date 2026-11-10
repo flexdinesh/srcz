@@ -517,8 +517,11 @@ commands or manual installation links, documentation, Check again, and Settings.
 Status checks never start a server. Mobile keeps the LSP status visible; its
 panel fits the viewport with 12px side insets and 44px action/copy targets.
 
-Diff-tab footer: the relative path, `+12 −3` line stats, and the file-type
-label. No line selection.
+Diff-tab footer: the relative path, then, for selected lines, a tabular
+`Change 2 of 5` when the selection is exactly a change (as a step selects it;
+decision 0124) and `Ln 12–20` (`Old Ln 4` on the old side), `+12 −3` line
+stats, and the file-type label. Mobile hides the change position with the
+selected lines.
 
 ### Settings
 
@@ -694,7 +697,9 @@ Each compare opens one review tab in the shared strip, labelled “Uncommitted�
 and memory behavior. The mode-toggle slot holds the diff toolbar in the
 document mode-toggle treatment: [Split][Unified], View options (settings
 icon; a 4px `accent` square marks it while a choice differs from its default),
-Previous change and Next change (Shift+F7, F7; they step across files),
+Previous change and Next change (P or Shift+F7, N or F7, from anywhere in the
+review; each step selects one change's rows without context and crosses
+files, decision 0124),
 Collapse/Expand All Files, and, for commit, range, and branch reviews, Files
 (panel-right icon, `aria-pressed` while the rail shows). View options is a
 menu (decision 0117): checkbox items Wrap lines, Ignore whitespace, Expand

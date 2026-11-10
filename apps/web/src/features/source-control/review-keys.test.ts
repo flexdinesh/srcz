@@ -3,7 +3,7 @@ import test from "node:test"
 
 import { adjacentFile, nextUnviewed, reviewKeyCommand, type ReviewKeyEvent } from "./review-keys.ts"
 
-const plain: ReviewKeyEvent = { key: "", altKey: false, ctrlKey: false, metaKey: false, isComposing: false, textField: false }
+const plain: ReviewKeyEvent = { key: "", altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, isComposing: false, textField: false }
 
 test("] and [ move between files and v toggles Viewed", () => {
   assert.equal(reviewKeyCommand({ ...plain, key: "]" }), "nextFile")
@@ -15,8 +15,23 @@ test("] and [ move between files and v toggles Viewed", () => {
   assert.equal(reviewKeyCommand({ ...plain, key: "j" }), null)
 })
 
+test("n and p, or F7 and Shift+F7, step to the next and previous change", () => {
+  assert.equal(reviewKeyCommand({ ...plain, key: "n" }), "nextChange")
+  assert.equal(reviewKeyCommand({ ...plain, key: "p" }), "previousChange")
+  assert.equal(reviewKeyCommand({ ...plain, key: "F7" }), "nextChange")
+  assert.equal(reviewKeyCommand({ ...plain, key: "F7", shiftKey: true }), "previousChange")
+  assert.equal(reviewKeyCommand({ ...plain, key: "N", shiftKey: true }), null)
+  assert.equal(reviewKeyCommand({ ...plain, key: "P", shiftKey: true }), null)
+  // F7 types nothing, so it steps from text fields too; letters type there.
+  assert.equal(reviewKeyCommand({ ...plain, key: "F7", textField: true }), "nextChange")
+  assert.equal(reviewKeyCommand({ ...plain, key: "F7", shiftKey: true, textField: true }), "previousChange")
+  for (const modifier of ["altKey", "ctrlKey", "metaKey", "isComposing"] as const) {
+    assert.equal(reviewKeyCommand({ ...plain, key: "F7", [modifier]: true }), null)
+  }
+})
+
 test("review keys never fire in text fields, while composing, or with modifiers", () => {
-  for (const key of ["]", "[", "v", "c"]) {
+  for (const key of ["]", "[", "v", "c", "n", "p"]) {
     assert.equal(reviewKeyCommand({ ...plain, key, textField: true }), null)
     assert.equal(reviewKeyCommand({ ...plain, key, isComposing: true }), null)
     assert.equal(reviewKeyCommand({ ...plain, key, ctrlKey: true }), null)

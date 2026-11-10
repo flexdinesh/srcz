@@ -267,39 +267,54 @@ test("review anchors scroll their lines into view and open the unchanged lines t
   expect(await pane.evaluate((element) => element.scrollTop)).toBe(before)
 })
 
-test("F7 and the toolbar step through changes across the review's files", async ({ page }) => {
+test("F7, N and P, and the toolbar step through changes across the review's files", async ({ page }) => {
   test.setTimeout(60_000)
   const gutter = (line: number) => reviewFile(page, "large.txt").locator(`.diff-view [data-additions] [data-column-number="${line}"]`)
+  const position = page.locator(".status-change")
   await openReview(page, "review=working#f=large.txt")
   await expect(gutter(1)).toBeVisible({ timeout: 20_000 })
-  const pane = page.locator("main")
-  await pane.focus()
 
-  // Each hunk is its change with four lines of context either side.
+  // Steps answer as soon as the review loads, before anything has focus.
+  // Each selects its change's rows, without context, and the footer places
+  // it among the file's changes.
   await page.keyboard.press("F7")
-  await expect(page).toHaveURL(/#f=large\.txt&R1-R5$/)
-  await page.keyboard.press("F7")
-  await expect(page).toHaveURL(/#f=large\.txt&R17-R25$/)
-  await expect(page.getByRole("button", { name: "Copy large.txt:17-25" })).toBeVisible()
+  await expect(page).toHaveURL(/#f=large\.txt&R1$/)
+  await expect(position).toHaveText("Change 1 of 20")
+  await page.keyboard.press("n")
+  await expect(page).toHaveURL(/#f=large\.txt&R21$/)
+  await expect(position).toHaveText("Change 2 of 20")
+  await expect(page.getByRole("button", { name: "Copy large.txt:21" })).toBeVisible()
+  await page.keyboard.press("p")
+  await expect(page).toHaveURL(/#f=large\.txt&R1$/)
+
+  // A selection that is not a stepped change has no position.
+  await gutter(2).click()
+  await expect(page).toHaveURL(/#f=large\.txt&R2$/)
+  await expect(position).toHaveCount(0)
   await page.keyboard.press("Shift+F7")
-  await expect(page).toHaveURL(/#f=large\.txt&R1-R5$/)
+  await expect(page).toHaveURL(/#f=large\.txt&R1$/)
 
   // Past a file's first change, steps cross into the file before it.
   await page.keyboard.press("Shift+F7")
   await expect(page).toHaveURL(/#f=added\.md&R1-R3$/)
   await expect(reviewFile(page, "added.md").locator(".diff-view [data-line][data-selected-line]").first()).toBeInViewport()
   await page.getByRole("button", { name: "Previous change" }).click()
-  await expect(page).toHaveURL(/#f=src\/app\.ts&R1-R5$/)
+  await expect(page).toHaveURL(/#f=src\/app\.ts&R4$/)
+  await expect(position).toHaveText("Change 2 of 2")
+  // Focus stays on the toolbar's button, and the keys still step from there.
+  await page.keyboard.press("p")
+  await expect(page).toHaveURL(/#f=src\/app\.ts&R1$/)
+  await page.keyboard.press("F7")
+  await expect(page).toHaveURL(/#f=src\/app\.ts&R4$/)
   await page.getByRole("button", { name: "Next change" }).click()
   await expect(page).toHaveURL(/#f=added\.md&R1-R3$/)
   await page.getByRole("button", { name: "Next change" }).click()
-  await expect(page).toHaveURL(/#f=large\.txt&R1-R5$/)
+  await expect(page).toHaveURL(/#f=large\.txt&R1$/)
   await expect(gutter(1)).toBeInViewport()
 
-  // Files without hunks are skipped, and steps wrap past the review's ends.
+  // Files without changes are skipped, and steps wrap past the review's ends.
   await openReview(page, "review=working#f=notes/removed.md")
   await expect(diffLines(page, "change-deletion", "notes/removed.md").first()).toBeVisible()
-  await pane.focus()
   await page.keyboard.press("F7")
   await expect(page).toHaveURL(/#f=notes\/removed\.md&L1-L3$/)
   await page.keyboard.press("Shift+F7")
@@ -1022,7 +1037,7 @@ test("marking a file Viewed closes it and moves to the next file not yet viewed"
 
 test("] and [ move between a review's files and v toggles Viewed on the file in view", async ({ page }) => {
   await openReview(page, "review=working#f=README.md")
-  await expect(page.getByRole("main").locator(".review")).toHaveAttribute("aria-keyshortcuts", "] [ v c")
+  await expect(page.getByRole("main").locator(".review")).toHaveAttribute("aria-keyshortcuts", "n F7 p Shift+F7 ] [ v c")
   await expect(reviewFile(page, "README.md").getByRole("button", { name: "Viewed" })).toBeEnabled()
   await page.getByRole("main").focus()
   await page.keyboard.press("]")
