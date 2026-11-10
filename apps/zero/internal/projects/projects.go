@@ -427,6 +427,15 @@ func (d *discoverer) warn(dir string, err error) {
 	d.warnings = append(d.warnings, files.Warning{Path: dir, Err: err})
 }
 
+// CommonDir returns the shared git directory of a checkout: its .git
+// directory, or a linked worktree's common directory, which every worktree
+// of the repository shares. It reports false for a folder that is not a
+// checkout.
+func CommonDir(dir string) (string, bool) {
+	common, err := commonDir(dir)
+	return common, err == nil
+}
+
 // commonDir returns the shared git directory of a worktree.
 func commonDir(worktree string) (string, error) {
 	gitPath := filepath.Join(worktree, ".git")

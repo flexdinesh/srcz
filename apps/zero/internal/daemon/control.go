@@ -66,6 +66,13 @@ type WalkthroughNotices interface {
 	Notices() (<-chan contract.WalkthroughEvent, func())
 }
 
+// FeedbackNotices announces feedback changes; app.Feedback implements it
+// (decision 0120).
+type FeedbackNotices interface {
+	Announce(project, id string, author contract.FeedbackAuthor) (contract.FeedbackEvent, error)
+	Notices() (<-chan app.FeedbackNotice, func())
+}
+
 // errorResponse matches the web app's JSON errors: {error, code?}.
 type errorResponse = contract.ErrorResponse
 
@@ -83,6 +90,7 @@ type Controller struct {
 	stop      func()
 	done      <-chan struct{}
 	notices   WalkthroughNotices
+	feedback  FeedbackNotices
 	remote    RemoteControl
 }
 
@@ -102,6 +110,8 @@ type ControllerConfig struct {
 	Done <-chan struct{}
 	// Notices announces walkthroughs, required.
 	Notices WalkthroughNotices
+	// Feedback announces feedback changes; nil announces none.
+	Feedback FeedbackNotices
 	// Remote serves over TCP on request; nil answers remoteUnavailable.
 	Remote RemoteControl
 }
@@ -112,7 +122,7 @@ func NewController(config ControllerConfig) *Controller {
 	if stop == nil {
 		stop = func() {}
 	}
-	return &Controller{roots: config.Roots, skipped: config.Skipped, rootsFile: config.RootsFile, status: config.Status, stop: stop, done: config.Done, notices: config.Notices, remote: config.Remote}
+	return &Controller{roots: config.Roots, skipped: config.Skipped, rootsFile: config.RootsFile, status: config.Status, stop: stop, done: config.Done, notices: config.Notices, feedback: config.Feedback, remote: config.Remote}
 }
 
 func pid() int { return os.Getpid() }
@@ -143,6 +153,8 @@ func (c *Controller) Handler(next http.Handler) http.Handler {
 			c.serveEvents(w, r)
 		case name == "walkthroughs" && r.Method == http.MethodPost:
 			c.announce(w, r)
+		case name == "feedback" && r.Method == http.MethodPost:
+			c.announceFeedback(w, r)
 		case name == "stop" && r.Method == http.MethodPost:
 			writeJSON(w, http.StatusAccepted, stopResponse{Stopping: true})
 			c.stop()
@@ -152,7 +164,7 @@ func (c *Controller) Handler(next http.Handler) http.Handler {
 			methodNotAllowed(w, http.MethodGet)
 		case name == "roots":
 			methodNotAllowed(w, "GET, POST")
-		case name == "stop", name == "open", name == "walkthroughs":
+		case name == "stop", name == "open", name == "walkthroughs", name == "feedback":
 			methodNotAllowed(w, http.MethodPost)
 		default:
 			writeJSON(w, http.StatusNotFound, errorResponse{Error: "Unknown daemon endpoint."})
@@ -328,14 +340,92 @@ func (c *Controller) announce(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Subscribe starts a control stream: its first event (status), then each
-// walkthrough announcement on notices until cancel, which the caller must
-// call. Done closes when the daemon stops.
-func (c *Controller) Subscribe() (first contract.DaemonEvent, notices <-chan contract.WalkthroughEvent, cancel func()) {
-	notices, cancel = c.notices.Notices()
-	status := contract.DaemonStatusEvent{Protocol: c.status.Protocol, Version: c.status.Version}
-	return contract.DaemonEvent{Name: contract.DaemonEventStatus, Status: &status}, notices, cancel
+// announceFeedback tells control streams and the repository's project
+// streams that feedback changed in the daemon's store, as the CLI's writes
+// do after storing it.
+func (c *Controller) announceFeedback(w http.ResponseWriter, r *http.Request) {
+	var request contract.DaemonFeedbackRequest
+	if !decodeRequest(w, r, &request, `{"project": "/absolute/path", "id": "fb-3k2q8m", "author": "agent"}`) {
+		return
+	}
+	if request.Project == "" || request.ID == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "Send a project and an id.", Code: "invalidRequest"})
+		return
+	}
+	if c.feedback == nil {
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "The daemon's feedback store has no such feedback.", Code: contract.CodeFeedbackUnavailable})
+		return
+	}
+	_, err := c.feedback.Announce(request.Project, request.ID, request.Author)
+	if err == nil {
+		writeJSON(w, http.StatusAccepted, announceResponse{Announced: true})
+		return
+	}
+	switch failure := app.AsError(err); failure.Code {
+	case contract.CodeProjectUnavailable:
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "No served root shows the project.", Code: contract.CodeProjectUnavailable})
+	case contract.CodeFeedbackUnavailable:
+		writeJSON(w, http.StatusNotFound, errorResponse{Error: "The daemon's feedback store has no such feedback.", Code: contract.CodeFeedbackUnavailable})
+	case contract.CodeInvalidFeedback:
+		writeJSON(w, http.StatusBadRequest, errorResponse{Error: failure.Message, Code: "invalidRequest"})
+	default:
+		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "Announce feedback: " + failure.Message})
+	}
 }
+
+// Subscribe starts a control stream: its first event (status), then each
+// walkthrough and feedback announcement on events until cancel, which the
+// caller must call. Events closes when cancel runs or the notices end. Done
+// closes when the daemon stops.
+func (c *Controller) Subscribe() (first contract.DaemonEvent, events <-chan contract.DaemonEvent, cancel func()) {
+	walkthroughs, cancelWalkthroughs := c.notices.Notices()
+	var changes <-chan app.FeedbackNotice
+	cancelFeedback := func() {}
+	if c.feedback != nil {
+		changes, cancelFeedback = c.feedback.Notices()
+	}
+	merged := make(chan contract.DaemonEvent, 2*controlBuffer)
+	stop := make(chan struct{})
+	go func() {
+		defer close(merged)
+		for {
+			var event contract.DaemonEvent
+			select {
+			case <-stop:
+				return
+			case notice, ok := <-walkthroughs:
+				if !ok {
+					return
+				}
+				event = WalkthroughEvent(notice)
+			case notice, ok := <-changes:
+				if !ok {
+					return
+				}
+				event = FeedbackEvent(notice.Event)
+			}
+			select {
+			case merged <- event:
+			case <-stop:
+				return
+			}
+		}
+	}()
+	var once sync.Once
+	cancel = func() {
+		once.Do(func() {
+			close(stop)
+			cancelWalkthroughs()
+			cancelFeedback()
+		})
+	}
+	status := contract.DaemonStatusEvent{Protocol: c.status.Protocol, Version: c.status.Version}
+	return contract.DaemonEvent{Name: contract.DaemonEventStatus, Status: &status}, merged, cancel
+}
+
+// controlBuffer is how many announcements of each kind a control stream
+// holds before its sources drop the oldest.
+const controlBuffer = 16
 
 // Done closes when the daemon stops.
 func (c *Controller) Done() <-chan struct{} { return c.done }
@@ -345,11 +435,16 @@ func WalkthroughEvent(notice contract.WalkthroughEvent) contract.DaemonEvent {
 	return contract.DaemonEvent{Name: contract.DaemonEventWalkthrough, Walkthrough: &notice}
 }
 
+// FeedbackEvent is a feedback change as a control stream event.
+func FeedbackEvent(event contract.FeedbackEvent) contract.DaemonEvent {
+	return contract.DaemonEvent{Name: contract.DaemonEventFeedback, Feedback: &event}
+}
+
 // serveEvents streams daemon-level events: status first, then each
-// walkthrough announcement. It counts as in flight for idle exit while open,
+// walkthrough and feedback announcement. It counts as in flight for idle exit while open,
 // and ends with the request, the daemon, or the notices.
 func (c *Controller) serveEvents(w http.ResponseWriter, r *http.Request) {
-	first, notices, cancel := c.Subscribe()
+	first, events, cancel := c.Subscribe()
 	defer cancel()
 	// Streams outlive the server's write timeout; each write extends it.
 	controller := http.NewResponseController(w)
@@ -378,11 +473,10 @@ func (c *Controller) serveEvents(w http.ResponseWriter, r *http.Request) {
 			if !write(": heartbeat\n\n") {
 				return
 			}
-		case notice, ok := <-notices:
+		case event, ok := <-events:
 			if !ok {
 				return
 			}
-			event := WalkthroughEvent(notice)
 			if !write(controlEvent(event.Name, event.Payload())) {
 				return
 			}

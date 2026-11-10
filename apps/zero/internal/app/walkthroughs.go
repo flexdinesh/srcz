@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/flexdinesh/zero/internal/document"
@@ -21,7 +20,7 @@ import (
 type Walkthroughs struct {
 	*state
 	service *walkthrough.Service
-	notices noticeHub
+	notices noticeHub[contract.WalkthroughEvent]
 }
 
 // MaxWalkthroughBytes bounds one encoded draft.
@@ -258,90 +257,4 @@ func linesModel(lines []int) (*walkthrough.Lines, error) {
 		return nil, &Error{Kind: contract.KindInvalid, Code: contract.CodeInvalidWalkthrough, Message: message}
 	}
 	return &walkthrough.Lines{lines[0], lines[1]}, nil
-}
-
-// noticeHub fans announcements out to subscribers without ever blocking the
-// announcer. Its zero value is ready to use.
-type noticeHub struct {
-	mu          sync.Mutex
-	closed      bool
-	subscribers map[chan contract.WalkthroughEvent]struct{}
-	// listeners run under mu, so they must not block.
-	listeners map[*func(contract.WalkthroughEvent)]struct{}
-}
-
-// listen calls fn with each announcement until the returned function runs.
-func (h *noticeHub) listen(fn func(contract.WalkthroughEvent)) func() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.closed {
-		return func() {}
-	}
-	if h.listeners == nil {
-		h.listeners = map[*func(contract.WalkthroughEvent)]struct{}{}
-	}
-	h.listeners[&fn] = struct{}{}
-	return func() {
-		h.mu.Lock()
-		defer h.mu.Unlock()
-		delete(h.listeners, &fn)
-	}
-}
-
-func (h *noticeHub) subscribe() (<-chan contract.WalkthroughEvent, func()) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	notices := make(chan contract.WalkthroughEvent, noticeBuffer)
-	if h.closed {
-		close(notices)
-		return notices, func() {}
-	}
-	if h.subscribers == nil {
-		h.subscribers = map[chan contract.WalkthroughEvent]struct{}{}
-	}
-	h.subscribers[notices] = struct{}{}
-	return notices, func() {
-		h.mu.Lock()
-		defer h.mu.Unlock()
-		if _, ok := h.subscribers[notices]; ok {
-			delete(h.subscribers, notices)
-			close(notices)
-		}
-	}
-}
-
-// announce sends notice to every subscriber, dropping a full subscriber's
-// oldest notice to make room.
-func (h *noticeHub) announce(notice contract.WalkthroughEvent) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	for listener := range h.listeners {
-		(*listener)(notice)
-	}
-	for notices := range h.subscribers {
-		for sent := false; !sent; {
-			select {
-			case notices <- notice:
-				sent = true
-			default:
-				// Full: drop the oldest, unless the reader just took it.
-				select {
-				case <-notices:
-				default:
-				}
-			}
-		}
-	}
-}
-
-// close ends every subscription; later subscriptions start closed.
-func (h *noticeHub) close() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.closed = true
-	for notices := range h.subscribers {
-		close(notices)
-	}
-	h.subscribers = nil
-	h.listeners = nil
 }

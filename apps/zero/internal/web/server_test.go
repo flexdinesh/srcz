@@ -789,6 +789,8 @@ func TestEveryAPIFixtureDecodesStrictly(t *testing.T) {
 		{"metrics*.json", func() any { return &contract.ProcessMetrics{} }},
 		{"walkthroughs.json", func() any { return &[]contract.WalkthroughSummary{} }},
 		{"walkthrough-*.json", func() any { return &contract.Walkthrough{} }},
+		{"feedback.json", func() any { return &contract.Feedback{} }},
+		{"feedback-list.json", func() any { return &[]contract.FeedbackSummary{} }},
 		{"events-status.json", func() any { return &contract.StatusEvent{} }},
 		{"events-change.json", func() any { return &contract.ChangeEvent{} }},
 	}

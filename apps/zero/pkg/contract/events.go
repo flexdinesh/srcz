@@ -9,6 +9,9 @@ const (
 	// EventWalkthrough announces a walkthrough published for the stream's
 	// project (decision 0099). Its body is the control stream's WalkthroughEvent.
 	EventWalkthrough = "walkthrough"
+	// EventFeedback announces that a branch's feedback in the stream's
+	// project's repository changed (decision 0120). Its body is FeedbackEvent.
+	EventFeedback = "feedback"
 )
 
 // CodeInvalidLease rejects an events request whose lease is neither open nor
@@ -57,6 +60,7 @@ type Event struct {
 	Change      *ChangeEvent
 	Head        *HeadEvent
 	Walkthrough *WalkthroughEvent
+	Feedback    *FeedbackEvent
 }
 
 // Payload is the event's body, encoded as the stream's data.
@@ -70,6 +74,8 @@ func (e Event) Payload() any {
 		return e.Head
 	case EventWalkthrough:
 		return e.Walkthrough
+	case EventFeedback:
+		return e.Feedback
 	}
 	return nil
 }

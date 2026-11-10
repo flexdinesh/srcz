@@ -47,6 +47,8 @@ func TestAPIFixturesSatisfyGeneratedContracts(t *testing.T) {
 		"references.json":        "NavigationResult",
 		"walkthrough-tour.json":  "Walkthrough",
 		"walkthroughs.json":      "[]WalkthroughSummary",
+		"feedback.json":          "Feedback",
+		"feedback-list.json":     "[]FeedbackSummary",
 	}
 	checked := 0
 	for pattern, typeName := range shapes {
@@ -75,7 +77,7 @@ func TestAPIFixturesSatisfyGeneratedContracts(t *testing.T) {
 			checked++
 		}
 	}
-	if checked < 37 {
+	if checked < 40 {
 		t.Errorf("checked %d fixtures, want every generated shape's", checked)
 	}
 }

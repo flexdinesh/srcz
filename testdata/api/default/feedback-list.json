@@ -1,0 +1,4 @@
+[
+  {"id": "fb-3k2q8m", "branch": "feature/greeting", "threads": 4, "open": 2, "awaitingAgent": 2, "awaitingUser": 2, "updatedAt": "2026-11-10T09:31:00Z"},
+  {"id": "fb-7h4n2p", "branch": "main", "threads": 1, "open": 0, "awaitingAgent": 0, "awaitingUser": 0, "updatedAt": "2026-11-08T16:02:00Z"}
+]

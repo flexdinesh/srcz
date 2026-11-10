@@ -82,6 +82,23 @@ type Client interface {
 	// WalkthroughSchema returns the JSON Schema of a draft.
 	WalkthroughSchema(ctx context.Context) ([]byte, error)
 
+	// Feedback reads a branch's review feedback with its threads' locations
+	// resolved against the request's compare, or else the working tree.
+	Feedback(ctx context.Context, request contract.FeedbackRequest) (contract.Feedback, error)
+	// FeedbackList lists a project's repository's feedback, one per branch,
+	// most recently updated first.
+	FeedbackList(ctx context.Context, request contract.FeedbackListRequest) ([]contract.FeedbackSummary, error)
+	// CreateFeedbackThread starts a thread, creating the branch's feedback
+	// when missing, and announces it.
+	CreateFeedbackThread(ctx context.Context, draft contract.FeedbackThreadDraft) (contract.FeedbackThread, error)
+	// PostFeedbackMessage replies to a thread or changes its status, and
+	// announces it.
+	PostFeedbackMessage(ctx context.Context, draft contract.FeedbackMessageDraft) (contract.FeedbackThread, error)
+	// DeleteFeedbackThread removes one thread of a feedback.
+	DeleteFeedbackThread(ctx context.Context, request contract.FeedbackDeleteRequest) error
+	// DeleteFeedback removes a whole feedback.
+	DeleteFeedback(ctx context.Context, request contract.FeedbackDeleteRequest) error
+
 	// DaemonStatus returns the daemon's status.
 	DaemonStatus(ctx context.Context) (contract.DaemonStatus, error)
 	// DaemonRoots returns the daemon's served and skipped roots.
@@ -89,7 +106,7 @@ type Client interface {
 	// DaemonOpen serves an absolute directory, covering it with a root.
 	DaemonOpen(ctx context.Context, path string) (contract.DaemonOpenResult, error)
 	// DaemonEvents follows the daemon's control stream: status, then
-	// walkthrough announcements.
+	// walkthrough and feedback announcements.
 	DaemonEvents(ctx context.Context) (*Stream[contract.DaemonEvent], error)
 }
 

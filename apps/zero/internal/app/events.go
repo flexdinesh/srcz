@@ -15,7 +15,10 @@ type Events struct {
 	*state
 	// notices announces published walkthroughs, which streams carry for their
 	// project (decision 0099).
-	notices *noticeHub
+	notices *noticeHub[contract.WalkthroughEvent]
+	// feedback announces feedback changes, which streams carry for every
+	// project of the repository (decision 0120).
+	feedback *noticeHub[FeedbackNotice]
 }
 
 // Subscription is one follower of a project. The subscription is the
@@ -29,10 +32,16 @@ type Subscription struct {
 	last     *contract.HeadRef
 	baseline bool
 
-	stopNotices func()
-	mu          sync.Mutex
+	// repository is the project's feedback repository key.
+	repository string
+
+	stopNotices  func()
+	stopFeedback func()
+	mu           sync.Mutex
 	// published is the walkthrough announcements Next has yet to take.
 	published []contract.WalkthroughEvent
+	// changed is the feedback announcements Next has yet to take.
+	changed []contract.FeedbackEvent
 }
 
 // Subscribe follows request.Project at its lease level. The lease is checked
@@ -53,8 +62,9 @@ func (e *Events) Subscribe(request contract.EventsRequest) (*Subscription, error
 	if err != nil {
 		return nil, fail(contract.KindUnavailable, "Live updates are unavailable.")
 	}
-	result := &Subscription{watch: subscription, root: project.Root}
+	result := &Subscription{watch: subscription, root: project.Root, repository: FeedbackRepository(project.Root)}
 	result.stopNotices = e.notices.listen(result.announce)
+	result.stopFeedback = e.feedback.listen(result.announceFeedback)
 	return result, nil
 }
 
@@ -69,6 +79,24 @@ func (s *Subscription) announce(notice contract.WalkthroughEvent) {
 		s.published = s.published[1:]
 	}
 	s.published = append(s.published, notice)
+	s.mu.Unlock()
+	s.watch.Wake()
+}
+
+// announceFeedback keeps a feedback change in this project's repository for
+// Next, as this stream's project, the oldest dropped past noticeBuffer. It
+// must not block: the hub calls it under its lock.
+func (s *Subscription) announceFeedback(notice FeedbackNotice) {
+	if notice.Repository != s.repository {
+		return
+	}
+	event := notice.Event
+	event.Project = s.root
+	s.mu.Lock()
+	if len(s.changed) == noticeBuffer {
+		s.changed = s.changed[1:]
+	}
+	s.changed = append(s.changed, event)
 	s.mu.Unlock()
 	s.watch.Wake()
 }
@@ -112,12 +140,14 @@ func (s *Subscription) Done() <-chan struct{} { return s.watch.Done() }
 // Close ends the subscription.
 func (s *Subscription) Close() {
 	s.stopNotices()
+	s.stopFeedback()
 	s.watch.Close()
 }
 
 // Next returns the pending events in order: a status (the first followed by
 // the checkout's head), then a change (followed by the head when git state
-// changed and the head moved), then any walkthroughs published.
+// changed and the head moved), then any walkthroughs published, then any
+// feedback changes in the project's repository.
 func (s *Subscription) Next() []contract.Event {
 	var events []contract.Event
 	status, change := s.watch.Next()
@@ -135,11 +165,14 @@ func (s *Subscription) Next() []contract.Event {
 		}
 	}
 	s.mu.Lock()
-	published := s.published
-	s.published = nil
+	published, changed := s.published, s.changed
+	s.published, s.changed = nil, nil
 	s.mu.Unlock()
 	for i := range published {
 		events = append(events, contract.Event{Name: contract.EventWalkthrough, Walkthrough: &published[i]})
+	}
+	for i := range changed {
+		events = append(events, contract.Event{Name: contract.EventFeedback, Feedback: &changed[i]})
 	}
 	return events
 }
