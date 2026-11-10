@@ -10,11 +10,12 @@ export interface Settings {
   notifyBranches: NotifySetting
   notifyEdits: NotifySetting
   notifyWalkthroughs: NotifySetting
+  notifyFeedback: NotifySetting
 }
 
 // NotifySetting chooses one kind of desktop notification (decision 0099).
 export type NotifySetting = "off" | "on"
-export type NotifyKey = "notifyCommits" | "notifyBranches" | "notifyEdits" | "notifyWalkthroughs"
+export type NotifyKey = "notifyCommits" | "notifyBranches" | "notifyEdits" | "notifyWalkthroughs" | "notifyFeedback"
 
 export const notifyOptions: readonly { label: string; value: NotifySetting }[] = [
   { label: "Off", value: "off" },
@@ -64,6 +65,7 @@ const storedKeys: readonly SettingKey[] = [
   "notifyBranches",
   "notifyEdits",
   "notifyWalkthroughs",
+  "notifyFeedback",
 ]
 
 // The UI type scale is authored for a 13px base: explorer, tabs, and source
@@ -80,6 +82,7 @@ export const defaultSettings: Settings = {
   notifyBranches: "on",
   notifyEdits: "off",
   notifyWalkthroughs: "on",
+  notifyFeedback: "on",
 }
 
 interface SettingBase {
@@ -172,6 +175,14 @@ export const settingDefinitions: readonly SettingDefinition[] = [
     description: "When a walkthrough is published or updated.",
     options: notifyOptions,
   },
+  {
+    id: "notifyFeedback",
+    kind: "select",
+    category: NOTIFICATIONS_CATEGORY,
+    title: "Feedback Replies",
+    description: "When an agent replies to review feedback or starts a thread.",
+    options: notifyOptions,
+  },
 ]
 
 // availableSettings is what this client can act on: notifications exist only in
@@ -223,7 +234,10 @@ export function parseSettings(raw: string | null): Settings {
   const notifyWalkthroughs = "notifyWalkthroughs" in stored && isNotifySetting(stored.notifyWalkthroughs)
     ? stored.notifyWalkthroughs
     : defaultSettings.notifyWalkthroughs
-  return { fontSize: fontSize ?? DEFAULT_FONT_SIZE, languageServers, showWelcome, notifyCommits, notifyBranches, notifyEdits, notifyWalkthroughs }
+  const notifyFeedback = "notifyFeedback" in stored && isNotifySetting(stored.notifyFeedback)
+    ? stored.notifyFeedback
+    : defaultSettings.notifyFeedback
+  return { fontSize: fontSize ?? DEFAULT_FONT_SIZE, languageServers, showWelcome, notifyCommits, notifyBranches, notifyEdits, notifyWalkthroughs, notifyFeedback }
 }
 
 export function modifiedSettings(settings: Settings): SettingKey[] {

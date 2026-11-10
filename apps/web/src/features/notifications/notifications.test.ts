@@ -6,10 +6,10 @@ import { defaultSettings } from "../../settings/settings.ts"
 import { notificationConfig, notificationProblem, sameNotificationStatus } from "./notifications.ts"
 
 test("the desktop app gets the shown project and each kind's choice", () => {
-  assert.deepEqual(notificationConfig("/code/a", defaultSettings), { project: "/code/a", commits: true, branches: true, edits: false, walkthroughs: true })
+  assert.deepEqual(notificationConfig("/code/a", defaultSettings), { project: "/code/a", commits: true, branches: true, edits: false, walkthroughs: true, feedback: true })
   assert.deepEqual(
-    notificationConfig("/code/b", { ...defaultSettings, notifyCommits: "off", notifyBranches: "off", notifyEdits: "on", notifyWalkthroughs: "off" }),
-    { project: "/code/b", commits: false, branches: false, edits: true, walkthroughs: false },
+    notificationConfig("/code/b", { ...defaultSettings, notifyCommits: "off", notifyBranches: "off", notifyEdits: "on", notifyWalkthroughs: "off", notifyFeedback: "off" }),
+    { project: "/code/b", commits: false, branches: false, edits: true, walkthroughs: false, feedback: false },
   )
 })
 

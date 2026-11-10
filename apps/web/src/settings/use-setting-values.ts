@@ -137,6 +137,7 @@ export function useSettingValues(): SettingValues {
       notifyBranches: notify("notifyBranches"),
       notifyEdits: notify("notifyEdits"),
       notifyWalkthroughs: notify("notifyWalkthroughs"),
+      notifyFeedback: notify("notifyFeedback"),
     },
     modifiedCount: modifiedSettings(settings).length + (themeModified ? 1 : 0),
     resetAll() {

@@ -75,7 +75,7 @@ test("native menu answers other than a string, and failures, are no choice", asy
 })
 
 test("configuring notifications passes the config and validates the status", async () => {
-  const config = { project: "/code/a", commits: true, branches: false, edits: false, walkthroughs: true }
+  const config = { project: "/code/a", commits: true, branches: false, edits: false, walkthroughs: true, feedback: true }
   const calls: unknown[][] = []
   const exposed = {
     version: 2,

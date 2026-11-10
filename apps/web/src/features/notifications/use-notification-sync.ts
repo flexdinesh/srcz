@@ -11,14 +11,14 @@ import { notificationConfig, sameNotificationStatus } from "./notifications.ts"
 // trusted. Without a desktop app it does nothing and returns null.
 export function useNotificationSync(project: string, settings: Settings): NotificationStatus | null {
   const [status, setStatus] = useState<NotificationStatus | null>(null)
-  const { commits, branches, edits, walkthroughs } = notificationConfig(project, settings)
+  const { commits, branches, edits, walkthroughs, feedback } = notificationConfig(project, settings)
 
   useEffect(() => {
     const configure = desktopBridge()?.configureNotifications
     if (!configure) return
     let current = true
     const sync = () => {
-      void configure({ project, commits, branches, edits, walkthroughs }).then((next) => {
+      void configure({ project, commits, branches, edits, walkthroughs, feedback }).then((next) => {
         if (current) setStatus((previous) => sameNotificationStatus(previous, next) ? previous : next)
       })
     }
@@ -28,7 +28,7 @@ export function useNotificationSync(project: string, settings: Settings): Notifi
       current = false
       window.removeEventListener("focus", sync)
     }
-  }, [project, commits, branches, edits, walkthroughs])
+  }, [project, commits, branches, edits, walkthroughs, feedback])
 
   return status
 }

@@ -10,6 +10,7 @@ export function notificationConfig(project: string, settings: Settings): Notific
     branches: settings.notifyBranches === "on",
     edits: settings.notifyEdits === "on",
     walkthroughs: settings.notifyWalkthroughs === "on",
+    feedback: settings.notifyFeedback === "on",
   }
 }
 
