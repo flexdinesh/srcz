@@ -463,23 +463,14 @@ func (f *follower) listWalkthroughs(ctx context.Context, server client.Client) {
 	}
 }
 
-// feedbackLister is client.Client's FeedbackList (decision 0120).
-type feedbackLister interface {
-	FeedbackList(ctx context.Context, request contract.FeedbackListRequest) ([]contract.FeedbackSummary, error)
-}
-
 // feedback reports an agent's feedback write with what now waits on the user.
-// A list that fails, or a server without one, reports nothing.
+// A list that fails reports nothing.
 func (f *follower) feedback(ctx context.Context, server client.Client, event contract.FeedbackEvent) {
 	n := f.notifier
 	if !fromAgent(event) || !n.wants(KindFeedback) {
 		return
 	}
-	lister, ok := server.(feedbackLister)
-	if !ok {
-		return
-	}
-	summaries, err := lister.FeedbackList(ctx, contract.FeedbackListRequest{Project: f.project})
+	summaries, err := server.FeedbackList(ctx, contract.FeedbackListRequest{Project: f.project})
 	if err != nil {
 		return
 	}

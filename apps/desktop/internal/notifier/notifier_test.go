@@ -48,21 +48,6 @@ func newFakeServer() *fakeServer {
 	return &fakeServer{streams: map[*fakeStream]struct{}{}, changes: contract.ChangesResponse{Repository: true, Files: []contract.ChangedFile{}}, summaries: map[string][]contract.WalkthroughSummary{}, feedback: map[string][]contract.FeedbackSummary{}}
 }
 
-// feedbackClient adds FeedbackList to a client of the fake server.
-// TODO(0120): drop it for client.Client's own FeedbackList, served by the
-// fake at /api/feedback-list, once pkg/client has one.
-type feedbackClient struct {
-	client.Client
-	server *fakeServer
-}
-
-func (c feedbackClient) FeedbackList(_ context.Context, request contract.FeedbackListRequest) ([]contract.FeedbackSummary, error) {
-	c.server.mu.Lock()
-	defer c.server.mu.Unlock()
-	c.server.feedbackLists++
-	return slices.Clone(c.server.feedback[request.Project]), nil
-}
-
 func (f *fakeServer) feedbackReads() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -82,6 +67,11 @@ func (f *fakeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
 		_ = json.NewEncoder(w).Encode(append([]contract.WalkthroughSummary{}, f.summaries[project]...))
+	case "/api/feedback-list":
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		f.feedbackLists++
+		_ = json.NewEncoder(w).Encode(append([]contract.FeedbackSummary{}, f.feedback[project]...))
 	default:
 		http.NotFound(w, r)
 	}
@@ -633,9 +623,7 @@ func feedbackEvent(project string, author contract.FeedbackAuthor, updated strin
 func TestFeedbackRepliesNotifyOncePerWrite(t *testing.T) {
 	for _, over := range transports() {
 		t.Run(over.name, func(t *testing.T) {
-			h := &harness{server: newFakeServer(), now: time.Unix(1_000_000, 0)}
-			server := feedbackClient{Client: over.connect(t, h.server), server: h.server}
-			h.start(t, Options{Connect: func(context.Context, error) (client.Client, error) { return server, nil }})
+			h := newHarness(t, over)
 			summary := contract.FeedbackSummary{ID: "fb-3k2q8m", Branch: "feature/greeting", Threads: 3, Open: 2, AwaitingUser: 2, UpdatedAt: "2026-11-10T09:12:00Z"}
 			// Two worktrees of one repository share its feedback.
 			h.server.feedback[projectA] = []contract.FeedbackSummary{summary}
