@@ -13,8 +13,13 @@ import (
 	"github.com/flexdinesh/zero/pkg/contract"
 )
 
-// The test binary doubles as a fake language server.
+// The test binary doubles as a fake language server, and as the command of
+// the exec transport (relayEnv).
 func TestMain(m *testing.M) {
+	if socket := os.Getenv(relayEnv); socket != "" {
+		relay(socket)
+		os.Exit(0)
+	}
 	if lsptest.Serving() {
 		lsptest.Serve()
 		os.Exit(0)

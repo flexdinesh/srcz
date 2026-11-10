@@ -42,7 +42,7 @@ var ErrInvalid = errors.New("not a zero connection string")
 
 var (
 	hostName = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$`)
-	idText   = regexp.MustCompile(`^r-[0-9a-f]{12}$`)
+	idText   = regexp.MustCompile(`^[rs]-[0-9a-f]{12}$`)
 )
 
 // Credential authenticates both ends: the fingerprint pins the server and the
@@ -92,7 +92,16 @@ func (c Credential) ID() string {
 	return "r-" + hex.EncodeToString(c.Fingerprint[:6])
 }
 
-// IsID reports whether text is a remote connection id.
+// SandboxID names a sandbox connection (decision 0128): it follows from the
+// provider, the engine that runs the sandbox, and the sandbox's own ID there,
+// none of them secret, so the same sandbox keeps its id across attaches.
+func SandboxID(provider, engine, ref string) string {
+	sum := sha256.Sum256([]byte(provider + "\x00" + engine + "\x00" + ref))
+	return "s-" + hex.EncodeToString(sum[:6])
+}
+
+// IsID reports whether text is a saved connection's id: r- for a remote
+// server, s- for a sandbox.
 func IsID(text string) bool { return idText.MatchString(text) }
 
 // Parse reads a connection string, tolerating surrounding quotes and the

@@ -1,6 +1,6 @@
-// Package proxy serves the app's custom scheme (decisions 0067, 0094, 0098):
-// zero-app://local from the daemon's Unix socket, zero-app://<id> from a
-// saved remote server. Pages reach /api and the web app, never the control
+// Package proxy serves the app's custom scheme (decisions 0067, 0094, 0098,
+// 0128): zero-app://local from the daemon's Unix socket, zero-app://<id> from
+// a saved remote server or sandbox. Pages reach /api and the web app, never the control
 // endpoints or a credential, and servers see what their checks expect.
 package proxy
 

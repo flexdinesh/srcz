@@ -68,7 +68,7 @@ func newProxy(t *testing.T, handler http.Handler) (*Proxy, *fakeDaemon) {
 	socket, _ := serve(t, handler)
 	daemon := &fakeDaemon{}
 	daemon.socket.Store(&socket)
-	p := New(NewConnections(daemon, &fakeStore{}))
+	p := New(NewConnections(daemon, &fakeStore{}, ""))
 	t.Cleanup(p.Close)
 	return p, daemon
 }
@@ -381,7 +381,7 @@ func TestDaemonGone(t *testing.T) {
 		stop()
 		daemon := &fakeDaemon{}
 		daemon.socket.Store(&socket)
-		p := New(NewConnections(daemon, &fakeStore{}))
+		p := New(NewConnections(daemon, &fakeStore{}, ""))
 		t.Cleanup(p.Close)
 		return p, daemon
 	}
@@ -420,7 +420,7 @@ func TestDaemonGone(t *testing.T) {
 	})
 	t.Run("a page load gets an escaped failure page and forces an ensure", func(t *testing.T) {
 		daemon := &fakeDaemon{err: errors.New("<script>x</script>")}
-		p := New(NewConnections(daemon, &fakeStore{}))
+		p := New(NewConnections(daemon, &fakeStore{}, ""))
 		r := request(http.MethodGet, Origin+"/", nil)
 		r.Header.Set("Accept", "text/html")
 		recorder := httptest.NewRecorder()

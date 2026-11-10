@@ -14,6 +14,8 @@ func TestParse(t *testing.T) {
 		"zero://local/?review=working#L12-L20":  {Connection: "local", Route: "/", RawQuery: "review=working", Fragment: "L12-L20"},
 		"zero://r-0123456789ab/":                {Connection: "r-0123456789ab", Route: "/"},
 		"zero://r-0123456789ab/view?wt=tour#L3": {Connection: "r-0123456789ab", Route: "/view", RawQuery: "wt=tour", Fragment: "L3"},
+		"zero://s-0123456789ab/":                {Connection: "s-0123456789ab", Route: "/"},
+		"zero://s-0123456789ab/view?path=a.md":  {Connection: "s-0123456789ab", Route: "/view", RawQuery: "path=a.md"},
 	} {
 		got, err := Parse(raw)
 		if err != nil || got != want {
@@ -27,6 +29,8 @@ func TestParse(t *testing.T) {
 		// Addresses and secrets do not belong in a link (decision 0098).
 		"zero://10.0.0.5:7971/", "zero://localhost:4173/", "zero://[::1]:80/",
 		"zero://r-0123456789ab:7971/", "zero://R-0123456789AB/", "zero://r-012345/", "zero://r-0123456789ab/_daemon/status",
+		// A sandbox link names the saved connection, never the container.
+		"zero://s-012345/", "zero://S-0123456789AB/", "zero://x-0123456789ab/", "zero://docker:web/", "zero://s-0123456789ab/_zero/remote",
 	} {
 		if _, err := Parse(raw); !errors.Is(err, ErrInvalid) {
 			t.Errorf("Parse(%q) = %v, want ErrInvalid", raw, err)

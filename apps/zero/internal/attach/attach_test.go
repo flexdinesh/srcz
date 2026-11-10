@@ -61,6 +61,10 @@ func (f *fakeEnvironment) Exec(_ context.Context, argv, env []string) (*exec.Cmd
 	return cmd, nil
 }
 
+func (f *fakeEnvironment) Identity(context.Context) (string, string, error) {
+	return "sandbox-1", "engine-1", nil
+}
+
 func TestAttachInstallsAndServesThePathThere(t *testing.T) {
 	env := &fakeEnvironment{platform: "linux/arm64"}
 	endpoint, err := Attach(t.Context(), env, "/src", "1.2.3")

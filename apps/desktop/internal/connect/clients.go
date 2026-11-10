@@ -2,9 +2,6 @@ package connect
 
 import (
 	"context"
-	"fmt"
-	"slices"
-	"sync"
 
 	"github.com/flexdinesh/zero/apps/desktop/internal/notifier"
 	"github.com/flexdinesh/zero/pkg/client"
@@ -36,38 +33,26 @@ func (d *Daemon) StreamClient(ctx context.Context, failed error) (client.Client,
 	return d.streamClient, nil
 }
 
-// Saved looks up a saved connection.
-type Saved interface {
-	Lookup(id string) (connection.Saved, bool, error)
+// Endpoints reaches saved connections' servers.
+type Endpoints interface {
+	// Endpoint is id's server, rereading the saved connection; found is false
+	// when id is not saved.
+	Endpoint(id string) (endpoint connection.Endpoint, found bool, err error)
 }
 
-// RemoteClients returns what a notifier connects to a saved server with. It
-// rereads the store each time, so `zero connect` with new addresses applies to
-// the next attempt, and keeps a client while the connection is unchanged.
-func RemoteClients(store Saved, id string) func(context.Context, error) (client.Client, error) {
-	var (
-		mu      sync.Mutex
-		current client.Client
-		last    connection.Saved
-	)
+// RemoteClients returns what a notifier connects to a saved server with: a
+// client over the transport the window's pages use, so a sandbox runs one zero
+// for both. Each attempt rereads the saved connection, so `zero connect` with
+// new addresses applies to the next one.
+func RemoteClients(endpoints Endpoints, id string) func(context.Context, error) (client.Client, error) {
 	return func(context.Context, error) (client.Client, error) {
-		saved, found, err := store.Lookup(id)
+		endpoint, found, err := endpoints.Endpoint(id)
 		if err != nil {
-			return nil, fmt.Errorf("read saved connections: %w", err)
+			return nil, err
 		}
 		if !found {
 			return nil, notifier.ErrNoConnection
 		}
-		mu.Lock()
-		defer mu.Unlock()
-		if current != nil && saved.Credential == last.Credential && saved.Port == last.Port && slices.Equal(saved.Hosts, last.Hosts) {
-			return current, nil
-		}
-		endpoint, err := saved.Endpoint()
-		if err != nil {
-			return nil, err
-		}
-		current, last = client.NewRemote(endpoint), saved
-		return current, nil
+		return client.NewEndpoint(endpoint), nil
 	}
 }

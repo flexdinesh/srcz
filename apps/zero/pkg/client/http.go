@@ -21,7 +21,8 @@ import (
 const maxResponse = 512 << 20
 
 // HTTP is the HTTP transport: TCP to a CLI server (NewTCP), a Unix socket to
-// the daemon (NewUnix), or TLS to a remote server (NewRemote).
+// the daemon (NewUnix), or any connection.Endpoint (NewEndpoint), such as TLS
+// to a remote server or a command's standard input and output.
 type HTTP struct {
 	base   string
 	http   *http.Client
@@ -43,9 +44,10 @@ func NewUnix(socket string) *HTTP {
 	return &HTTP{base: endpoint.BaseURL(), http: newHTTPClient(endpoint.RoundTripper()), daemon: true}
 }
 
-// NewRemote returns a client for a remote server. Its control API is not
-// reachable over TCP: daemon calls return ErrNoDaemon.
-func NewRemote(endpoint connection.TLS) *HTTP {
+// NewEndpoint returns a client for the server at endpoint, such as a remote
+// server or a sandbox. Only the daemon's own socket reaches its control API:
+// daemon calls return ErrNoDaemon.
+func NewEndpoint(endpoint connection.Endpoint) *HTTP {
 	return &HTTP{base: endpoint.BaseURL(), http: newHTTPClient(endpoint.RoundTripper())}
 }
 
