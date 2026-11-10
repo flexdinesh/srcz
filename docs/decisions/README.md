@@ -123,3 +123,4 @@ rewriting history; update `Status` on the old record.
 | [0118](0118-zero-name-and-collision-safe-installs.md) | Zero name and collision-safe installs | Accepted; supersedes 0100 naming; revises 0073, 0101, 0104 |
 | [0119](0119-desktop-title-band-on-macos.md) | Themed desktop shell on macOS | Accepted; revises 0081, 0095 |
 | [0120](0120-review-feedback-threads.md) | Review feedback threads | Accepted; extends 0028, 0035, 0047, 0050, 0066, 0080, 0099 |
+| [0121](0121-final-tab-close-keeps-window.md) | Closing the final tab keeps the desktop window | Accepted; supersedes 0097 final-tab close |
