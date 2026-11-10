@@ -128,3 +128,4 @@ rewriting history; update `Status` on the old record.
 | [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112 |
 | [0124](0124-change-steps.md) | Change steps land on changes, answer anywhere in the review, and show their place | Accepted; supersedes 0034 step unit and F7 scope, extends 0117 |
 | [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098 |
+| [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098 |
