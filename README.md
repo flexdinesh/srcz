@@ -37,14 +37,62 @@ Zero starts with fresh settings, tabs, roots, connections, and walkthroughs.
 An alternate CLI name leaves the desktop app, protocols, and config names canonical.
 Latest `main` builds: see [development](docs/development.md#install-from-main).
 
-## Use
+## Ways to run
+
+### One project
 
 ```sh
 zero .            # open in the desktop app (falls back to the browser)
-zero browser .    # always serve in the browser
-zero . --remote   # serve to another machine; run the printed `zero connect ...` there
-zero --help
 ```
+
+Run it in a repository or any folder. When the repository has worktrees, click
+the branch in the explorer header (or press → on its picker entry) to switch;
+worktrees open wherever they live, even outside the served directory.
+
+### Many repositories
+
+```sh
+zero ~/code                     # every git repository under ~/code
+zero --path ~/code --path ~/oss # several directories
+```
+
+Zero finds repositories and their worktrees up to `--scan-depth` folders deep
+(default 10) and lists them in the project picker (Cmd/Ctrl+O). Pick a
+repository, then a worktree by branch.
+
+### Another machine (LAN, VPN, Tailscale)
+
+```sh
+# on the host, over ssh is fine; it keeps serving after you log out
+zero ~/code --remote
+# on your computer: the line the host printed
+zero connect 10.0.0.5:7971/<credential>
+```
+
+`zero connect` opens the host in its own desktop app window. The printed
+addresses are a guess; any route to the port works:
+
+```sh
+zero connect --host mybox <string>       # a Tailscale MagicDNS name or other host name
+ssh -L 7971:localhost:7971 mybox         # or tunnel the port yourself
+zero connect --host localhost <string>
+```
+
+On the host, `zero remote status` prints the string again, `zero remote stop`
+stops serving, and `zero remote rotate` invalidates old strings. The string is a
+password: traffic is TLS pinned to it and every request carries its token.
+`--web` also prints a browser link. See [remote hosts](apps/site/src/pages/docs/remote.mdx).
+
+### Browser only
+
+```sh
+zero browser .    # serve on localhost and open the browser
+```
+
+`zero browser --host <address>` serves plain http with **no authentication**:
+anyone who can reach the address can read the files. Prefer `--remote`.
+
+`zero --help` lists every command; see the [CLI reference](docs/cli.md).
 
 ## Docs
 
