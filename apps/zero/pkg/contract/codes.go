@@ -47,3 +47,15 @@ const (
 	// CodeForeignOrigin: a browser on another site sent the write.
 	CodeForeignOrigin = "foreignOrigin"
 )
+
+// Feedback error codes (decision 0120).
+const (
+	// CodeInvalidFeedback: the draft is not strict JSON, is malformed, or
+	// names lines, paths, or threads the feedback or project lacks.
+	CodeInvalidFeedback = "invalidFeedback"
+	// CodeFeedbackUnavailable: no feedback has that ID, or the project's
+	// repository has none for the branch.
+	CodeFeedbackUnavailable = "feedbackUnavailable"
+	// CodeFeedbackFull: the feedback, thread, or repository is at its limit.
+	CodeFeedbackFull = "feedbackFull"
+)

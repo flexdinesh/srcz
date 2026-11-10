@@ -173,3 +173,58 @@ type WalkthroughDraftStep struct {
 	File  *WalkthroughFileTarget `json:"file,omitempty"`
 	Diff  *WalkthroughDiffTarget `json:"diff,omitempty"`
 }
+
+// FeedbackRequest reads one branch's feedback (decision 0120): ID, or else
+// the feedback of Compare's head branch (a branch compare's Head), or else of
+// HEAD's branch. Compare, when set, is what the threads' locations resolve
+// against; without it they resolve against the working tree.
+type FeedbackRequest struct {
+	Project string
+	ID      string
+	Compare *FeedbackCompare
+}
+
+// FeedbackListRequest lists a project's repository's feedback, one per
+// branch.
+type FeedbackListRequest struct {
+	Project string
+}
+
+// FeedbackThreadDraft is POST /api/feedback-threads: a new thread with its
+// first message. The feedback is ID's, or else Compare's head branch's, or
+// else HEAD's branch's, created when missing. Lines is an inclusive, 1-based
+// [start, end] of Side in Compare (or the working tree without one), absent
+// for a file-level thread; the server records the anchored text, context,
+// and blob. Author defaults to user over HTTP and to agent from the CLI.
+type FeedbackThreadDraft struct {
+	Project string           `json:"project"`
+	ID      string           `json:"id,omitempty"`
+	Compare *FeedbackCompare `json:"compare,omitempty"`
+	Path    string           `json:"path"`
+	Side    FeedbackSide     `json:"side,omitempty"`
+	Lines   []int            `json:"lines,omitempty"`
+	Body    string           `json:"body"`
+	Author  FeedbackAuthor   `json:"author,omitempty"`
+	Name    string           `json:"name,omitempty"`
+}
+
+// FeedbackMessageDraft is POST /api/feedback-messages: a reply to thread
+// Thread of feedback ID, a status change, or both. An empty Body needs a
+// Status. A user reply without a status reopens a closed thread.
+type FeedbackMessageDraft struct {
+	Project string         `json:"project"`
+	ID      string         `json:"id"`
+	Thread  int            `json:"thread"`
+	Body    string         `json:"body,omitempty"`
+	Status  FeedbackStatus `json:"status,omitempty"`
+	Author  FeedbackAuthor `json:"author,omitempty"`
+	Name    string         `json:"name,omitempty"`
+}
+
+// FeedbackDeleteRequest is DELETE /api/feedback-threads (Thread set) or
+// DELETE /api/feedback (the whole feedback).
+type FeedbackDeleteRequest struct {
+	Project string
+	ID      string
+	Thread  int
+}
