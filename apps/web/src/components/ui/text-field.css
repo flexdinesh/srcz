@@ -17,14 +17,16 @@
 }
 
 .ui-field:focus-within,
-.ui-select:focus-visible {
+.ui-select:focus-visible,
+.ui-textarea:focus-visible {
   border-color: var(--field-ring);
   outline: 0;
   box-shadow: 0 0 0 1px var(--field-ring);
 }
 
 .ui-field[data-invalid],
-.ui-select[aria-invalid="true"] {
+.ui-select[aria-invalid="true"],
+.ui-textarea[aria-invalid="true"] {
   --field-ring: var(--color-destructive);
   border-color: var(--color-destructive);
 }
@@ -41,7 +43,8 @@
   outline: none;
 }
 
-.ui-field-input::placeholder {
+.ui-field-input::placeholder,
+.ui-textarea::placeholder {
   color: var(--color-text-secondary);
   opacity: 1;
 }
@@ -118,4 +121,30 @@
   .ui-field-trailing {
     --icon-button-min: var(--control-lg);
   }
+}
+
+/* A multi-line field: the field's border and focus, its text at the label
+   size with room to read. It grows with its text where the browser can. */
+.ui-textarea {
+  --field-ring: var(--color-focus);
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--field-height);
+  max-height: 16rem;
+  padding: calc(var(--space-1) + 1px) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  color: var(--color-text-primary);
+  background: var(--color-field-bg);
+  caret-color: var(--color-accent);
+  field-sizing: content;
+  font: inherit;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.ui-textarea::selection {
+  color: var(--color-text-primary);
+  background: var(--color-accent-subtle);
 }

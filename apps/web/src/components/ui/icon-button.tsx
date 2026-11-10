@@ -3,6 +3,8 @@ import type { ButtonHTMLAttributes, MouseEvent, ReactNode, Ref } from "react"
 
 export type IconButtonSize = "xs" | "sm" | "md" | "bar"
 export type IconButtonTone = "default" | "success" | "destructive"
+// gutter floats over code in a line gutter, as CopyButton's gutter variant.
+export type IconButtonVariant = "plain" | "gutter"
 
 type NativeProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "title">
 
@@ -14,6 +16,7 @@ export interface IconButtonProps extends NativeProps {
   title?: string
   size?: IconButtonSize
   tone?: IconButtonTone
+  variant?: IconButtonVariant
   // disabledReason keeps the control focusable but inert, and explains why.
   disabledReason?: string
   ref?: Ref<HTMLButtonElement>
@@ -21,9 +24,10 @@ export interface IconButtonProps extends NativeProps {
 
 // IconButton is an icon-only action. Sizes: xs 20px (12px glyph) in rows and
 // tabs, sm 24px (16px glyph) in headers, toolbars, and fields, md 28px (16px
-// glyph) in panels, and bar, a square that fills its band (--bar-size).
+// glyph) in panels, and bar, a square that fills its band (--bar-size). The
+// gutter variant is raised and bordered, for line gutters.
 export function IconButton({
-  label, icon, title, size = "sm", tone = "default", disabledReason, className, type = "button", onClick, ref, ...props
+  label, icon, title, size = "sm", tone = "default", variant = "plain", disabledReason, className, type = "button", onClick, ref, ...props
 }: IconButtonProps) {
   const inert = Boolean(disabledReason)
   return (
@@ -33,6 +37,7 @@ export function IconButton({
       className={cn("ui-icon-button", className)}
       data-size={size}
       data-tone={tone === "default" ? undefined : tone}
+      data-variant={variant === "plain" ? undefined : variant}
       aria-label={label}
       aria-disabled={inert || undefined}
       title={disabledReason || title || label}
