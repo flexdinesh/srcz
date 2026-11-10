@@ -1,0 +1,126 @@
+{
+  "id": "fb-3k2q8m",
+  "project": "/home/user/markdown",
+  "branch": "feature/greeting",
+  "threads": [
+    {
+      "number": 1,
+      "status": "open",
+      "awaiting": "agent",
+      "anchor": {
+        "path": "code/main.go",
+        "side": "new",
+        "lines": [7, 7],
+        "text": ["\tfmt.Println(\"hello from zero\") // go-search-token"],
+        "before": ["", "func main() {"],
+        "after": ["}"],
+        "blob": "9f3b5c1d2e4a6b7c8d9e0f1a2b3c4d5e6f708192",
+        "compare": {"kind": "working", "uncommitted": false}
+      },
+      "location": {"state": "anchored", "path": "code/main.go", "side": "new", "lines": [7, 7]},
+      "messages": [
+        {
+          "number": 1,
+          "author": "user",
+          "body": "Keep the greeting in a constant so the CLI and tests share it.",
+          "bodyHTML": "<p>Keep the greeting in a constant so the CLI and tests share it.</p>\n",
+          "createdAt": "2026-11-10T09:12:00Z"
+        }
+      ],
+      "createdAt": "2026-11-10T09:12:00Z",
+      "updatedAt": "2026-11-10T09:12:00Z"
+    },
+    {
+      "number": 2,
+      "status": "resolved",
+      "awaiting": "user",
+      "anchor": {
+        "path": "code/app.js",
+        "side": "new",
+        "lines": [2, 3],
+        "text": ["const root = document.querySelector(\"#app\")", "root.textContent = \"hello\""],
+        "before": ["// app.js"],
+        "after": [""],
+        "blob": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+        "compare": {"kind": "branch", "base": "main", "head": "feature/greeting", "uncommitted": false}
+      },
+      "location": {"state": "moved", "path": "code/app.js", "side": "new", "lines": [4, 5]},
+      "messages": [
+        {
+          "number": 1,
+          "author": "user",
+          "body": "Guard against a missing `#app` element.",
+          "bodyHTML": "<p>Guard against a missing <code>#app</code> element.</p>\n",
+          "createdAt": "2026-11-10T09:14:00Z"
+        },
+        {
+          "number": 2,
+          "author": "agent",
+          "name": "claude",
+          "body": "Added an early return when the element is missing.",
+          "bodyHTML": "<p>Added an early return when the element is missing.</p>\n",
+          "status": "resolved",
+          "createdAt": "2026-11-10T09:30:00Z"
+        }
+      ],
+      "createdAt": "2026-11-10T09:14:00Z",
+      "updatedAt": "2026-11-10T09:30:00Z"
+    },
+    {
+      "number": 3,
+      "status": "open",
+      "awaiting": "agent",
+      "anchor": {
+        "path": "config/zero.toml",
+        "side": "old",
+        "lines": [4, 4],
+        "text": ["depth = 3"],
+        "blob": "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c",
+        "compare": {"kind": "branch", "base": "main", "head": "feature/greeting", "uncommitted": false}
+      },
+      "location": {"state": "outdated", "path": "config/zero.toml", "side": "old"},
+      "messages": [
+        {
+          "number": 1,
+          "author": "user",
+          "body": "Why did the default depth change?",
+          "bodyHTML": "<p>Why did the default depth change?</p>\n",
+          "createdAt": "2026-11-10T09:16:00Z"
+        }
+      ],
+      "createdAt": "2026-11-10T09:16:00Z",
+      "updatedAt": "2026-11-10T09:16:00Z"
+    },
+    {
+      "number": 4,
+      "status": "wontfix",
+      "awaiting": "user",
+      "anchor": {
+        "path": "guides/getting-started.md",
+        "side": "new"
+      },
+      "location": {"state": "anchored", "path": "guides/getting-started.md", "side": "new"},
+      "messages": [
+        {
+          "number": 1,
+          "author": "user",
+          "body": "Split this guide into install and first run.",
+          "bodyHTML": "<p>Split this guide into install and first run.</p>\n",
+          "createdAt": "2026-11-10T09:18:00Z"
+        },
+        {
+          "number": 2,
+          "author": "agent",
+          "body": "Out of scope for this branch; the guide is rewritten in the docs redesign.",
+          "bodyHTML": "<p>Out of scope for this branch; the guide is rewritten in the docs redesign.</p>\n",
+          "status": "wontfix",
+          "createdAt": "2026-11-10T09:31:00Z"
+        }
+      ],
+      "createdAt": "2026-11-10T09:18:00Z",
+      "updatedAt": "2026-11-10T09:31:00Z"
+    }
+  ],
+  "createdAt": "2026-11-10T09:12:00Z",
+  "updatedAt": "2026-11-10T09:31:00Z"
+}
