@@ -464,7 +464,8 @@ test("clicking a commit opens the commit's review with a Files rail, keeping foc
   await expect(glyph(commit)).toBeHidden()
   await commit.hover()
   await expect(glyph(commit)).toBeVisible()
-  await expect(commit.locator(".compare-row-age")).toBeHidden()
+  // The row's details line keeps the age beside the glyph.
+  await expect(commit.locator(".commit-row-age")).toBeVisible()
   // A click selects the commit and opens its diff; focus stays on the row.
   await commit.click()
   await expect(commit).toHaveAttribute("aria-selected", "true")

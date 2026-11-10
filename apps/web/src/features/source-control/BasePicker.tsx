@@ -70,7 +70,7 @@ export function BasePicker({ base, refs, onChange }: BasePickerProps) {
         refs.load()
       }
     }}>
-      <Popover.Trigger render={<IconButton size="xs" className="compare-base-trigger" label="Change base branch"
+      <Popover.Trigger render={<IconButton className="compare-base-trigger" label="Change base branch"
         icon={<ChevronDownIcon aria-hidden="true" />} />} />
       <Popover.Portal>
         <Popover.Positioner className={menuPositionerClass} sideOffset={4} align="start">

@@ -45,7 +45,7 @@ rewriting history; update `Status` on the old record.
 | [0037](0037-dark-default-theme.md) | Dark is the default theme | Accepted; labels superseded by 0039 |
 | [0038](0038-mise-dev-tooling-and-env-ports.md) | mise owns dev tooling, tasks, and env-configured dev ports | Accepted |
 | [0039](0039-srcz-theme-labels.md) | Source Zero Light, Source Zero Dark, and Auto theme labels | Accepted |
-| [0040](0040-source-control-panes-and-review-files-rail.md) | Source Control panes, branch stacks, and the review Files rail | Accepted; commit-row branch chips superseded by 0042; deliberate commit diffs by 0112 |
+| [0040](0040-source-control-panes-and-review-files-rail.md) | Source Control panes, branch stacks, and the review Files rail | Accepted; commit-row branch chips superseded by 0042; deliberate commit diffs by 0112; pane header by 0123 |
 | [0041](0041-white-canvas-srcz-light.md) | White canvas for Source Zero Light | Superseded by 0102; white document surface amended by 0043 |
 | [0042](0042-expandable-commit-rows.md) | Expandable commit rows | Accepted; click and request-free details superseded by 0112 |
 | [0043](0043-grey-document-surface-srcz-light.md) | Grey document surface for Source Zero Light | Accepted; Source Zero Light values amended by 0044; grey document surface superseded by 0046 |
@@ -125,3 +125,4 @@ rewriting history; update `Status` on the old record.
 | [0120](0120-review-feedback-threads.md) | Review feedback threads | Accepted; extends 0028, 0035, 0047, 0050, 0066, 0080, 0099 |
 | [0121](0121-final-tab-close-keeps-window.md) | Closing the final tab keeps the desktop window | Accepted; supersedes 0097 final-tab close |
 | [0122](0122-type-roles-and-list-size.md) | Type roles and the list size | Accepted; revises 0033 |
+| [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112 |

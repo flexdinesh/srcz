@@ -45,46 +45,50 @@
   border-top: 1px solid var(--color-border-strong);
 }
 
-.scm-pane-header {
-  display: flex;
-  height: var(--row-list);
-  flex: none;
-  align-items: center;
-  gap: var(--space-1);
-  padding-right: var(--space-2);
-}
-
+/* The heading's toggle spans the header: a click anywhere on it opens or
+   closes the pane. */
 .scm-pane-heading {
   display: flex;
-  min-width: 0;
-  flex: 0 1 auto;
+  flex: none;
   margin: 0;
   font: inherit;
 }
 
-/* The toggle fills the header's leading space; trailing notes stay muted. */
 .scm-pane-toggle {
-  width: auto;
-  padding-right: var(--space-2);
+  height: var(--control-md);
+  gap: var(--space-2);
+  padding-right: var(--space-3);
   font-family: var(--font-chrome);
   font-size: var(--text-chrome);
 }
 
+.scm-pane-title {
+  flex: none;
+}
+
+/* Trailing notes stay muted and normal weight inside the toggle. */
 .scm-pane-note {
   min-width: 0;
   overflow: hidden;
   color: var(--color-text-muted);
   font-size: var(--text-xs);
+  font-weight: 400;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* An open pane's actions sit in their own row above its body, set off by a
+   hairline. */
 .scm-pane-actions {
   display: flex;
+  min-height: var(--control-lg);
   flex: none;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
-  margin-left: auto;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .scm-pane-body {
@@ -296,8 +300,8 @@
   display: none;
 }
 
-/* A commit's diff glyph replaces the age on hover and keyboard focus and
-   stays on the selection: it says a click opens the diff. It is not a
+/* A commit's diff glyph shows at the row's end on hover and keyboard focus
+   and stays on the selection: it says a click opens the diff. It is not a
    control; clicks reach the row. Pointer focus (a chevron click) does not
    show it. */
 .commit-diff-glyph {
@@ -317,14 +321,55 @@
   display: block;
 }
 
-.compare-row-commit:is(:hover, :focus-visible, [data-diff-pinned]):has(.commit-diff-glyph) .compare-row-age {
-  display: none;
+/* A commit's chevron sits where pane titles keep theirs; the subject stays
+   on the other rows' indent. Two lines: subject, then muted details. */
+.compare-row-commit {
+  height: auto;
+  padding-block: var(--space-1);
+  padding-left: var(--space-1);
 }
 
-/* A commit's chevron sits where pane titles keep theirs; the subject stays
-   on the other rows' indent. */
-.compare-row-commit {
-  padding-left: var(--space-1);
+.commit-row-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: var(--space-1);
+}
+
+.commit-row-text > .compare-row-label {
+  flex: none;
+}
+
+.commit-row-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-metadata);
+  line-height: var(--text-xs--line-height);
+}
+
+.compare-row[data-selected] .commit-row-meta {
+  color: inherit;
+}
+
+.commit-row-author {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commit-row-age {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.commit-row-hash {
+  flex: none;
+  font-family: var(--font-mono);
 }
 
 .compare-row-commit .commit-details-toggle {

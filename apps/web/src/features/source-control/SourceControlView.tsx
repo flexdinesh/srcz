@@ -105,15 +105,15 @@ export function SourceControlView({
       ),
       actions: <>
         {layout.changesView === "tree" && (
-          <IconButton size="xs" label={anyExpanded ? "Collapse All Folders" : "Expand All Folders"}
+          <IconButton label={anyExpanded ? "Collapse All Folders" : "Expand All Folders"}
             icon={anyExpanded ? <FoldVerticalIcon aria-hidden="true" /> : <UnfoldVerticalIcon aria-hidden="true" />}
             disabled={fileCount === 0}
             onClick={() => setCollapseRequest({ expand: !anyExpanded, id: (collapseRequest?.id ?? 0) + 1 })} />
         )}
-        <IconButton size="xs" label={layout.changesView === "list" ? "View as Tree" : "View as List"}
+        <IconButton label={layout.changesView === "list" ? "View as Tree" : "View as List"}
           icon={layout.changesView === "list" ? <ListTreeIcon aria-hidden="true" /> : <ListIcon aria-hidden="true" />}
           onClick={() => layout.setChangesView(layout.changesView === "list" ? "tree" : "list")} />
-        <IconButton size="xs" label="Open Changes" title="Open all uncommitted changes in a review tab"
+        <IconButton label="Open Changes" title="Open all uncommitted changes in a review tab"
           icon={<FileDiffIcon aria-hidden="true" />} disabled={fileCount === 0} onClick={() => review(workingCompare, true)} />
       </>,
       body: working && (
@@ -130,7 +130,7 @@ export function SourceControlView({
         </span>
       ),
       actions: <>
-        <IconButton ref={filterButton} size="xs" label="Filter Commits" title="Filter commits by message, author, or hash"
+        <IconButton ref={filterButton} label="Filter Commits" title="Filter commits by message, author, or hash"
           aria-pressed={commitFilter.filter.open} icon={<SearchIcon aria-hidden="true" />}
           onClick={() => {
             if (commitFilter.filter.open) {
