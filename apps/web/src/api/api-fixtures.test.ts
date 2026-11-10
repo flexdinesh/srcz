@@ -4,10 +4,11 @@ import test from "node:test"
 
 import {
   isBranchFilesResponse, isChangesResponse, isCommitFilesResponse, isCommitsResponse, isCompareStatsResponse, isDiffResponse,
-  isDirectoriesResponse, isErrorResponse, isFormatResult, isNavigationResult, isNavigationStatus, isPageData, isProcessMetrics,
+  isDirectoriesResponse, isErrorResponse, isFeedback, isFeedbackSummary, isFormatResult, isNavigationResult, isNavigationStatus, isPageData, isProcessMetrics,
   isProjectsResponse, isRangeFilesResponse, isRefsResponse, isSearchDocumentsResponse, isStackResponse, isWalkthrough,
   isWalkthroughSummary, type DiffResponse, type PageData,
 } from "@zero/contracts"
+import { feedbackUnavailableCode } from "./feedback-data.ts"
 import { unknownBaseCode, unknownHeadCode } from "./source-control-messages.ts"
 import { isRecord } from "./http.ts"
 import { isLiveChange, isLiveStatus } from "./events-contract.ts"
@@ -336,6 +337,51 @@ test("walkthrough fixtures satisfy runtime contracts", async () => {
   assert.equal(withStep({ ...file, file: { path: "a.go", lines: ["3"] } }), false)
   assert.equal(withStep({ ...diff, diff: { compare: { kind: "stash" } } }), false)
   assert.equal(withStep({ ...diff, diff: { compare: { kind: "working" }, side: "both" } }), false)
+})
+
+test("feedback fixtures satisfy runtime contracts", async () => {
+  const feedback = await fixture("feedback.json")
+  assert.ok(isFeedback(feedback))
+  // The fixture exercises every anchor state, status, and awaiting party.
+  assert.deepEqual(new Set(feedback.threads.map((thread) => thread.location.state)), new Set(["anchored", "moved", "outdated"]))
+  assert.deepEqual(new Set(feedback.threads.map((thread) => thread.status)), new Set(["open", "resolved", "wontfix"]))
+  assert.deepEqual(new Set(feedback.threads.map((thread) => thread.awaiting)), new Set(["agent", "user"]))
+  assert.ok(feedback.threads.some((thread) => thread.anchor.lines === undefined), "a file-level thread")
+  // An outdated location has no lines; others keep the anchor's line count.
+  for (const thread of feedback.threads) {
+    const { anchor, location } = thread
+    if (location.state === "outdated") assert.equal(location.lines, undefined, String(thread.number))
+    else assert.equal(location.lines?.length, anchor.lines?.length, String(thread.number))
+  }
+
+  const list = await fixture("feedback-list.json")
+  assert.ok(Array.isArray(list) && list.every(isFeedbackSummary))
+  assert.ok(list.some((summary) => summary.id === feedback.id && summary.branch === feedback.branch))
+
+  const missing = await fixture("error-feedback-unavailable.json")
+  assert.ok(isErrorResponse(missing))
+  assert.equal(missing.code, feedbackUnavailableCode)
+
+  // A branch with no feedback yet reads as an empty one.
+  assert.equal(isFeedback({ id: "", project: "/p", branch: "", threads: [], createdAt: "", updatedAt: "" }), true)
+})
+
+test("feedback contract validators reject malformed threads", async () => {
+  const feedback = await fixture("feedback.json")
+  assert.ok(isRecord(feedback) && Array.isArray(feedback.threads))
+  const threads: unknown[] = feedback.threads
+  const [thread] = threads
+  assert.ok(isRecord(thread) && isRecord(thread.anchor) && Array.isArray(thread.messages))
+  const withThread = (value: unknown) => isFeedback({ ...feedback, threads: [value] })
+  assert.equal(withThread(thread), true)
+  assert.equal(withThread({ ...thread, status: "closed" }), false)
+  assert.equal(withThread({ ...thread, awaiting: "both" }), false)
+  assert.equal(withThread({ ...thread, anchor: { ...thread.anchor, side: "both" } }), false)
+  assert.equal(withThread({ ...thread, anchor: { ...thread.anchor, compare: { kind: "stash", uncommitted: false } } }), false)
+  assert.equal(withThread({ ...thread, location: { state: "lost", path: "a.go", side: "new" } }), false)
+  assert.equal(withThread({ ...thread, messages: [{ number: 1, author: "bot", body: "", bodyHTML: "", createdAt: "" }] }), false)
+  assert.equal(isFeedback({ ...feedback, branch: undefined }), false)
+  assert.equal(isFeedbackSummary({ id: "fb-3k2q8m", branch: "main", threads: 1 }), false)
 })
 
 test("live update fixtures satisfy runtime contracts", async () => {

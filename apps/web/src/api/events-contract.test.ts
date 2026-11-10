@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { isLiveHead } from "./events-contract.ts"
+import { isFeedbackEvent, isLiveHead } from "./events-contract.ts"
 
 const commit = "0123456789abcdef0123456789abcdef01234567"
 
@@ -22,4 +22,13 @@ test("head events carry the checkout and the stream's previous head", () => {
   assert.equal(isLiveHead(withoutPrevious), false)
   assert.equal(isLiveHead({ ...baseline, previous: { branch: "main" } }), false)
   assert.equal(isLiveHead(null), false)
+})
+
+test("feedback events name the feedback, its branch, and who wrote the change", () => {
+  const event = { project: "/home/user/markdown", id: "fb-3k2q8m", branch: "feature/greeting", author: "agent", updatedAt: "2026-11-10T09:30:00Z" }
+  assert.equal(isFeedbackEvent(event), true)
+  assert.equal(isFeedbackEvent({ ...event, branch: "" }), true)
+  assert.equal(isFeedbackEvent({ ...event, author: "bot" }), false)
+  const { id: _id, ...withoutId } = event
+  assert.equal(isFeedbackEvent(withoutId), false)
 })

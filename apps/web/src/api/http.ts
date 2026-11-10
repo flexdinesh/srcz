@@ -69,10 +69,37 @@ export async function fetchJSON<T>(
   valid: (value: unknown) => value is T,
   describe: (failure: RequestFailure) => string,
 ): Promise<T> {
+  return requestJSON(url, { headers: { Accept: "application/json", ...options.headers }, signal: options.signal }, options, valid, describe)
+}
+
+// postJSON posts body as JSON to url and returns the payload valid accepts,
+// failing as fetchJSON does.
+export async function postJSON<T>(
+  url: string,
+  body: unknown,
+  options: FetchJSONOptions,
+  valid: (value: unknown) => value is T,
+  describe: (failure: RequestFailure) => string,
+): Promise<T> {
+  return requestJSON(url, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", ...options.headers },
+    body: JSON.stringify(body),
+    signal: options.signal,
+  }, options, valid, describe)
+}
+
+async function requestJSON<T>(
+  url: string,
+  init: RequestInit,
+  options: FetchJSONOptions,
+  valid: (value: unknown) => value is T,
+  describe: (failure: RequestFailure) => string,
+): Promise<T> {
   const fail = (failure: RequestFailure) => new RequestError(describe(failure), failure)
   let response: Response
   try {
-    response = await fetch(url, { headers: { Accept: "application/json", ...options.headers }, signal: options.signal })
+    response = await fetch(url, init)
   } catch (error: unknown) {
     if (isAbort(error)) throw error
     throw fail({ kind: "unreachable" })
