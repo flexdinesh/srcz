@@ -83,7 +83,7 @@ func serveFixtureWith(t *testing.T, root string, servers *lsp.Manager) fixture {
 	options := watch.DefaultOptions()
 	options.Debounce = 30 * time.Millisecond
 	options.MaxWait = 200 * time.Millisecond
-	webApp, err := web.New(web.Config{Roots: roots, Depth: 5, LanguageServers: servers, LiveUpdates: watch.NewHub(options), WalkthroughDirectory: t.TempDir()})
+	webApp, err := web.New(web.Config{Roots: roots, Depth: 5, LanguageServers: servers, LiveUpdates: watch.NewHub(options), WalkthroughDirectory: t.TempDir(), FeedbackDirectory: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,6 +94,7 @@ func serveFixtureWith(t *testing.T, root string, servers *lsp.Manager) fixture {
 		Status:    daemon.Status{Protocol: daemon.ProtocolVersion, Version: "test", PID: 1, Socket: "test.sock", Depth: 5, IdleExit: "0s", StartedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)},
 		Done:      done,
 		Notices:   webApp.Application().Walkthroughs,
+		Feedback:  webApp.Application().Feedback,
 	})
 
 	tcp := httptest.NewServer(webApp)

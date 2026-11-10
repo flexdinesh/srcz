@@ -13,6 +13,14 @@ const (
 	CodeWalkthroughUnavailable = "walkthroughUnavailable"
 )
 
+// DaemonFeedbackRequest is the body of POST /_daemon/feedback: announce that
+// project's feedback ID changed, written by Author (decision 0120).
+type DaemonFeedbackRequest struct {
+	Project string         `json:"project"`
+	ID      string         `json:"id"`
+	Author  FeedbackAuthor `json:"author"`
+}
+
 // Remote serving (decision 0098) error codes.
 const (
 	// CodeUnauthorized: a TCP request without the connection string's token.
@@ -61,6 +69,9 @@ type DaemonRemote struct {
 const (
 	DaemonEventStatus      = "status"
 	DaemonEventWalkthrough = "walkthrough"
+	// DaemonEventFeedback announces a feedback change (decision 0120). Its
+	// body is FeedbackEvent; Project is the project it was written in.
+	DaemonEventFeedback = "feedback"
 )
 
 // DaemonStatus describes a running daemon, GET /_daemon/status. Its shape
@@ -119,6 +130,7 @@ type DaemonEvent struct {
 	Name        string
 	Status      *DaemonStatusEvent
 	Walkthrough *WalkthroughEvent
+	Feedback    *FeedbackEvent
 }
 
 // Payload is the event's body, encoded as the stream's data.
@@ -128,6 +140,8 @@ func (e DaemonEvent) Payload() any {
 		return e.Status
 	case DaemonEventWalkthrough:
 		return e.Walkthrough
+	case DaemonEventFeedback:
+		return e.Feedback
 	}
 	return nil
 }

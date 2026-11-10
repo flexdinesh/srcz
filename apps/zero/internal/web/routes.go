@@ -41,7 +41,7 @@ func localHost(host string) bool {
 type apiHandler func(w http.ResponseWriter, r *http.Request, query url.Values)
 
 // newRoutes lists every endpoint. All are GET but publishing and deleting
-// walkthroughs; JSON endpoints are never cached.
+// walkthroughs and writing feedback; JSON endpoints are never cached.
 func (a *App) newRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 	api := func(path string, handler apiHandler) {
@@ -135,6 +135,24 @@ func (a *App) newRoutes() *http.ServeMux {
 		a.serveDeleteWalkthrough(w, r, query.Get("project"), query.Get("id"))
 	})
 
+	// Review feedback (decision 0120).
+	api("/api/feedback", a.serveFeedback)
+	api("/api/feedback-list", func(w http.ResponseWriter, _ *http.Request, query url.Values) {
+		summaries, err := a.app.Feedback.List(contract.FeedbackListRequest{Project: query.Get("project")})
+		writeResult(w, summaries, err)
+	})
+	write := func(pattern string, handler http.HandlerFunc) {
+		mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.Header().Set("Cache-Control", "no-store")
+			handler(w, r)
+		})
+	}
+	write("POST /api/feedback-threads", a.serveCreateFeedbackThread)
+	write("POST /api/feedback-messages", a.servePostFeedbackMessage)
+	write("DELETE /api/feedback-threads", func(w http.ResponseWriter, r *http.Request) { a.serveDeleteFeedback(w, r, true) })
+	write("DELETE /api/feedback", func(w http.ResponseWriter, r *http.Request) { a.serveDeleteFeedback(w, r, false) })
+
 	// Live updates (decision 0050).
 	mux.HandleFunc("GET /api/events", a.serveEvents)
 	if a.config.Presence {
@@ -149,7 +167,7 @@ func (a *App) newRoutes() *http.ServeMux {
 
 // serveShellPage serves the app shell. Without a project the browser
 // chooses one, so no page data is embedded; /view requires a file unless it
-// opens a review, walkthrough, or Welcome tab.
+// opens a review, walkthrough, feedback, or Welcome tab.
 func (a *App) serveShellPage(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	projectID := query.Get("project")
@@ -158,7 +176,7 @@ func (a *App) serveShellPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	selected, at := "", ""
-	required := r.URL.Path == "/view" && !reviewQuery(query) && !walkthroughQuery(query) && !welcomeQuery(query)
+	required := r.URL.Path == "/view" && !reviewQuery(query) && !walkthroughQuery(query) && !feedbackQuery(query) && !welcomeQuery(query)
 	if required {
 		selected, at = query.Get("path"), query.Get("at")
 	}
@@ -176,6 +194,12 @@ func reviewQuery(query url.Values) bool {
 // tab (decision 0047): wt=<id>.
 func walkthroughQuery(query url.Values) bool {
 	return !query.Has("path") && query.Get("wt") != ""
+}
+
+// feedbackQuery reports a pathless /view that reveals the Feedback view at
+// a feedback (decision 0120): fb=<id>.
+func feedbackQuery(query url.Values) bool {
+	return !query.Has("path") && query.Get("fb") != ""
 }
 
 // welcomeQuery reports a pathless /view that opens the Welcome tab (decision

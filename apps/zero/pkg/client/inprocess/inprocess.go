@@ -166,6 +166,32 @@ func (c *Client) WalkthroughSchema(ctx context.Context) ([]byte, error) {
 	return call(ctx, func() ([]byte, error) { return bytes.Clone(c.app.Walkthroughs.Schema()), nil })
 }
 
+func (c *Client) Feedback(ctx context.Context, request contract.FeedbackRequest) (contract.Feedback, error) {
+	return call(ctx, func() (contract.Feedback, error) { return c.app.Feedback.Get(ctx, request) })
+}
+
+func (c *Client) FeedbackList(ctx context.Context, request contract.FeedbackListRequest) ([]contract.FeedbackSummary, error) {
+	return call(ctx, func() ([]contract.FeedbackSummary, error) { return c.app.Feedback.List(request) })
+}
+
+func (c *Client) CreateFeedbackThread(ctx context.Context, draft contract.FeedbackThreadDraft) (contract.FeedbackThread, error) {
+	return call(ctx, func() (contract.FeedbackThread, error) { return c.app.Feedback.CreateThread(ctx, draft) })
+}
+
+func (c *Client) PostFeedbackMessage(ctx context.Context, draft contract.FeedbackMessageDraft) (contract.FeedbackThread, error) {
+	return call(ctx, func() (contract.FeedbackThread, error) { return c.app.Feedback.PostMessage(ctx, draft) })
+}
+
+func (c *Client) DeleteFeedbackThread(ctx context.Context, request contract.FeedbackDeleteRequest) error {
+	_, err := call(ctx, func() (struct{}, error) { return struct{}{}, c.app.Feedback.DeleteThread(request) })
+	return err
+}
+
+func (c *Client) DeleteFeedback(ctx context.Context, request contract.FeedbackDeleteRequest) error {
+	_, err := call(ctx, func() (struct{}, error) { return struct{}{}, c.app.Feedback.Delete(request) })
+	return err
+}
+
 func (c *Client) DaemonStatus(ctx context.Context) (contract.DaemonStatus, error) {
 	return daemonCall(ctx, c.control, func() (contract.DaemonStatus, error) { return c.control.Status(), nil })
 }
@@ -185,7 +211,7 @@ func (c *Client) DaemonEvents(ctx context.Context) (*client.Stream[contract.Daem
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	first, notices, cancelNotices := c.control.Subscribe()
+	first, events, cancelEvents := c.control.Subscribe()
 	ctx, cancel := context.WithCancel(ctx)
 	pending := []contract.DaemonEvent{first}
 	next := func() (contract.DaemonEvent, error) {
@@ -199,14 +225,14 @@ func (c *Client) DaemonEvents(ctx context.Context) (*client.Stream[contract.Daem
 			return contract.DaemonEvent{}, ctx.Err()
 		case <-c.control.Done():
 			return contract.DaemonEvent{}, io.EOF
-		case notice, ok := <-notices:
+		case event, ok := <-events:
 			if !ok {
 				return contract.DaemonEvent{}, io.EOF
 			}
-			return daemon.WalkthroughEvent(notice), nil
+			return event, nil
 		}
 	}
-	return client.NewStream(next, func() { cancel(); cancelNotices() }), nil
+	return client.NewStream(next, func() { cancel(); cancelEvents() }), nil
 }
 
 // call runs an operation unless ctx has ended, translating its error.

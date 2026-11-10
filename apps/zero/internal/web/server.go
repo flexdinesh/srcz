@@ -39,6 +39,9 @@ type Config struct {
 	// WalkthroughDirectory stores published walkthroughs; empty uses
 	// walkthrough.DefaultDirectory.
 	WalkthroughDirectory string
+	// FeedbackDirectory stores review feedback; empty uses
+	// feedback.DefaultDirectory.
+	FeedbackDirectory string
 	// OpenBrowser opens a published walkthrough's URL when it asks to be
 	// opened; nil never opens one.
 	OpenBrowser func(url string) error
@@ -113,6 +116,7 @@ func New(config Config) (*App, error) {
 		OpenFile:             func(name string) (fs.File, error) { return a.openFile(name) },
 		Watches:              config.LiveUpdates,
 		WalkthroughDirectory: config.WalkthroughDirectory,
+		FeedbackDirectory:    config.FeedbackDirectory,
 	})
 	if err != nil {
 		return nil, err
@@ -182,12 +186,13 @@ func (a *App) Close() {
 	a.servers.Close()
 }
 
-// StopLiveUpdates ends every event stream and walkthrough notice
-// subscription and stops watching, so a server shutdown need not wait for
+// StopLiveUpdates ends every event stream and walkthrough and feedback
+// notice subscription and stops watching, so a server shutdown need not wait for
 // streams that never end on their own.
 func (a *App) StopLiveUpdates() {
 	a.watches.Close()
 	a.app.Walkthroughs.CloseNotices()
+	a.app.Feedback.CloseNotices()
 	a.stoppingOnce.Do(func() { close(a.stopping) })
 }
 

@@ -143,6 +143,16 @@ func (c *Client) AnnounceWalkthrough(ctx context.Context, project, id string, cr
 	return c.call(ctx, http.MethodPost, "walkthroughs", announceRequest{Project: project, ID: id, Created: created}, http.StatusAccepted, &response)
 }
 
+// AnnounceFeedback asks the daemon to announce that project's feedback id
+// changed, written by author, to its control streams and the repository's
+// project streams. A *ControlError with code feedbackUnavailable means the
+// daemon's store lacks it; projectUnavailable means no served root shows
+// the project.
+func (c *Client) AnnounceFeedback(ctx context.Context, project, id string, author contract.FeedbackAuthor) error {
+	var response announceResponse
+	return c.call(ctx, http.MethodPost, "feedback", contract.DaemonFeedbackRequest{Project: project, ID: id, Author: author}, http.StatusAccepted, &response)
+}
+
 // Stop asks the daemon to stop and waits, within ctx, until the socket stops
 // answering. A daemon that is not running is already stopped.
 func (c *Client) Stop(ctx context.Context) error {

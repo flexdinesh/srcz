@@ -318,6 +318,73 @@ func (c *HTTP) WalkthroughSchema(ctx context.Context) ([]byte, error) {
 	return io.ReadAll(io.LimitReader(response.Body, maxResponse))
 }
 
+func (c *HTTP) Feedback(ctx context.Context, request contract.FeedbackRequest) (contract.Feedback, error) {
+	query := url.Values{"project": {request.Project}}
+	setNonEmpty(query, "id", request.ID)
+	if compare := request.Compare; compare != nil {
+		query.Set("compare", string(compare.Kind))
+		setNonEmpty(query, "base", compare.Base)
+		setNonEmpty(query, "head", compare.Head)
+		setFlag(query, "uncommitted", compare.Uncommitted)
+		setNonEmpty(query, "commit", compare.Commit)
+		setNonEmpty(query, "from", compare.From)
+		setNonEmpty(query, "to", compare.To)
+	}
+	var response contract.Feedback
+	return response, c.getJSON(ctx, "/api/feedback", query, &response)
+}
+
+func (c *HTTP) FeedbackList(ctx context.Context, request contract.FeedbackListRequest) ([]contract.FeedbackSummary, error) {
+	var summaries []contract.FeedbackSummary
+	return summaries, c.getJSON(ctx, "/api/feedback-list", url.Values{"project": {request.Project}}, &summaries)
+}
+
+func (c *HTTP) CreateFeedbackThread(ctx context.Context, draft contract.FeedbackThreadDraft) (contract.FeedbackThread, error) {
+	var thread contract.FeedbackThread
+	return thread, c.postJSON(ctx, "/api/feedback-threads", draft, &thread)
+}
+
+func (c *HTTP) PostFeedbackMessage(ctx context.Context, draft contract.FeedbackMessageDraft) (contract.FeedbackThread, error) {
+	var thread contract.FeedbackThread
+	return thread, c.postJSON(ctx, "/api/feedback-messages", draft, &thread)
+}
+
+func (c *HTTP) DeleteFeedbackThread(ctx context.Context, request contract.FeedbackDeleteRequest) error {
+	query := url.Values{"project": {request.Project}, "id": {request.ID}, "thread": {strconv.Itoa(request.Thread)}}
+	return c.deleteNoContent(ctx, "/api/feedback-threads", query)
+}
+
+func (c *HTTP) DeleteFeedback(ctx context.Context, request contract.FeedbackDeleteRequest) error {
+	return c.deleteNoContent(ctx, "/api/feedback", url.Values{"project": {request.Project}, "id": {request.ID}})
+}
+
+// postJSON posts body as JSON and decodes a JSON answer into result.
+func (c *HTTP) postJSON(ctx context.Context, path string, body, result any) error {
+	encoded, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	response, err := c.do(ctx, http.MethodPost, path, nil, encoded)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = response.Body.Close() }()
+	return answer(response, result)
+}
+
+// deleteNoContent sends a DELETE that answers 204.
+func (c *HTTP) deleteNoContent(ctx context.Context, path string, query url.Values) error {
+	response, err := c.do(ctx, http.MethodDelete, path, query, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = response.Body.Close() }()
+	if response.StatusCode != http.StatusNoContent {
+		return failure(response)
+	}
+	return nil
+}
+
 // setNonEmpty sets a query parameter the server reads as absent when empty.
 func setNonEmpty(query url.Values, name, value string) {
 	if value != "" {
@@ -533,6 +600,9 @@ func projectEvent(name string, data []byte) (contract.Event, bool, error) {
 	case contract.EventWalkthrough:
 		event.Walkthrough = &contract.WalkthroughEvent{}
 		target = event.Walkthrough
+	case contract.EventFeedback:
+		event.Feedback = &contract.FeedbackEvent{}
+		target = event.Feedback
 	default:
 		return contract.Event{}, false, nil
 	}
@@ -552,6 +622,9 @@ func daemonEvent(name string, data []byte) (contract.DaemonEvent, bool, error) {
 	case contract.DaemonEventWalkthrough:
 		event.Walkthrough = &contract.WalkthroughEvent{}
 		target = event.Walkthrough
+	case contract.DaemonEventFeedback:
+		event.Feedback = &contract.FeedbackEvent{}
+		target = event.Feedback
 	default:
 		return contract.DaemonEvent{}, false, nil
 	}

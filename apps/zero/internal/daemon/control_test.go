@@ -489,3 +489,80 @@ func (d *testDaemon) status(t *testing.T) Status {
 	}
 	return status
 }
+
+// fakeFeedback records feedback announcements and hands each stream
+// subscription a channel the test feeds.
+type fakeFeedback struct {
+	mu        sync.Mutex
+	announced []contract.DaemonFeedbackRequest
+	err       error
+	stream    chan app.FeedbackNotice
+}
+
+func (f *fakeFeedback) Announce(project, id string, author contract.FeedbackAuthor) (contract.FeedbackEvent, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return contract.FeedbackEvent{}, f.err
+	}
+	f.announced = append(f.announced, contract.DaemonFeedbackRequest{Project: project, ID: id, Author: author})
+	return contract.FeedbackEvent{Project: project, ID: id, Author: author}, nil
+}
+
+func (f *fakeFeedback) Notices() (<-chan app.FeedbackNotice, func()) {
+	return f.stream, func() {}
+}
+
+func TestControlAnnouncesFeedback(t *testing.T) {
+	notices := newFakeNotices()
+	feedback := &fakeFeedback{stream: make(chan app.FeedbackNotice, 4)}
+	c, _ := testControl(t, notices)
+	c.feedback = feedback
+	client := serveControl(t, c.Handler(http.NotFoundHandler()))
+
+	stream := openEvents(t, client)
+	stream.expect(t, ": zero\n")
+	stream.expect(t, "event: status\ndata: {\"protocol\":1,\"version\":\"1.2.3\"}\n")
+	feedback.stream <- app.FeedbackNotice{Repository: "/work/repo/.git", Event: contract.FeedbackEvent{Project: "/work/repo", ID: "fb-3k2q8m", Branch: "topic", Author: contract.FeedbackAuthorAgent, UpdatedAt: "2026-11-10T09:30:00Z"}}
+	stream.expect(t, "event: feedback\ndata: {\"project\":\"/work/repo\",\"id\":\"fb-3k2q8m\",\"branch\":\"topic\",\"author\":\"agent\",\"updatedAt\":\"2026-11-10T09:30:00Z\"}\n")
+	notices.stream <- contract.WalkthroughEvent{Project: "/work/repo", ID: "tour", Title: "Tour", Created: true}
+	stream.expect(t, "event: walkthrough\ndata: {\"project\":\"/work/repo\",\"id\":\"tour\",\"title\":\"Tour\",\"created\":true}\n")
+
+	if err := client.AnnounceFeedback(context.Background(), "/work/repo", "fb-3k2q8m", contract.FeedbackAuthorAgent); err != nil {
+		t.Fatal(err)
+	}
+	feedback.mu.Lock()
+	announced := append([]contract.DaemonFeedbackRequest(nil), feedback.announced...)
+	feedback.mu.Unlock()
+	if want := []contract.DaemonFeedbackRequest{{Project: "/work/repo", ID: "fb-3k2q8m", Author: contract.FeedbackAuthorAgent}}; !reflect.DeepEqual(announced, want) {
+		t.Errorf("announced = %+v, want %+v", announced, want)
+	}
+
+	for _, test := range []struct {
+		err  error
+		code string
+	}{
+		{&app.Error{Kind: contract.KindNotFound, Code: contract.CodeFeedbackUnavailable}, contract.CodeFeedbackUnavailable},
+		{&app.Error{Kind: contract.KindNotFound, Code: contract.CodeProjectUnavailable}, contract.CodeProjectUnavailable},
+	} {
+		feedback.mu.Lock()
+		feedback.err = test.err
+		feedback.mu.Unlock()
+		code, _, body := controlRequest(t, client, http.MethodPost, "feedback", jsonHeader, `{"project":"/work/repo","id":"fb-3k2q8m","author":"agent"}`)
+		if code != http.StatusNotFound || !strings.Contains(string(body), test.code) {
+			t.Errorf("announce with %v = %d %s, want 404 %s", test.err, code, body, test.code)
+		}
+	}
+	if code, _, body := controlRequest(t, client, http.MethodPost, "feedback", jsonHeader, `{"project":"/work/repo"}`); code != http.StatusBadRequest || !strings.Contains(string(body), "invalidRequest") {
+		t.Errorf("announce without an id = %d %s", code, body)
+	}
+	if code, header, _ := controlRequest(t, client, http.MethodGet, "feedback", nil, ""); code != http.StatusMethodNotAllowed || header.Get("Allow") != http.MethodPost {
+		t.Errorf("GET /_daemon/feedback = %d Allow %q", code, header.Get("Allow"))
+	}
+
+	// A daemon without a feedback store has none to announce.
+	bare, _ := testControl(t, newFakeNotices())
+	if code, _, body := controlRequest(t, serveControl(t, bare.Handler(http.NotFoundHandler())), http.MethodPost, "feedback", jsonHeader, `{"project":"/work/repo","id":"fb-3k2q8m","author":"agent"}`); code != http.StatusNotFound || !strings.Contains(string(body), contract.CodeFeedbackUnavailable) {
+		t.Errorf("announce without a store = %d %s", code, body)
+	}
+}

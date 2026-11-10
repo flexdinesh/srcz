@@ -97,6 +97,7 @@ func Run(ctx context.Context, config Config) error {
 		Stop:      func() { cancel(errStopRequested) },
 		Done:      ctx.Done(),
 		Notices:   rt.Application().Walkthroughs,
+		Feedback:  rt.Application().Feedback,
 		Status: Status{
 			Protocol:  ProtocolVersion,
 			Version:   version.Number(),

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/flexdinesh/zero/internal/document"
+	"github.com/flexdinesh/zero/internal/feedback"
 	"github.com/flexdinesh/zero/internal/files"
 	"github.com/flexdinesh/zero/internal/lsp"
 	"github.com/flexdinesh/zero/internal/projects"
@@ -47,6 +48,9 @@ type Config struct {
 	// WalkthroughDirectory stores published walkthroughs; empty uses
 	// walkthrough.DefaultDirectory.
 	WalkthroughDirectory string
+	// FeedbackDirectory stores review feedback; empty uses
+	// feedback.DefaultDirectory.
+	FeedbackDirectory string
 }
 
 // App holds the domain services. Each is safe for concurrent use.
@@ -58,6 +62,7 @@ type App struct {
 	Navigation    *Navigation
 	Metrics       *Metrics
 	Walkthroughs  *Walkthroughs
+	Feedback      *Feedback
 }
 
 // state is the configuration every service shares.
@@ -86,17 +91,26 @@ func New(config Config) (*App, error) {
 		}
 		config.WalkthroughDirectory = directory
 	}
+	if config.FeedbackDirectory == "" {
+		directory, err := feedback.DefaultDirectory()
+		if err != nil {
+			return nil, err
+		}
+		config.FeedbackDirectory = directory
+	}
 	shared := &state{config: config}
 	targets := walkthroughTargets{roots: config.Roots, depth: config.Depth, types: config.Types, openFile: config.OpenFile}
 	walkthroughs := &Walkthroughs{state: shared, service: walkthrough.NewService(walkthrough.NewStore(config.WalkthroughDirectory), targets)}
+	reviews := &Feedback{state: shared, service: feedback.NewService(feedback.NewStore(config.FeedbackDirectory))}
 	return &App{
 		Projects:      &Projects{state: shared},
 		Documents:     &Documents{state: shared},
-		Events:        &Events{state: shared, notices: &walkthroughs.notices},
+		Events:        &Events{state: shared, notices: &walkthroughs.notices, feedback: &reviews.notices},
 		SourceControl: &SourceControl{state: shared},
 		Navigation:    &Navigation{state: shared, servers: config.LanguageServers},
 		Metrics:       &Metrics{},
 		Walkthroughs:  walkthroughs,
+		Feedback:      reviews,
 	}, nil
 }
 
