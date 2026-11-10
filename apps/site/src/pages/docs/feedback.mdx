@@ -1,0 +1,125 @@
+---
+showAskAi: false
+---
+
+# Review feedback
+
+Leave comments on code an agent wrote, then hand them to the agent in one
+prompt. Comment on lines of a diff, on a whole file in a review, or on lines of
+a file in Source. The agent reads the threads with the Zero CLI, makes the
+changes, and replies in each thread; its replies appear beside the code.
+
+All comments on one branch of a repository share one feedback id, such as
+`fb-3k2q8m`, that never changes, so the same prompt works for every round of
+review. Worktrees of a repository share its feedback.
+
+## Commenting
+
+In a review, select lines in the gutter: click a line number, Shift-click
+another to extend. Press **C**, or choose the comment icon (**Comment on
+lines**) that appears in the gutter beside the selection. A comment box opens
+under the selected lines. Write in Markdown, then press Ctrl+Enter (Cmd+Enter
+on macOS) or choose **Comment**. Escape or **Cancel** closes the box; if you
+comment on the same lines again before reloading the page, your text is still
+there. Lines on either side of a diff work: removed lines keep their old
+numbers.
+
+To comment on a whole file, choose the comment icon (**Comment on file**) in
+the file's sticky header.
+
+Source works the same way: select lines, then press **C** or choose the
+comment icon beside the gutter's copy button. Source comments are about the
+working tree, so Source shows them only for the files on disk: not in Preview,
+Format, or a file at a commit.
+
+Each comment starts a thread, shown inside the code right after its lines:
+
+- **Reply** under the messages; Ctrl+Enter (Cmd+Enter) sends. Your reply to a
+  closed thread reopens it.
+- **Resolve** closes a thread; **Reopen** opens it again. The **More** menu
+  has **Won't fix** and **Delete thread**.
+- **Copy thread for agent** copies one thread with the command to reply to it.
+- Resolved and won't-fix threads fold to one line; click to expand. Turn off
+  **Show resolved comments** in a review's **View options** to hide them; the
+  choice applies to Source too.
+
+In branch, commit, and range reviews, the Files rail counts each file's open
+threads.
+
+## Threads follow the code
+
+Threads move with their lines as the code changes. A thread is **outdated**
+only when the lines it was written on are gone; it then leaves the code and
+stays in the Feedback view with the text it was written on. A file's header
+says how many of its threads are outdated; click it to see them.
+
+## The Feedback view
+
+Open the **Feedback** view (the message icon in the activity bar). The badge
+counts threads with an agent reply you have not seen. The view shows the
+checked-out branch's feedback; the picker switches to another branch's.
+
+Filter by **Open**, **Awaiting agent**, **Resolved** (with won't fix), or
+**All**. Threads are
+grouped by file; a dot marks a new agent reply. Click a thread to open it at
+its lines in the review or Source it was written in. Outdated threads open in
+place, with the original code and the conversation.
+
+| Action | Where |
+| --- | --- |
+| Copy the prompt for your agent | **Copy Prompt** in the view's header |
+| Copy every shown thread as Markdown | **More** › **Copy as Markdown** |
+| Copy the feedback id | the copy icon beside the id |
+| Delete every thread of the branch | **More** › **Delete feedback**, then confirm |
+
+The [desktop app](/docs/desktop) can notify you when an agent replies
+(**Feedback Replies** under Settings › Notifications); clicking it opens the
+Feedback view.
+
+Feedback lives in your user state directory (`~/.local/state/zero/feedback`
+on Linux, `~/Library/Application Support/zero/feedback` on macOS), up to 200
+branches per repository; the least recently updated go first. It is per
+machine and is not shared through git.
+
+## Answering feedback (for agents)
+
+The quickest start: choose **Copy Prompt** and paste it into your agent. It
+names the feedback, your project, and the commands below.
+
+Agents use the Zero CLI; no running server is needed, and open windows update
+within a second:
+
+```sh
+zero feedback show fb-3k2q8m          # threads awaiting the agent, as Markdown
+zero feedback reply fb-3k2q8m 3 -m "Moved the greeting to a constant." --resolve
+```
+
+Examples and copied prompts use the canonical `zero`. If installed as
+`zero-cli` or with `--name NAME`, substitute your chosen command; see
+[installation details](/docs/getting-started#command-name-collisions).
+
+| Command | Effect |
+| --- | --- |
+| `zero feedback show [id]` | Threads awaiting the agent; `--all` for every thread, `--json` for JSON |
+| `zero feedback reply <id> <thread> -m TEXT` | Reply; add `--resolve`, `--wontfix`, or `--reopen` to set the status |
+| `zero feedback comment [id] --path P --lines 12-20 -m TEXT` | Start a thread on the working tree; omit `--lines` for the whole file |
+| `zero feedback list` | One line per branch with feedback in the repository |
+
+Without an id, commands use the current directory's repository and checked-out
+branch; `--project DIR` names another. `-m -` reads the message from standard
+input, `--name NAME` signs an agent's messages, and any mistake exits 1 naming
+each problem.
+
+Agents can also use HTTP on a running zero: `GET /api/feedback?project=…&id=…`
+returns the threads, and `POST /api/feedback-messages` with JSON
+`{"project", "id", "thread", "body", "status", "author": "agent"}` replies.
+
+Zero ships an agent skill with the full guidance. Install it with the
+[`skills`](https://github.com/vercel-labs/skills) CLI:
+
+```sh
+npx skills add flexdinesh/zero --skill zero-feedback
+```
+
+The skill is documentation only; Zero does not install it. Its source is
+[`skills/zero-feedback`](https://github.com/flexdinesh/zero/tree/main/skills/zero-feedback).

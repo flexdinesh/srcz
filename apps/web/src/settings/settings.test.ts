@@ -32,7 +32,7 @@ test("font size accepts whole pixel values within range", () => {
 })
 
 test("stored settings keep valid values and default the rest", () => {
-  const defaults = { fontSize: DEFAULT_FONT_SIZE, languageServers: "on", showWelcome: "on", notifyCommits: "on", notifyBranches: "on", notifyEdits: "off", notifyWalkthroughs: "on" }
+  const defaults = { fontSize: DEFAULT_FONT_SIZE, languageServers: "on", showWelcome: "on", notifyCommits: "on", notifyBranches: "on", notifyEdits: "off", notifyWalkthroughs: "on", notifyFeedback: "on" }
   assert.deepEqual(parseSettings(null), defaults)
   assert.deepEqual(parseSettings("not json"), defaults)
   assert.deepEqual(parseSettings("[]"), defaults)
@@ -45,6 +45,8 @@ test("stored settings keep valid values and default the rest", () => {
   assert.deepEqual(parseSettings('{"showWelcome":false}'), defaults)
   assert.deepEqual(parseSettings('{"notifyEdits":"on","notifyCommits":"off"}'), { ...defaults, notifyEdits: "on", notifyCommits: "off" })
   assert.deepEqual(parseSettings('{"notifyBranches":"off","notifyWalkthroughs":"off"}'), { ...defaults, notifyBranches: "off", notifyWalkthroughs: "off" })
+  assert.deepEqual(parseSettings('{"notifyFeedback":"off"}'), { ...defaults, notifyFeedback: "off" })
+  assert.deepEqual(parseSettings('{"notifyFeedback":false}'), defaults)
   assert.deepEqual(parseSettings('{"notifyEdits":true,"notifyCommits":"maybe"}'), defaults)
 })
 
@@ -63,9 +65,9 @@ test("ui scale is relative to the default font size", () => {
 })
 
 test("notification settings exist only where notifications do", () => {
-  const notify = ["notifyCommits", "notifyBranches", "notifyEdits", "notifyWalkthroughs"]
+  const notify = ["notifyCommits", "notifyBranches", "notifyEdits", "notifyWalkthroughs", "notifyFeedback"]
   assert.deepEqual(availableSettings(true), settingDefinitions)
-  assert.deepEqual(availableSettings(true).map((definition) => definition.id).slice(-4), notify)
+  assert.deepEqual(availableSettings(true).map((definition) => definition.id).slice(-5), notify)
   assert.ok(availableSettings(false).every((definition) => !notify.includes(definition.id)))
   assert.deepEqual(matchAmong("commit", availableSettings(true)).map((definition) => definition.id), ["notifyCommits"])
   assert.equal(matchAmong("commit", availableSettings(false)).length, 0)

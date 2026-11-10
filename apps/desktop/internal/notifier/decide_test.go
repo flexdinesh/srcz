@@ -105,6 +105,49 @@ func TestWalkthroughMessages(t *testing.T) {
 	}
 }
 
+func TestFeedbackMessages(t *testing.T) {
+	list := []contract.FeedbackSummary{
+		{ID: "fb-3k2q8m", Branch: "feature/greeting", Threads: 4, Open: 3, AwaitingAgent: 1, AwaitingUser: 2, UpdatedAt: "2026-11-10T09:12:00Z"},
+		{ID: "fb-detach", Branch: "", Threads: 1, AwaitingUser: 1, UpdatedAt: "2026-11-09T09:12:00Z"},
+		{ID: "fb-settld", Branch: "main", Threads: 1, UpdatedAt: "2026-11-08T09:12:00Z"},
+	}
+	agent := func(id string) contract.FeedbackEvent {
+		return contract.FeedbackEvent{Project: "/code/zero", ID: id, Author: contract.FeedbackAuthorAgent, UpdatedAt: "2026-11-10T09:12:00Z"}
+	}
+	tests := []struct {
+		name   string
+		event  contract.FeedbackEvent
+		title  string
+		detail string
+		silent bool
+	}{
+		{name: "the user's own write is silent", event: contract.FeedbackEvent{ID: "fb-3k2q8m", Author: contract.FeedbackAuthorUser}, silent: true},
+		{name: "feedback the list lacks is silent", event: agent("fb-gone00"), silent: true},
+		{name: "a reply names the branch and what waits", event: agent("fb-3k2q8m"), title: "Agent replied on feature/greeting", detail: "2 threads awaiting you"},
+		{name: "a detached HEAD has no branch", event: agent("fb-detach"), title: "Agent replied", detail: "1 thread awaiting you"},
+		{name: "nothing waiting has no detail", event: agent("fb-settld"), title: "Agent replied on main"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, ok := feedbackMessage(test.event, list)
+			if ok == test.silent {
+				t.Fatalf("feedbackMessage = %+v, %v; want silent %v", got, ok, test.silent)
+			}
+			if test.silent {
+				return
+			}
+			if got.kind != KindFeedback || got.title != test.title || got.detail != test.detail || got.route != "/view" || got.query.Get("fb") != test.event.ID {
+				t.Errorf("feedbackMessage = %+v, want %q %q", got, test.title, test.detail)
+			}
+		})
+	}
+	// A server's branch name is cleaned like any other text it sends.
+	hostile := []contract.FeedbackSummary{{ID: "fb-3k2q8m", Branch: "main\n\u202egnp", AwaitingUser: 1}}
+	if got, ok := feedbackMessage(agent("fb-3k2q8m"), hostile); !ok || got.title != "Agent replied on maingnp" {
+		t.Errorf("hostile branch = %+v, %v", got, ok)
+	}
+}
+
 func TestAddressedNamesItsConnectionAndProject(t *testing.T) {
 	m := message{kind: KindCommit, title: "New commit on main", detail: "bbbbbbb Fix", route: "/view"}
 	local := addressed(m, "local", "", "/code/zero")

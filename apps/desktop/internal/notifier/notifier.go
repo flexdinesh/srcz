@@ -87,6 +87,10 @@ type Notifier struct {
 	recent    []string
 	followers map[string]*follower
 	limit     limiter
+	// feedbackSeen is each feedback's last reported update time: every
+	// worktree of a repository hears one write (decision 0120), and one
+	// notice covers them.
+	feedbackSeen map[string]string
 }
 
 // New returns a Notifier following nothing until Configure.
@@ -101,7 +105,7 @@ func New(options Options) *Notifier {
 		options.MinBackoff = minBackoff
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	return &Notifier{options: options, ctx: ctx, cancel: cancel, followers: map[string]*follower{}}
+	return &Notifier{options: options, ctx: ctx, cancel: cancel, followers: map[string]*follower{}, feedbackSeen: map[string]string{}}
 }
 
 // Stop ends every stream. A stopped server can then exit: streams count as
@@ -208,6 +212,25 @@ func (n *Notifier) deliver(project string, m message) {
 	if allowed {
 		n.options.Show(addressed(m, n.options.Connection, n.options.Label, project))
 	}
+}
+
+// wants reports that kind is on.
+func (n *Notifier) wants(kind Kind) bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return n.settings.enabled(kind)
+}
+
+// firstFeedback reports the first of a feedback write's announcements, and
+// remembers it.
+func (n *Notifier) firstFeedback(event contract.FeedbackEvent) bool {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.feedbackSeen[event.ID] == event.UpdatedAt {
+		return false
+	}
+	n.feedbackSeen[event.ID] = event.UpdatedAt
+	return true
 }
 
 // follower holds one project's stream, across reconnects and lease changes.
@@ -350,6 +373,10 @@ func (f *follower) follow(ctx context.Context, failed error) error {
 				}
 			case contract.EventWalkthrough:
 				f.listWalkthroughs(streamCtx, server)
+			case contract.EventFeedback:
+				if result.event.Feedback != nil {
+					f.feedback(streamCtx, server, *result.event.Feedback)
+				}
 			}
 		case <-settle.C:
 			f.settled(streamCtx, server)
@@ -433,5 +460,22 @@ func (f *follower) listWalkthroughs(ctx context.Context, server client.Client) {
 	f.walkthroughs = walkthroughTimes(summaries)
 	if ok {
 		f.notifier.deliver(f.project, message)
+	}
+}
+
+// feedback reports an agent's feedback write with what now waits on the user.
+// A list that fails reports nothing.
+func (f *follower) feedback(ctx context.Context, server client.Client, event contract.FeedbackEvent) {
+	n := f.notifier
+	if !fromAgent(event) || !n.wants(KindFeedback) {
+		return
+	}
+	summaries, err := server.FeedbackList(ctx, contract.FeedbackListRequest{Project: f.project})
+	if err != nil {
+		return
+	}
+	message, ok := feedbackMessage(event, summaries)
+	if ok && n.firstFeedback(event) {
+		n.deliver(f.project, message)
 	}
 }

@@ -22,6 +22,8 @@ export interface NotificationConfig {
   branches: boolean
   edits: boolean
   walkthroughs: boolean
+  // feedback is agents' replies to review feedback (decision 0120).
+  feedback: boolean
 }
 
 // NotificationStatus is whether notices can reach the user.

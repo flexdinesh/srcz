@@ -1,7 +1,9 @@
+import { MessageSquarePlusIcon } from "lucide-react"
 import { Fragment, memo, useCallback, useMemo, useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from "react"
 
 import { ChangeMark } from "../../components/ui/change-mark.tsx"
 import { CopyButton } from "../../components/ui/copy-button.tsx"
+import { IconButton } from "../../components/ui/icon-button.tsx"
 import type { ColumnRange, NavigationKind } from "../navigation/code-navigation.ts"
 import { clampLineRange, lineReference, spanLines, splitSourceLines, startLineSelection, type LineRange } from "../../lib/line-selection.ts"
 import { showLink, targetAt, wordRange, type SourceTarget } from "../navigation/source-position.ts"
@@ -34,6 +36,21 @@ export interface SourceAnnotation {
   render(lineAt: ((line: number) => string | undefined) | null): ReactNode
 }
 
+// SourceZone is a full-width zone after line, or before the first when line
+// is 0 or past the last, e.g. a feedback thread (decision 0120).
+export interface SourceZone {
+  key: string
+  line: number
+  node: ReactNode
+}
+
+// SourceComments places feedback zones and starts a comment on the selected
+// lines: the gutter's Comment button, or C outside text fields.
+export interface SourceComments {
+  zones: readonly SourceZone[]
+  onComment(range: LineRange): void
+}
+
 // SourceChanges marks where the file differs from HEAD in the gutter
 // (decision 0115); onOpen opens a marker's change in its review.
 export interface SourceChanges {
@@ -61,6 +78,7 @@ interface SourceDocumentProps {
   navigation?: SourceNavigation
   annotation?: SourceAnnotation
   changes?: SourceChanges
+  comments?: SourceComments
 }
 
 // LineCopyButton copies a line reference from the gutter. Its presses stay
@@ -72,6 +90,33 @@ export function LineCopyButton({ reference }: { reference: string }) {
       <CopyButton text={reference} label={`Copy ${reference}`} variant="gutter" className="source-line-copy-button" />
     </span>
   )
+}
+
+// LineCommentButton starts a comment on the selected lines from the gutter,
+// beside Copy. Its presses stay out of the gutter, which selects lines.
+function LineCommentButton({ onComment }: { onComment(): void }) {
+  const stop = (event: { stopPropagation(): void }) => event.stopPropagation()
+  return (
+    <span className="source-line-comment" onPointerDown={stop} onMouseDown={stop}>
+      <IconButton size="xs" variant="gutter" label="Comment on Lines" title="Comment on lines (C)" aria-keyshortcuts="c"
+        icon={<MessageSquarePlusIcon aria-hidden="true" />}
+        onClick={(event) => {
+          event.stopPropagation()
+          onComment()
+        }} />
+    </span>
+  )
+}
+
+// isTextField reports a target that takes typed text, whose keys are its own.
+function isTextField(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
+    || (target instanceof HTMLElement && target.isContentEditable)
+}
+
+// zoneLine is the line a zone follows: 0, the top, when it is past the last.
+function zoneLine(line: number, count: number): number {
+  return line <= count ? line : 0
 }
 
 function modified(event: { metaKey: boolean; ctrlKey: boolean }): boolean {
@@ -86,7 +131,7 @@ const SourceLineContent = memo(function SourceLineContent({ line, highlighted }:
     : <span className="source-document-line-content">{line}</span>
 })
 
-export function SourceDocument({ source, language, label, selection, navigation, annotation, changes }: SourceDocumentProps) {
+export function SourceDocument({ source, language, label, selection, navigation, annotation, changes, comments }: SourceDocumentProps) {
   const lines = splitSourceLines(source)
   // Rows show plain text until highlighting arrives.
   const highlightedLines = useHighlightedLines(source, language)
@@ -162,6 +207,21 @@ export function SourceDocument({ source, language, label, selection, navigation,
     }
   }, [drag, range, selection])
 
+  // C comments on the selection while focus is in the document or nowhere.
+  const comment = comments?.onComment
+  useEffect(() => {
+    if (!comment || !range) return
+    const key = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "c" || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || isTextField(event.target)) return
+      const root = container.current
+      if (event.target !== document.body && !(event.target instanceof Node && root?.contains(event.target))) return
+      event.preventDefault()
+      comment(range)
+    }
+    window.addEventListener("keydown", key)
+    return () => window.removeEventListener("keydown", key)
+  }, [comment, range])
+
   function pressGutter(event: PointerEvent, lineNumber: number) {
     if (!selection || event.button !== 0) return
     container.current?.focus({ preventScroll: true })
@@ -195,12 +255,25 @@ export function SourceDocument({ source, language, label, selection, navigation,
     }
   }
 
-  // The annotation sits after its line, or at the top past the last line.
-  const annotationLine = annotation ? (annotation.line <= lines.length ? annotation.line : 0) : -1
+  // Zones sit after their line, or at the top past the last line.
+  const lineCount = lines.length
+  const annotationLine = annotation ? zoneLine(annotation.line, lineCount) : -1
   const focus = annotation?.focus && annotationLine > 0 ? annotation.focus : null
-  const zone = (line: number) => annotationLine === line && annotation
-    ? <span className="source-annotation">{annotation.render((number) => lines[number - 1])}</span>
-    : null
+  const commentZones = comments?.zones
+  const zonesAt = useMemo(() => {
+    const byLine = new Map<number, SourceZone[]>()
+    for (const zone of commentZones ?? []) {
+      const line = zoneLine(zone.line, lineCount)
+      byLine.set(line, [...byLine.get(line) ?? [], zone])
+    }
+    return byLine
+  }, [commentZones, lineCount])
+  const zone = (line: number) => {
+    const narration = annotationLine === line && annotation ? annotation.render((number) => lines[number - 1]) : null
+    const here = zonesAt.get(line)
+    if (!narration && !here) return null
+    return <span className="source-annotation">{narration}{here?.map((entry) => <Fragment key={entry.key}>{entry.node}</Fragment>)}</span>
+  }
 
   return (
     <div
@@ -211,7 +284,10 @@ export function SourceDocument({ source, language, label, selection, navigation,
       aria-multiline="true"
       aria-readonly="true"
       tabIndex={0}
+      aria-keyshortcuts={comments && range ? "c" : undefined}
       onKeyDown={(event) => {
+        // A zone's text field keeps its own keys.
+        if (isTextField(event.target)) return
         if (navigation && event.key === "F12" && !event.altKey && !modified(event)) {
           event.preventDefault()
           navigation.onNavigate(event.shiftKey ? "references" : "definition", null)
@@ -268,6 +344,10 @@ export function SourceDocument({ source, language, label, selection, navigation,
                 {changes && mark?.wedge && (
                   <ChangeMark kind="deleted" edge={mark.wedge.edge} label={markerLabel(mark.wedge.marker)}
                     onActivate={() => mark.wedge && changes.onOpen(mark.wedge.marker)} />
+                )}
+                {/* After the change marks: on the selection's first line it covers them. */}
+                {comments && range && !drag?.active && shown?.start === lineNumber && (
+                  <LineCommentButton onComment={() => comments.onComment(range)} />
                 )}
               </span>
               <SourceLineContent line={line} highlighted={highlightedLines[index]} />

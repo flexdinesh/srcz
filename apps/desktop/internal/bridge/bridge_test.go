@@ -24,12 +24,18 @@ func TestParseAppearance(t *testing.T) {
 
 func TestParseNotifications(t *testing.T) {
 	valid := func() map[string]any {
-		return map[string]any{"project": "/code/zero", "commits": true, "branches": true, "edits": false, "walkthroughs": true}
+		return map[string]any{"project": "/code/zero", "commits": true, "branches": true, "edits": false, "walkthroughs": true, "feedback": true}
 	}
 	got, ok := ParseNotifications(valid())
-	want := Notifications{Project: "/code/zero", Commits: true, Branches: true, Walkthroughs: true}
+	want := Notifications{Project: "/code/zero", Commits: true, Branches: true, Walkthroughs: true, Feedback: true}
 	if !ok || got != want {
 		t.Errorf("ParseNotifications = %+v, %v; want %+v", got, ok, want)
+	}
+	// An older server's page has no feedback choice: feedback is off.
+	older := valid()
+	delete(older, "feedback")
+	if got, ok := ParseNotifications(older); !ok || got.Feedback || !got.Walkthroughs {
+		t.Errorf("without feedback = %+v, %v", got, ok)
 	}
 	none := valid()
 	none["project"] = ""
@@ -45,6 +51,9 @@ func TestParseNotifications(t *testing.T) {
 		func(fields map[string]any) { delete(fields, "branches") },
 		func(fields map[string]any) { fields["edits"] = nil },
 		func(fields map[string]any) { fields["walkthroughs"] = 1 },
+		func(fields map[string]any) { fields["feedback"] = "on" },
+		func(fields map[string]any) { fields["feedback"] = nil },
+		func(fields map[string]any) { delete(fields, "feedback"); fields["connection"] = "r-000000000000" },
 		func(fields map[string]any) { fields["connection"] = "r-000000000000" },
 	}
 	for i, change := range bad {
