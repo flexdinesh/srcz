@@ -270,12 +270,16 @@ func (r *remoteServer) listenLocked(host string, port *int) error {
 // handler composes what TCP adds to the web app. Authentication comes first,
 // so only a real client counts as a UI.
 func (r *remoteServer) handler() http.Handler {
+	return r.idle.wrap(remote.Authenticate(r.identity.Credential.TokenText(), remoteInfo(), r.lifetime.track(remote.Compress(r.web))))
+}
+
+// remoteInfo is what /_zero/remote answers on every exposure.
+func remoteInfo() contract.RemoteInfo {
 	name, err := os.Hostname()
 	if err != nil {
 		name = "zero"
 	}
-	info := contract.RemoteInfo{Protocol: ProtocolVersion, Version: version.Number(), Name: name}
-	return r.idle.wrap(remote.Authenticate(r.identity.Credential.TokenText(), info, r.lifetime.track(remote.Compress(r.web))))
+	return contract.RemoteInfo{Protocol: ProtocolVersion, Version: version.Number(), Name: name}
 }
 
 // Stop implements RemoteControl.

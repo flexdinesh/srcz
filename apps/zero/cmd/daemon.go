@@ -14,6 +14,7 @@ import (
 
 	"github.com/flexdinesh/zero/internal/daemon"
 	"github.com/flexdinesh/zero/internal/remote"
+	"github.com/flexdinesh/zero/internal/tailscale"
 	"github.com/spf13/cobra"
 )
 
@@ -143,7 +144,7 @@ func serveDaemon(ctx context.Context, opts daemonOptions, lifetime daemon.Lifeti
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "cannot serve over TCP: %v\n", err)
 	}
-	err = daemon.Run(ctx, daemon.Config{Socket: opts.socket, RootsFile: rootsFile, Depth: opts.depth, ScanDepth: opts.scanDepth, Lifetime: lifetime, Log: stderr, IdentityFile: identityFile})
+	err = daemon.Run(ctx, daemon.Config{Socket: opts.socket, RootsFile: rootsFile, Depth: opts.depth, ScanDepth: opts.scanDepth, Lifetime: lifetime, Log: stderr, IdentityFile: identityFile, Tailscale: &tailscale.Client{}})
 	if errors.Is(err, daemon.ErrRunning) {
 		return fmt.Errorf("%w at %s", err, opts.socket)
 	}

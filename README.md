@@ -92,6 +92,19 @@ zero browser .    # serve on localhost and open the browser
 `zero browser --host <address>` serves plain http with **no authentication**:
 anyone who can reach the address can read the files. Prefer `--remote`.
 
+### Tailscale
+
+```sh
+zero ~/code --tailscale   # prints https://<machine>.<tailnet>.ts.net:7971/
+```
+
+Open the printed link in a browser on any device in your tailnet: real HTTPS,
+no string. Your tailnet's access rules decide who can connect, and anyone they
+let in can read the served files. Zero runs `tailscale serve` while it serves
+and leaves nothing behind; `zero remote status|stop` manage it. Needs HTTPS
+Certificates on for the tailnet; on Linux, `sudo tailscale set --operator=$USER`
+once. See [remote hosts](apps/site/src/pages/docs/remote.mdx#tailscale).
+
 ### Docker
 
 ```sh

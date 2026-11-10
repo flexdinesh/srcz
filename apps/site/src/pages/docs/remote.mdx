@@ -120,6 +120,41 @@ it only on networks you trust, or run `zero browser` (it binds `localhost`) and
 forward its port yourself, for example `ssh -L 7971:localhost:7971 <host>`.
 :::
 
+## Tailscale
+
+On a [tailnet](https://tailscale.com), serve with real HTTPS and no string:
+
+```sh
+zero ~/code/foo --tailscale
+```
+
+```text
+  zero 1.4.0
+  serving directory:  /home/dee/code/foo
+
+  tailnet:  https://mybox.tail1234.ts.net:7971/
+  open it on any device your tailnet's access rules let reach this machine; they can all read the served files.
+
+  stops 10 min after this if nothing connects, and 5 min after the last UI closes. `zero remote stop` stops it now.
+```
+
+Open the link in a browser on any of your tailnet devices. Zero runs
+`tailscale serve` for you on HTTPS port 7971 (`--port` changes it) and stops it
+with the server, so nothing stays in your Tailscale settings. It keeps the same
+time limits as `--remote`, works with `--foreground`, and `zero remote status`
+and `zero remote stop` manage it. It replaces a `--remote` listener, and the
+reverse.
+
+There is no token: your tailnet's access rules decide who can connect, and
+anyone they let reach this machine can read and change what Zero serves. Zero
+needs the Tailscale CLI, a connected tailnet, and HTTPS Certificates turned on
+in the admin console's DNS page. On Linux, run
+`sudo tailscale set --operator=$USER` once so `tailscale serve` runs as you.
+Zero names whichever is missing.
+
+Tailscale proxies to a port on `127.0.0.1`, which other users of the host can
+reach, as they can `zero browser`.
+
 ## Notifications
 
 A connection's window notifies you as a local one does

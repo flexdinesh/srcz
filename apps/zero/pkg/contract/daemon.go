@@ -29,6 +29,19 @@ const (
 	CodePortBusy = "portBusy"
 	// CodeRemoteUnavailable: this daemon does not serve over TCP.
 	CodeRemoteUnavailable = "remoteUnavailable"
+	// CodeTailscaleUnavailable: Tailscale cannot serve here; the message
+	// names the fix (decision 0126).
+	CodeTailscaleUnavailable = "tailscaleUnavailable"
+)
+
+// Remote exposures (decision 0126): how the daemon serves beyond its socket.
+// One serves at a time; starting another stops it.
+const (
+	// RemoteExposureTLS listens on TCP with pinned TLS and a token (0098).
+	RemoteExposureTLS = "tls"
+	// RemoteExposureTailscale is a foreground `tailscale serve` to a private
+	// listener; the tailnet authenticates.
+	RemoteExposureTailscale = "tailscale"
 )
 
 // RemoteInfoPath answers RemoteInfo over TCP, after authentication. The
@@ -44,20 +57,26 @@ type RemoteInfo struct {
 	Name string `json:"name"`
 }
 
-// DaemonRemoteRequest is the body of POST /_daemon/remote. An empty Host binds
-// every interface. A nil Port tries the last port, then the default range. The
+// DaemonRemoteRequest is the body of POST /_daemon/remote. Exposure is a
+// RemoteExposure kind; empty is TLS. For TLS, an empty Host binds every
+// interface and a nil Port tries the last port, then the default range. For
+// Tailscale, Host must be empty and Port is the HTTPS port (default 7971). The
 // durations (time.ParseDuration text) default to 10m and 5m.
 type DaemonRemoteRequest struct {
+	Exposure  string `json:"exposure,omitempty"`
 	Host      string `json:"host,omitempty"`
 	Port      *int   `json:"port,omitempty"`
 	FirstWait string `json:"firstWait,omitempty"`
 	Grace     string `json:"grace,omitempty"`
 }
 
-// DaemonRemote is the daemon's TCP listener, /_daemon/remote. Credential is a
+// DaemonRemote is the daemon's exposure, /_daemon/remote. Credential is a
 // secret: only the Unix socket answers this. Clients is the UIs connected.
+// Over Tailscale, Host is this machine's MagicDNS name, Port the HTTPS port,
+// and there is no ID or Credential.
 type DaemonRemote struct {
 	Listening  bool   `json:"listening"`
+	Exposure   string `json:"exposure,omitempty"`
 	Host       string `json:"host,omitempty"`
 	Port       int    `json:"port,omitempty"`
 	ID         string `json:"id,omitempty"`

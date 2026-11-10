@@ -40,11 +40,13 @@ zero ~/code/foo --remote          # on the server: serve over TLS, print a zero 
 zero ~/code/foo --remote --web    # also print a browser link
 zero --remote --host 10.0.0.5     # one address (default every interface)
 zero . --remote --foreground      # serve from this process until stopped, as in a container
+zero ~/code/foo --tailscale       # serve to your tailnet: https://<machine>.<tailnet>.ts.net:7971/
+zero . --tailscale --port 443     # another HTTPS port; works with --foreground too
 zero connect <string>             # on your computer: open it in the desktop app
 zero connect --host localhost <string>   # through your own ssh -L tunnel
 zero connect --no-open <string>   # save it and print the zero:// link
-zero remote status                # print the state and the string again
-zero remote stop                  # stop serving over TCP now
+zero remote status                # print the state and the string (or tailnet URL) again
+zero remote stop                  # stop serving to other machines now
 zero remote rotate                # new identity; old strings stop working
 ```
 
