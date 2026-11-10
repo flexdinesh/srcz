@@ -1,29 +1,23 @@
-import { useEffect, useLayoutEffect, useState } from "react"
+import { useLayoutEffect } from "react"
 
 import { desktopBridge } from "../lib/desktop-bridge.ts"
 import type { WorkspaceTab } from "./workspace-tabs.ts"
 
 // The native menu owns Cmd/Ctrl+W. Close through the workspace so routing,
 // scroll cleanup, and remembered tabs follow the same path as the tab's X.
+// Closing the final tab leaves the empty workspace; the shortcut there closes
+// the window, whose memory already holds the empty workspace (decision 0121).
 export function useDesktopCloseTab(active: WorkspaceTab | null, tabs: readonly WorkspaceTab[], closeTab: (tab: WorkspaceTab) => void) {
-  const [closingWindow, setClosingWindow] = useState(false)
-
   useLayoutEffect(() => {
-    if (!desktopBridge()?.closeWindow) return
+    const closeWindow = desktopBridge()?.closeWindow
+    if (!closeWindow) return
     function close(event: Event) {
       event.preventDefault()
       const tab = active ?? tabs.at(-1)
       if (tab) closeTab(tab)
-      if (tabs.length <= 1) setClosingWindow(true)
+      else closeWindow?.()
     }
     window.addEventListener("zero:close-tab", close)
     return () => window.removeEventListener("zero:close-tab", close)
   }, [active, closeTab, tabs])
-
-  // Let navigation and the project's memory effect save the empty workspace
-  // before closing the native window. A tab opened meanwhile keeps it alive.
-  useEffect(() => {
-    if (closingWindow && !active && tabs.length === 0) desktopBridge()?.closeWindow?.()
-    else if (closingWindow && tabs.length > 0) setClosingWindow(false)
-  }, [active, closingWindow, tabs.length])
 }

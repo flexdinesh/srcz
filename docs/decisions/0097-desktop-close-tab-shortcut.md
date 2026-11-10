@@ -1,6 +1,6 @@
 # 0097: Desktop close shortcut closes the active tab
 
-- Status: Accepted
+- Status: Accepted; superseded for closing the final tab by [0121](0121-final-tab-close-keeps-window.md)
 - Date: 2026-11-05
 - Revises: [0095](0095-desktop-app-is-mygo-electron-removed.md) (window menu), [0081](0081-desktop-bridge-v2-native-features.md) (optional bridge method)
 

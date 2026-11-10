@@ -572,7 +572,7 @@ func TestWebViewApp(t *testing.T) {
 		app.capture("no-folder-picker.png")
 	})
 
-	t.Run("close shortcut closes the active tab then the app", func(t *testing.T) {
+	t.Run("close shortcut closes the active tab, then the empty window", func(t *testing.T) {
 		w.t = t
 		isolate("close-tabs")
 		app := w.launch(w.project)
@@ -611,6 +611,13 @@ func TestWebViewApp(t *testing.T) {
 		app.eval(`document.body.appendChild(document.createElement("input")).focus(); return true`)
 		pressClose()
 		app.waitEval("the previous tab selected", `return document.querySelectorAll('[role=tab]').length === 1 && document.querySelector('[role=tab][aria-selected=true]')?.textContent === "README.md"`)
+		// Closing the final tab keeps the window open on the empty workspace.
+		pressClose()
+		app.waitEval("the empty workspace after the final tab", `return document.querySelectorAll('[role=tab]').length === 0`)
+		time.Sleep(time.Second)
+		if open, err := app.evalErr(`return document.querySelectorAll('[role=tab]').length === 0`); err != nil || open != true {
+			t.Fatalf("closing the final tab closed the window: %v, %v", open, err)
+		}
 		pressClose()
 		waitForExit(app)
 
