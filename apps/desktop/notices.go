@@ -36,7 +36,7 @@ func (h *host) configureNotifications(connectionHost string, window *mygo.Window
 		h.notifiers[connectionHost] = running
 	}
 	h.mu.Unlock()
-	running.Configure(config.Project, notifier.Settings{Commits: config.Commits, Branches: config.Branches, Edits: config.Edits, Walkthroughs: config.Walkthroughs})
+	running.Configure(config.Project, notifier.Settings{Commits: config.Commits, Branches: config.Branches, Edits: config.Edits, Walkthroughs: config.Walkthroughs, Feedback: config.Feedback})
 	return bridge.NotificationStatus{Supported: noticesSupported(), Denied: h.noticesDenied.Load()}
 }
 

@@ -31,6 +31,9 @@ type fakeServer struct {
 	opened    []string
 	changes   contract.ChangesResponse
 	summaries map[string][]contract.WalkthroughSummary
+	// feedback is each project's feedback list; feedbackLists counts reads.
+	feedback      map[string][]contract.FeedbackSummary
+	feedbackLists int
 	// refuse answers /api/events with this status and error body.
 	refuseStatus int
 	refuseCode   string
@@ -42,7 +45,28 @@ type fakeStream struct {
 }
 
 func newFakeServer() *fakeServer {
-	return &fakeServer{streams: map[*fakeStream]struct{}{}, changes: contract.ChangesResponse{Repository: true, Files: []contract.ChangedFile{}}, summaries: map[string][]contract.WalkthroughSummary{}}
+	return &fakeServer{streams: map[*fakeStream]struct{}{}, changes: contract.ChangesResponse{Repository: true, Files: []contract.ChangedFile{}}, summaries: map[string][]contract.WalkthroughSummary{}, feedback: map[string][]contract.FeedbackSummary{}}
+}
+
+// feedbackClient adds FeedbackList to a client of the fake server.
+// TODO(0120): drop it for client.Client's own FeedbackList, served by the
+// fake at /api/feedback-list, once pkg/client has one.
+type feedbackClient struct {
+	client.Client
+	server *fakeServer
+}
+
+func (c feedbackClient) FeedbackList(_ context.Context, request contract.FeedbackListRequest) ([]contract.FeedbackSummary, error) {
+	c.server.mu.Lock()
+	defer c.server.mu.Unlock()
+	c.server.feedbackLists++
+	return slices.Clone(c.server.feedback[request.Project]), nil
+}
+
+func (f *fakeServer) feedbackReads() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.feedbackLists
 }
 
 func (f *fakeServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -599,5 +623,62 @@ func TestFollowsAtMostSixteenProjects(t *testing.T) {
 	eventually(t, "the oldest projects to stop", func() bool { return h.server.streamCount() == maxFollowed })
 	if got := h.server.streamsOf("/code/p0"); len(got) != 0 {
 		t.Errorf("the oldest project is still followed: %v", got)
+	}
+}
+
+func feedbackEvent(project string, author contract.FeedbackAuthor, updated string) string {
+	return sse(contract.EventFeedback, contract.FeedbackEvent{Project: project, ID: "fb-3k2q8m", Branch: "feature/greeting", Author: author, UpdatedAt: updated})
+}
+
+func TestFeedbackRepliesNotifyOncePerWrite(t *testing.T) {
+	for _, over := range transports() {
+		t.Run(over.name, func(t *testing.T) {
+			h := &harness{server: newFakeServer(), now: time.Unix(1_000_000, 0)}
+			server := feedbackClient{Client: over.connect(t, h.server), server: h.server}
+			h.start(t, Options{Connect: func(context.Context, error) (client.Client, error) { return server, nil }})
+			summary := contract.FeedbackSummary{ID: "fb-3k2q8m", Branch: "feature/greeting", Threads: 3, Open: 2, AwaitingUser: 2, UpdatedAt: "2026-11-10T09:12:00Z"}
+			// Two worktrees of one repository share its feedback.
+			h.server.feedback[projectA] = []contract.FeedbackSummary{summary}
+			h.server.feedback[projectB] = []contract.FeedbackSummary{summary}
+			h.notifier.Configure(projectA, Settings{Feedback: true})
+			h.waitStream(t, projectA, leaseWatched)
+			h.notifier.Configure(projectB, Settings{Feedback: true})
+			h.waitStream(t, projectB, leaseWatched)
+
+			// The user's own write reads nothing and says nothing.
+			h.server.send(projectA, feedbackEvent(projectA, contract.FeedbackAuthorUser, "2026-11-10T09:11:00Z"))
+			time.Sleep(30 * time.Millisecond)
+			if got, reads := h.titles(), h.server.feedbackReads(); len(got) != 0 || reads != 0 {
+				t.Fatalf("a user write showed %v after %d list reads", got, reads)
+			}
+
+			// An agent's write reaches every worktree's stream; one notice covers it.
+			h.server.send(projectA, feedbackEvent(projectA, contract.FeedbackAuthorAgent, summary.UpdatedAt))
+			h.server.send(projectB, feedbackEvent(projectA, contract.FeedbackAuthorAgent, summary.UpdatedAt))
+			notice := h.waitTitle(t, "Agent replied on feature/greeting")
+			if notice.Kind != KindFeedback || !strings.HasSuffix(notice.Body, " · 2 threads awaiting you") || !strings.HasPrefix(notice.Route, "/view?") || !strings.Contains(notice.Route, "fb=fb-3k2q8m") || !strings.Contains(notice.Route, "project=") {
+				t.Errorf("feedback notice = %+v", notice)
+			}
+			eventually(t, "both streams to read the list", func() bool { return h.server.feedbackReads() == 2 })
+			time.Sleep(30 * time.Millisecond)
+			if got := h.titles(); len(got) != 1 {
+				t.Fatalf("one write showed %v", got)
+			}
+
+			// A later write notifies again.
+			h.advance(time.Minute)
+			h.server.send(projectA, feedbackEvent(projectA, contract.FeedbackAuthorAgent, "2026-11-10T09:20:00Z"))
+			eventually(t, "the later reply", func() bool { return len(h.shown()) == 2 })
+
+			// Off: an agent's write reads nothing.
+			h.advance(time.Minute)
+			h.notifier.Configure(projectB, Settings{Feedback: false, Branches: true})
+			reads := h.server.feedbackReads()
+			h.server.send(projectA, feedbackEvent(projectA, contract.FeedbackAuthorAgent, "2026-11-10T09:30:00Z"))
+			time.Sleep(30 * time.Millisecond)
+			if got := h.server.feedbackReads(); got != reads || len(h.shown()) != 2 {
+				t.Errorf("with feedback off: %d list reads (was %d), shown %v", got, reads, h.titles())
+			}
+		})
 	}
 }

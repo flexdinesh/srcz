@@ -19,6 +19,7 @@ const (
 	KindBranch      Kind = "branch"
 	KindEdits       Kind = "edits"
 	KindWalkthrough Kind = "walkthrough"
+	KindFeedback    Kind = "feedback"
 )
 
 // Settings is which kinds the user wants from one connection.
@@ -27,6 +28,7 @@ type Settings struct {
 	Branches     bool
 	Edits        bool
 	Walkthroughs bool
+	Feedback     bool
 }
 
 func (s Settings) enabled(kind Kind) bool {
@@ -39,13 +41,15 @@ func (s Settings) enabled(kind Kind) bool {
 		return s.Edits
 	case KindWalkthrough:
 		return s.Walkthroughs
+	case KindFeedback:
+		return s.Feedback
 	}
 	return false
 }
 
 // followsOtherProjects reports a kind that fires for projects not on screen.
 func (s Settings) followsOtherProjects() bool {
-	return s.Commits || s.Branches || s.Walkthroughs
+	return s.Commits || s.Branches || s.Walkthroughs || s.Feedback
 }
 
 // message is a notice before it is addressed to a project and connection.
@@ -208,6 +212,38 @@ func walkthroughTimes(summaries []contract.WalkthroughSummary) map[string]string
 		times[summary.ID] = summary.UpdatedAt
 	}
 	return times
+}
+
+// fromAgent reports a feedback change an agent wrote: only those notify
+// (decision 0120). The user's own writes say nothing.
+func fromAgent(event contract.FeedbackEvent) bool {
+	return event.Author == contract.FeedbackAuthorAgent
+}
+
+// feedbackMessage reports an agent's write to the feedback event names, with
+// what now waits on the user from the repository's list: nothing for the
+// user's own writes, or when the list no longer has that feedback.
+func feedbackMessage(event contract.FeedbackEvent, summaries []contract.FeedbackSummary) (message, bool) {
+	if !fromAgent(event) {
+		return message{}, false
+	}
+	found := slices.IndexFunc(summaries, func(summary contract.FeedbackSummary) bool { return summary.ID == event.ID })
+	if found < 0 {
+		return message{}, false
+	}
+	summary := summaries[found]
+	title := "Agent replied"
+	if summary.Branch != "" {
+		title += " on " + clean(summary.Branch, maxName)
+	}
+	var detail string
+	switch {
+	case summary.AwaitingUser == 1:
+		detail = "1 thread awaiting you"
+	case summary.AwaitingUser > 1:
+		detail = fmt.Sprintf("%d threads awaiting you", summary.AwaitingUser)
+	}
+	return message{kind: KindFeedback, title: title, detail: detail, route: "/view", query: url.Values{"fb": {summary.ID}}}, true
 }
 
 // addressed makes the notice for a project on a connection. The body always

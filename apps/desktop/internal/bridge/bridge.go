@@ -176,6 +176,8 @@ type Notifications struct {
 	Branches     bool
 	Edits        bool
 	Walkthroughs bool
+	// Feedback is agents' replies to review feedback (decision 0120).
+	Feedback bool
 }
 
 // NotificationStatus is whether notices can reach the user.
@@ -185,11 +187,23 @@ type NotificationStatus struct {
 }
 
 // ParseNotifications validates {project, commits, branches, edits,
-// walkthroughs}: project "" or absolute and normalized, the rest booleans, and
-// nothing else.
+// walkthroughs, feedback}: project "" or absolute and normalized, the rest
+// booleans, and nothing else. feedback may be absent, as from a page of an
+// older server, which means off.
 func ParseNotifications(value any) (Notifications, bool) {
 	fields, ok := value.(map[string]any)
-	if !ok || len(fields) != 5 {
+	if !ok {
+		return Notifications{}, false
+	}
+	feedback, wanted := false, 5
+	if raw, present := fields["feedback"]; present {
+		flag, ok := raw.(bool)
+		if !ok {
+			return Notifications{}, false
+		}
+		feedback, wanted = flag, 6
+	}
+	if len(fields) != wanted {
 		return Notifications{}, false
 	}
 	project, okProject := fields["project"].(string)
@@ -200,7 +214,7 @@ func ParseNotifications(value any) (Notifications, bool) {
 	if !okProject || !okCommits || !okBranches || !okEdits || !okWalkthroughs || (project != "" && !isPlainAbsolute(project)) {
 		return Notifications{}, false
 	}
-	return Notifications{Project: project, Commits: commits, Branches: branches, Edits: edits, Walkthroughs: walkthroughs}, true
+	return Notifications{Project: project, Commits: commits, Branches: branches, Edits: edits, Walkthroughs: walkthroughs, Feedback: feedback}, true
 }
 
 func isPlainAbsolute(name string) bool {
