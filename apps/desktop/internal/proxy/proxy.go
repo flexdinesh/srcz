@@ -248,14 +248,15 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 }
 
 // writePage answers with a page of the app's own. Its link reloads, which
-// ensures the daemon again.
+// ensures the daemon again. Under macOS's hidden title bar its top strip
+// drags the window (decision 0119); elsewhere the strip has no height.
 func writePage(w http.ResponseWriter, status int, title, detail string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset="utf-8"><title>zero</title>
-<style>body{font:15px/1.5 system-ui,sans-serif;margin:3em;color-scheme:light dark}</style>
-<h1>%s</h1><p>%s</p><p><a href="/">Try again</a></p>
+<style>body{font:15px/1.5 system-ui,sans-serif;margin:3em;color-scheme:light dark}.drag{position:fixed;inset:0 0 auto;height:var(--mygo-titlebar-height,0px);--app-region:drag}</style>
+<div class="drag"></div><h1>%s</h1><p>%s</p><p><a href="/">Try again</a></p>
 `, html.EscapeString(title), html.EscapeString(detail))
 }

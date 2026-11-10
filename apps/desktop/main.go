@@ -7,10 +7,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"image/color"
 	"log"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -19,6 +21,7 @@ import (
 
 	"github.com/egoist/mygo"
 
+	"github.com/flexdinesh/zero/apps/desktop/internal/appearance"
 	"github.com/flexdinesh/zero/apps/desktop/internal/connect"
 	"github.com/flexdinesh/zero/apps/desktop/internal/link"
 	"github.com/flexdinesh/zero/apps/desktop/internal/notifier"
@@ -40,6 +43,9 @@ type host struct {
 	daemon      *connect.Daemon
 	connections *proxy.Connections
 	store       connection.Store
+	// looks remembers each connection window's background and appearance
+	// (decision 0119).
+	looks *appearance.Store
 
 	// mu guards windows, notifiers, and noticeTargets. Windows and notifiers are
 	// one per connection, by its scheme host; noticeTargets is where a notice's
@@ -82,6 +88,10 @@ func main() {
 	}
 	app.store = connection.NewStore(storePath)
 	app.connections = proxy.NewConnections(app.daemon, app.store)
+	app.looks = appearance.Open(looksPath())
+	// The app starts in the appearance the local window had last, before
+	// any page reports one.
+	app.applyAppearance(proxy.Host)
 	clickNotice = app.noticeClicked
 	mygo.App.OnNotificationClick(app.noticeClicked)
 
@@ -145,16 +155,19 @@ func (h *host) frontWindow() *mygo.Window {
 // openWindow opens the window of start's connection.
 func (h *host) openWindow(start string) {
 	connectionHost := hostOf(start)
+	titleBarStyle, trafficLights := windowChrome(runtime.GOOS)
 	window := mygo.NewWindow(mygo.WindowOptions{
-		Title:           windowTitle(connectionHost, h.connections.Label(connectionHost)),
-		Width:           1200,
-		Height:          800,
-		MinWidth:        640,
-		MinHeight:       400,
-		StateKey:        windowStateKey(connectionHost),
-		URL:             start,
-		BackgroundColor: "light-dark(#d7d8dc, #101116)",
-		Page:            mygo.PageOptions{PreloadScript: preloadScript},
+		Title:                windowTitle(connectionHost, h.connections.Label(connectionHost)),
+		Width:                1200,
+		Height:               800,
+		MinWidth:             640,
+		MinHeight:            400,
+		StateKey:             windowStateKey(connectionHost),
+		URL:                  start,
+		TitleBarStyle:        titleBarStyle,
+		TrafficLightPosition: trafficLights,
+		BackgroundColor:      h.looks.Get(connectionHost).WindowBackground(),
+		Page:                 mygo.PageOptions{PreloadScript: preloadScript},
 	})
 	h.mu.Lock()
 	h.windows[connectionHost] = window
@@ -171,6 +184,12 @@ func (h *host) openWindow(start string) {
 		}
 	})
 	page := window.Page()
+	// The window takes its page's theme color, so resizing and loading never
+	// show another; a page without one gets the default (decision 0119).
+	page.OnThemeColorChanged(func(c color.NRGBA, ok bool) {
+		h.followThemeColor(connectionHost, window, c, ok)
+	})
+	window.OnFocus(func() { h.applyAppearance(connectionHost) })
 	// Pages get nothing the web app does not use.
 	page.SetPermissionHandler(func(mygo.PermissionRequest) bool { return false })
 	page.OnWillNavigate(func(event *mygo.NavigateEvent) {
@@ -193,6 +212,73 @@ func (h *host) openWindow(start string) {
 			log.Printf("zero-desktop: %v", err)
 		}
 	})
+}
+
+// windowChrome hides the native title bar on macOS only, where the page draws
+// the title band under the traffic lights (decision 0119); they center in its
+// 32px. Other platforms keep their native title bar.
+func windowChrome(goos string) (mygo.TitleBarStyle, *mygo.Point) {
+	if goos != "darwin" {
+		return mygo.TitleBarDefault, nil
+	}
+	const bandHeight, trafficLightHeight = 32, 16
+	return mygo.TitleBarHidden, &mygo.Point{X: 12, Y: (bandHeight - trafficLightHeight) / 2}
+}
+
+// followsPageAppearance reports a platform whose native surfaces (menus,
+// window controls) follow the page's theme rather than the OS: macOS only
+// (decision 0119).
+func followsPageAppearance(goos string) bool { return goos == "darwin" }
+
+// followThemeColor gives window its page's theme color and remembers it for
+// the next launch; a page without an opaque one gets the default.
+func (h *host) followThemeColor(connectionHost string, window *mygo.Window, c color.NRGBA, ok bool) {
+	background, opaque := appearance.Hex(c)
+	if !ok || !opaque {
+		background = appearance.DefaultBackground
+	} else if err := h.looks.SetBackground(connectionHost, background); err != nil {
+		log.Printf("zero-desktop: %v", err)
+	}
+	if err := window.SetBackgroundColor(background); err != nil {
+		log.Printf("zero-desktop: %v", err)
+	}
+}
+
+// setAppearance remembers what connectionHost's page asks native surfaces to
+// follow, and applies it while that window is in front.
+func (h *host) setAppearance(connectionHost string, window *mygo.Window, source string) {
+	if err := h.looks.SetAppearance(connectionHost, source); err != nil {
+		log.Printf("zero-desktop: %v", err)
+	}
+	if focused := mygo.FocusedWindow(); focused == nil || focused == window {
+		h.applyAppearance(connectionHost)
+	}
+}
+
+// applyAppearance has native surfaces follow connectionHost's page. The
+// appearance is the app's, so the window in front decides.
+func (h *host) applyAppearance(connectionHost string) {
+	if !followsPageAppearance(runtime.GOOS) {
+		return
+	}
+	source := mygo.ThemeSource(h.looks.Get(connectionHost).Appearance)
+	if source == "" {
+		source = mygo.ThemeSystem
+	}
+	if mygo.Theme.Source() != source {
+		mygo.Theme.SetSource(source)
+	}
+}
+
+// looksPath is where window looks are remembered: the app's user data, or
+// nowhere when there is none.
+func looksPath() string {
+	dir, err := mygo.App.Path(mygo.PathUserData)
+	if err != nil {
+		log.Printf("zero-desktop: %v", err)
+		return ""
+	}
+	return filepath.Join(dir, "appearance.json")
 }
 
 // windowStateKey keeps "main" for the local window: its remembered bounds

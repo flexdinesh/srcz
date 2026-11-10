@@ -1,7 +1,16 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { hexColor, isTheme, parseTheme, resolveTheme, themeOptions } from "./theme.ts"
+import { hexColor, isTheme, nativeAppearance, parseTheme, resolveTheme, themeOptions } from "./theme.ts"
+
+test("native surfaces follow the OS on Auto and the theme's polarity otherwise", () => {
+  assert.equal(nativeAppearance("system", "light"), "system")
+  assert.equal(nativeAppearance("system", "dark"), "system")
+  assert.equal(nativeAppearance("light", "light"), "light")
+  assert.equal(nativeAppearance("dark", "dark"), "dark")
+  assert.equal(nativeAppearance("dracula", "dark"), "dark")
+  assert.equal(nativeAppearance("solarized-light", "light"), "light")
+})
 
 test("theme validation accepts only configured theme values", () => {
   assert.equal(isTheme("light"), true)

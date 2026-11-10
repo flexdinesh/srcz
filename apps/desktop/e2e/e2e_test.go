@@ -317,9 +317,24 @@ func TestWebViewApp(t *testing.T) {
 		app.waitEval("the changed file in the page", `return document.body.innerText.includes("Live marker from the e2e test.")`)
 	})
 
+	run("native title bar outside macOS", func(t *testing.T) {
+		// Decision 0119: only macOS hides the title bar, so the page's band
+		// has no height here and the workspace starts at the top.
+		got := app.eval(`const band = document.querySelector(".title-bar"); return [band !== null, band ? band.getBoundingClientRect().height : -1, getComputedStyle(document.documentElement).getPropertyValue("--mygo-titlebar-height").trim()]`)
+		if values, _ := got.([]any); len(values) != 3 || values[0] != true || values[1] != float64(0) || (values[2] != "" && values[2] != "0px") {
+			t.Errorf("title band [present, height, --mygo-titlebar-height] = %v; want [true 0 none]", got)
+		}
+	})
+
 	run("bridge", func(t *testing.T) {
 		if got := app.eval(`return window.zeroDesktop.version`); got != float64(2) {
 			t.Errorf("bridge version = %v", got)
+		}
+		if got := app.eval(`return typeof window.zeroDesktop.setAppearance`); got != "function" {
+			t.Errorf("setAppearance = %v", got)
+		}
+		if got := app.eval(`try { await window.mygo.call("Bridge.SetAppearance", "dark"); return "resolved" } catch (error) { return String(error) }`); got != "resolved" {
+			t.Errorf("SetAppearance(dark) = %v", got)
 		}
 		refused := func(script string) {
 			t.Helper()
@@ -328,6 +343,8 @@ func TestWebViewApp(t *testing.T) {
 				t.Errorf("%s = %v, want a refusal", script, got)
 			}
 		}
+		refused(`window.mygo.call("Bridge.SetAppearance", "auto")`)
+		refused(`window.mygo.call("Bridge.SetAppearance", 1)`)
 		refused(`window.zeroDesktop.revealPath("relative", "a")`)
 		refused(`window.zeroDesktop.revealPath(` + strconv.Quote(w.project) + `, "../escape")`)
 		refused(`window.zeroDesktop.showContextMenu([], 1, 1)`)

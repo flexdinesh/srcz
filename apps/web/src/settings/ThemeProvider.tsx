@@ -8,9 +8,11 @@ import {
   useState,
 } from "react"
 
+import { desktopBridge } from "../lib/desktop-bridge.ts"
 import {
   applyTheme as applyDocumentTheme,
   initializeTheme,
+  nativeAppearance,
   resolveTheme,
   storeTheme,
   type ResolvedTheme,
@@ -57,6 +59,12 @@ export function ThemeProvider({ children, initialTheme }: ThemeProviderProps) {
     media.addEventListener("change", updateSystemTheme)
     return () => { media.removeEventListener("change", updateSystemTheme) }
   }, [applyTheme, appliedTheme])
+
+  // The desktop app's menus and window controls follow the applied theme,
+  // previews included (decision 0119).
+  useEffect(() => {
+    desktopBridge()?.setAppearance?.(nativeAppearance(appliedTheme, resolvedTheme))
+  }, [appliedTheme, resolvedTheme])
 
   const setTheme = useCallback((nextTheme: Theme) => {
     storeTheme(nextTheme)

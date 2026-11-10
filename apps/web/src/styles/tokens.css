@@ -159,6 +159,10 @@
   /* Palette fields lead their dialog, a step above its pick rows. */
   --field-height-palette: 2.5rem;
   --status-height: var(--control-md);
+  /* The desktop app's title band on macOS (decision 0119): the room mygo
+     reports for the hidden title bar's controls, 0 in browsers, on other
+     platforms, and in full screen. */
+  --titlebar-height: var(--mygo-titlebar-height, 0px);
 
   /* Source rows and gutter geometry (Pierre and the copy control align to it). */
   --source-line-height: 1.375rem;

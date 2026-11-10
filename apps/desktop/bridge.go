@@ -28,6 +28,7 @@ const preloadScript = `(() => {
     showAppMenu(x, y) { void call("ShowAppMenu", x, y).catch(() => undefined) },
     showContextMenu(items, x, y) { return call("ShowContextMenu", items, x, y) },
     configureNotifications(config) { return call("ConfigureNotifications", config) },
+    setAppearance(source) { void call("SetAppearance", source).catch(() => undefined) },
   }
   window.zeroDesktop = Object.freeze(location.host === "` + proxy.Host + `" ? {
     version: 2,
@@ -94,6 +95,23 @@ func (b *bridgeService) ConfigureNotifications(ctx context.Context, value any) (
 		return bridge.NotificationStatus{}, errRefused
 	}
 	return b.host.configureNotifications(hostOf(mygo.CallerPage(ctx).URL()), window, config), nil
+}
+
+// SetAppearance takes the polarity the sender's page asks the app's menus and
+// window controls to follow, "system" while its theme follows the OS, for the
+// sender's own connection (decision 0119). macOS applies it; elsewhere it is
+// only remembered.
+func (b *bridgeService) SetAppearance(ctx context.Context, value any) error {
+	window, ok := callerWindow(ctx, b.anyConnection)
+	if !ok {
+		return errRefused
+	}
+	source, ok := bridge.ParseAppearance(value)
+	if !ok {
+		return errRefused
+	}
+	b.host.setAppearance(hostOf(mygo.CallerPage(ctx).URL()), window, source)
+	return nil
 }
 
 // OpenFolder asks for a directory and opens it as a project.

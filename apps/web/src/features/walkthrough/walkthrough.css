@@ -488,7 +488,7 @@ main:not(.source-mode, .image-mode) > .annotated-document > .document-annotation
 /* Present mode (decision 0047): the document fills the canvas; the activity
    bar, sidebar, tabs, and status bar step aside. */
 .layout[data-presenting] {
-  height: 100dvh;
+  height: calc(100dvh - var(--titlebar-height));
   grid-template-columns: minmax(0, 1fr);
 }
 

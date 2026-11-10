@@ -9,6 +9,19 @@ import (
 	"testing"
 )
 
+func TestParseAppearance(t *testing.T) {
+	for _, source := range []string{"system", "light", "dark"} {
+		if got, ok := ParseAppearance(source); !ok || got != source {
+			t.Errorf("ParseAppearance(%q) = %q, %v", source, got, ok)
+		}
+	}
+	for _, value := range []any{"", "auto", "Dark", "dracula", nil, 1, true, []any{"dark"}} {
+		if _, ok := ParseAppearance(value); ok {
+			t.Errorf("ParseAppearance(%#v) accepted", value)
+		}
+	}
+}
+
 func TestParseNotifications(t *testing.T) {
 	valid := func() map[string]any {
 		return map[string]any{"project": "/code/zero", "commits": true, "branches": true, "edits": false, "walkthroughs": true}

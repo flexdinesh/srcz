@@ -22,6 +22,16 @@ test("showAppMenu passes the point through when exposed and is null otherwise", 
   assert.equal(readDesktopBridge({ version: 1, openFolder() {}, showAppMenu: "menu" })?.showAppMenu, null)
 })
 
+test("setAppearance passes the appearance through when exposed and is null otherwise", () => {
+  const calls: unknown[] = []
+  const exposed = { version: 2, setAppearance(this: unknown, appearance: string) { calls.push([this, appearance]) } }
+  readDesktopBridge(exposed)?.setAppearance?.("system")
+  readDesktopBridge(exposed)?.setAppearance?.("dark")
+  assert.deepEqual(calls, [[exposed, "system"], [exposed, "dark"]])
+  assert.equal(readDesktopBridge({ version: 2 })?.setAppearance, null)
+  assert.equal(readDesktopBridge({ version: 2, setAppearance: "dark" })?.setAppearance, null)
+})
+
 test("closeWindow calls the native method when exposed and is null otherwise", () => {
   const calls: unknown[] = []
   const exposed = { version: 2, openFolder() {}, closeWindow(this: unknown) { calls.push(this) } }

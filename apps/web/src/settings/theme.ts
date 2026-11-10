@@ -116,6 +116,13 @@ export function resolveTheme(theme: Theme, prefersDark: boolean): ResolvedTheme 
   return scheme
 }
 
+// nativeAppearance is what the desktop app's native surfaces (menus, window
+// controls) follow (decision 0119): the OS while the theme follows it, else
+// the theme's polarity.
+export function nativeAppearance(theme: Theme, resolvedTheme: ResolvedTheme): "system" | ResolvedTheme {
+  return themeDefinitions[theme].scheme === "system" ? "system" : resolvedTheme
+}
+
 export function readStoredTheme(): Theme {
   try {
     return parseTheme(window.localStorage.getItem(THEME_STORAGE_KEY))
