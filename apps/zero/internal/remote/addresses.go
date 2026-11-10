@@ -25,11 +25,27 @@ type Interface struct {
 	Addresses []net.IP
 }
 
+// tailnetRanges are the addresses Tailscale assigns: a tailnet address reaches
+// this machine from any of the user's devices, on any network.
+var tailnetRanges = []*net.IPNet{mustCIDR("100.64.0.0/10"), mustCIDR("fd7a:115c:a1e0::/48")}
+
+func mustCIDR(text string) *net.IPNet {
+	_, network, err := net.ParseCIDR(text)
+	if err != nil {
+		panic(err)
+	}
+	return network
+}
+
+func tailnetAddress(ip net.IP) bool {
+	return slices.ContainsFunc(tailnetRanges, func(network *net.IPNet) bool { return network.Contains(ip) })
+}
+
 // Candidates lists the addresses a client might reach this machine at, best
 // first: the server side of the SSH connection the user is in (they reached
-// this machine there), the default route's address, then the rest of the
-// interfaces, IPv4 before IPv6. sshConnection is $SSH_CONNECTION: "client_ip
-// client_port server_ip server_port".
+// this machine there), tailnet addresses, the default route's address, then
+// the rest of the interfaces, IPv4 before IPv6. sshConnection is
+// $SSH_CONNECTION: "client_ip client_port server_ip server_port".
 func Candidates(sshConnection string, route net.IP, interfaces []Interface) []string {
 	var found []string
 	add := func(ip net.IP) {
@@ -43,20 +59,28 @@ func Candidates(sshConnection string, route net.IP, interfaces []Interface) []st
 	if fields := strings.Fields(sshConnection); len(fields) == 4 {
 		add(net.ParseIP(fields[2]))
 	}
-	add(route)
-	var v4, v6 []net.IP
+	var tailnet4, tailnet6, v4, v6 []net.IP
 	for _, candidate := range interfaces {
 		if virtualInterface(candidate.Name) {
 			continue
 		}
 		for _, ip := range candidate.Addresses {
-			if ip.To4() != nil {
+			switch {
+			case tailnetAddress(ip) && ip.To4() != nil:
+				tailnet4 = append(tailnet4, ip)
+			case tailnetAddress(ip):
+				tailnet6 = append(tailnet6, ip)
+			case ip.To4() != nil:
 				v4 = append(v4, ip)
-			} else {
+			default:
 				v6 = append(v6, ip)
 			}
 		}
 	}
+	for _, ip := range append(tailnet4, tailnet6...) {
+		add(ip)
+	}
+	add(route)
 	for _, ip := range append(v4, v6...) {
 		add(ip)
 	}

@@ -56,10 +56,13 @@ settings. Connect to several machines and each gets a window. Zero saves the
 connection, so `zero://<id>/` links reopen it. `--no-open` saves it and prints
 the link instead.
 
-The printed addresses are a guess at what your computer can reach. If they are
-wrong, edit the string, or pass `--host`:
+The printed addresses are a guess at what your computer can reach: the address
+your SSH session reached, then Tailscale addresses (they work from any network),
+then the rest. If they are wrong, edit the string, or pass `--host` (a Tailscale
+MagicDNS name works):
 
 ```sh
+zero connect --host mybox 10.0.0.5:7971/<credential>
 ssh -L 7971:localhost:7971 <host>
 zero connect --host localhost 10.0.0.5:7971/<credential>
 ```
