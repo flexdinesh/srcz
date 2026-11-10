@@ -16,14 +16,21 @@ review. Worktrees of a repository share its feedback.
 ## Commenting
 
 In a review, select lines in the gutter: click a line number, Shift-click
-another to extend. Choose **Comment** beside **Copy**, or press **C**. Write
-in Markdown, then press Ctrl+Enter (Cmd+Enter on macOS) or choose
-**Comment**; Escape cancels and keeps your text for next time. Lines on either
-side of a diff work: removed lines keep their old numbers.
+another to extend. Press **C**, or choose the comment icon (**Comment on
+lines**) that appears in the gutter beside the selection. A comment box opens
+under the selected lines. Write in Markdown, then press Ctrl+Enter (Cmd+Enter
+on macOS) or choose **Comment**. Escape or **Cancel** closes the box; if you
+comment on the same lines again before reloading the page, your text is still
+there. Lines on either side of a diff work: removed lines keep their old
+numbers.
 
-To comment on a whole file, choose **Comment on file** in the file's sticky
-header. In Source, select lines the same way; Source comments are about the
-working tree.
+To comment on a whole file, choose the comment icon (**Comment on file**) in
+the file's sticky header.
+
+Source works the same way: select lines, then press **C** or choose the
+comment icon beside the gutter's copy button. Source comments are about the
+working tree, so Source shows them only for the files on disk: not in Preview,
+Format, or a file at a commit.
 
 Each comment starts a thread, shown inside the code right after its lines:
 
@@ -33,9 +40,11 @@ Each comment starts a thread, shown inside the code right after its lines:
   has **Won't fix** and **Delete thread**.
 - **Copy thread for agent** copies one thread with the command to reply to it.
 - Resolved and won't-fix threads fold to one line; click to expand. Turn off
-  **Show resolved comments** in the review's view options to hide them.
+  **Show resolved comments** in a review's **View options** to hide them; the
+  choice applies to Source too.
 
-The Files rail counts each file's open threads.
+In branch, commit, and range reviews, the Files rail counts each file's open
+threads.
 
 ## Threads follow the code
 
@@ -50,7 +59,8 @@ Open the **Feedback** view (the message icon in the activity bar). The badge
 counts threads with an agent reply you have not seen. The view shows the
 checked-out branch's feedback; the picker switches to another branch's.
 
-Filter by **Open**, **Awaiting agent**, **Resolved**, or **All**. Threads are
+Filter by **Open**, **Awaiting agent**, **Resolved** (with won't fix), or
+**All**. Threads are
 grouped by file; a dot marks a new agent reply. Click a thread to open it at
 its lines in the review or Source it was written in. Outdated threads open in
 place, with the original code and the conversation.
@@ -60,7 +70,7 @@ place, with the original code and the conversation.
 | Copy the prompt for your agent | **Copy Prompt** in the view's header |
 | Copy every shown thread as Markdown | **More** › **Copy as Markdown** |
 | Copy the feedback id | the copy icon beside the id |
-| Delete every thread of the branch | **More** › **Delete feedback** |
+| Delete every thread of the branch | **More** › **Delete feedback**, then confirm |
 
 The [desktop app](/docs/desktop) can notify you when an agent replies
 (**Feedback Replies** under Settings › Notifications); clicking it opens the
