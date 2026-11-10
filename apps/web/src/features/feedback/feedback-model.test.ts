@@ -5,7 +5,7 @@ import test from "node:test"
 import { isFeedback, type Feedback, type FeedbackThread } from "@zero/contracts"
 import {
   activity, anchorKey, anchorLabel, authorLabel, feedbackCompare, feedbackMarkdown, feedbackMeta, feedbackPrompt, groupByFile, inlineThreads, isUnseen,
-  locationLabel, markSeen, matchesFilter, openCounts, outdatedCount, parseSeen, placeLabel, reviewCompareOf, routeFeedback, statusChange,
+  locationLabel, markSeen, plainLine, matchesFilter, openCounts, outdatedCount, parseSeen, placeLabel, reviewCompareOf, routeFeedback, statusChange,
   threadPrompt, threadRoute, threadTitle, unseenCount, utcTime,
 } from "./feedback-model.ts"
 
@@ -49,6 +49,21 @@ test("Markdown export names empty feedback as the CLI does", async () => {
   const closed = feedback.threads.filter((entry) => entry.awaiting !== "agent")
   assert.equal(feedbackMarkdown({ ...feedback, threads: closed }, []),
     "# Feedback fb-3k2q8m\nBranch feature/greeting · /home/user/markdown · no threads awaiting you\n\nNo threads yet.\n")
+})
+
+test("titles read the first line of Markdown as plain text", async () => {
+  const feedback = await fixture()
+  assert.equal(plainLine("Name the **answer** after _what_ it counts."), "Name the answer after what it counts.")
+  assert.equal(plainLine("## Use `snake_case` and *not* __this__ or ~~that~~"), "Use snake_case and not this or that")
+  assert.equal(plainLine("> - [x] See [the guide](docs/guide.md) and ![logo](a.png) at <https://example.com>"),
+    "See the guide and logo at https://example.com")
+  assert.equal(plainLine("12. Keep \\*stars\\* and `a*b*c`, and snake_case_names"), "Keep *stars* and a*b*c, and snake_case_names")
+  assert.equal(plainLine("2 * 3 * 4"), "2 * 3 * 4")
+  const first = thread(feedback, 1)
+  const titled = (body: string) => threadTitle({ ...first, messages: [{ number: 1, author: "user", body, bodyHTML: "", createdAt: first.createdAt }] })
+  assert.equal(titled("\n\n**Rename** this"), "Rename this")
+  assert.equal(titled("```go\nfmt.Println()\n```\nPrefer a constant."), "Prefer a constant.")
+  assert.equal(titled("```\n```"), "No message")
 })
 
 test("location labels follow lines, sides, moves, and outdated text", async () => {

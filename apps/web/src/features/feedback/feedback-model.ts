@@ -127,14 +127,44 @@ export function statusChange(status: FeedbackStatus): string {
   return "reopened this"
 }
 
-// firstLine is a message's first non-blank line.
-export function firstLine(text: string): string {
-  return text.split(/\r?\n/).map((line) => line.trim()).find(Boolean) ?? ""
+const codeSpan = /(`+)(.+?)\1/g
+const literalMark = /\u0000(\d+)\u0000/g
+
+// plainLine reads one line of Markdown as plain text: block markers,
+// emphasis, strikethrough, links, images, autolinks, code spans, and
+// backslash escapes give way to their text. Code spans keep their content
+// as written.
+export function plainLine(line: string): string {
+  // Code spans and escaped characters are literal: they set aside first.
+  const literal: string[] = []
+  const keep = (text: string) => `\u0000${literal.push(text) - 1}\u0000`
+  const text = line
+    .replace(codeSpan, (_match, _ticks: string, content: string) => keep(content.trim()))
+    .replace(/\\([\\`*_{}[\]()#+\-.!<>~|])/g, (_match, character: string) => keep(character))
+    .replace(/^\s{0,3}(?:#{1,6}\s+|>\s?|[-*+]\s+(?:\[[ xX]\]\s+)?|\d{1,9}[.)]\s+)+/, "")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/<((?:https?|mailto):[^>\s]+)>/g, "$1")
+    .replace(/(\*\*|__)(?=\S)(.+?)(?<=\S)\1/g, "$2")
+    .replace(/(^|[^\w*])\*(?=\S)(.+?)(?<=\S)\*(?!\*)/g, "$1$2")
+    .replace(/(^|\W)_(?=\S)(.+?)(?<=\S)_(?!\w)/g, "$1$2")
+    .replace(/~~(?=\S)(.+?)(?<=\S)~~/g, "$1")
+  return text.replace(literalMark, (_match, index: string) => literal[Number(index)] ?? "").trim()
 }
 
-// threadTitle is the first line of a thread's first message.
+// threadTitle is the first line of a thread's first message as plain text,
+// past blank lines and fenced code.
 export function threadTitle(thread: FeedbackThread): string {
-  return firstLine(thread.messages[0]?.body ?? "") || "No message"
+  let fenced = false
+  for (const line of (thread.messages[0]?.body ?? "").split(/\r?\n/)) {
+    if (/^\s{0,3}(?:```|~~~)/.test(line)) {
+      fenced = !fenced
+      continue
+    }
+    const text = fenced ? "" : plainLine(line)
+    if (text) return text
+  }
+  return "No message"
 }
 
 // lastAuthor names who wrote a thread's last message.
