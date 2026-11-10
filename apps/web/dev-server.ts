@@ -1,3 +1,7 @@
+import {
+  isFeedbackCompare, type Feedback, type FeedbackStatus, type FeedbackSummary, type FeedbackThread,
+} from "@zero/contracts"
+
 export interface NetworkAddress {
   address: string
   family: string
@@ -273,3 +277,189 @@ export function mockFixtureName(method: string, rawURL: string): MockFixture | u
       return undefined
   }
 }
+
+// MockResponse is an in-memory mock's answer: JSON, or 204 with no body.
+export interface MockResponse {
+  status: number
+  body: string
+}
+
+export interface MockFeedbackRequest {
+  method: string
+  url: string
+  body: string
+}
+
+function jsonResponse(status: number, value: unknown): MockResponse {
+  return { status, body: JSON.stringify(value) }
+}
+
+function invalidFeedback(problems: readonly string[]): MockResponse {
+  return jsonResponse(400, { error: problems.join("\n"), code: "invalidFeedback" })
+}
+
+function escapeHTML(text: string): string {
+  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\"", "&quot;")
+}
+
+// mockBodyHTML renders a message as paragraphs of escaped text; the server
+// renders Markdown.
+function mockBodyHTML(body: string): string {
+  return body.split(/\n{2,}/).filter((part) => part.trim()).map((part) => `<p>${escapeHTML(part.trim())}</p>\n`).join("")
+}
+
+function parseJSONObject(text: string): Record<string, unknown> | null {
+  try {
+    const value: unknown = JSON.parse(text)
+    return typeof value === "object" && value !== null && !Array.isArray(value) ? Object.fromEntries(Object.entries(value)) : null
+  } catch {
+    return null
+  }
+}
+
+function awaitingOf(thread: FeedbackThread): FeedbackThread["awaiting"] {
+  const last = thread.messages.at(-1)
+  if (last?.author === "agent") return "user"
+  return thread.status === "open" && last?.author === "user" ? "agent" : "none"
+}
+
+function summaryOf(feedback: Feedback): FeedbackSummary {
+  const count = (test: (thread: FeedbackThread) => boolean) => feedback.threads.filter(test).length
+  return {
+    id: feedback.id,
+    branch: feedback.branch,
+    threads: feedback.threads.length,
+    open: count((thread) => thread.status === "open"),
+    awaitingAgent: count((thread) => thread.awaiting === "agent"),
+    awaitingUser: count((thread) => thread.awaiting === "user"),
+    updatedAt: feedback.updatedAt,
+  }
+}
+
+const mockFeedbackStatuses: ReadonlySet<string> = new Set(["open", "resolved", "wontfix"])
+
+function isMockStatus(value: unknown): value is FeedbackStatus {
+  return typeof value === "string" && mockFeedbackStatuses.has(value)
+}
+
+// mockFeedbackStore answers the feedback routes from memory for pnpm
+// dev:mock (decision 0120), seeded with the fixtures: current is the
+// checkout's branch's feedback; listed summarizes other branches', which read
+// as empty until written. Locations stay as written; the server resolves them.
+export function mockFeedbackStore(current: Feedback, listed: readonly FeedbackSummary[], now: () => string = () => new Date().toISOString()) {
+  const store = new Map<string, Feedback>([[current.id, current]])
+  const summaries = new Map(listed.filter((summary) => summary.id !== current.id).map((summary): [string, FeedbackSummary] => [summary.id, summary]))
+  let currentId = current.id
+  const currentBranch = current.branch
+
+  const find = (id: string, project: string): Feedback | null => {
+    const found = store.get(id || currentId)
+    if (found) return { ...found, project }
+    const summary = summaries.get(id)
+    if (summary) return { id, project, branch: summary.branch, threads: [], createdAt: summary.updatedAt, updatedAt: summary.updatedAt }
+    return id ? null : { id: "", project, branch: currentBranch, threads: [], createdAt: "", updatedAt: "" }
+  }
+  const save = (feedback: Feedback) => {
+    store.set(feedback.id, feedback)
+    summaries.delete(feedback.id)
+    if (feedback.branch === currentBranch) currentId = feedback.id
+  }
+  const unavailable = (id: string) => jsonResponse(404, { error: `no feedback ${id} for this repository`, code: "feedbackUnavailable" })
+
+  function createThread(draft: Record<string, unknown>): MockResponse {
+    const problems: string[] = []
+    const project = typeof draft.project === "string" ? draft.project : ""
+    const id = typeof draft.id === "string" ? draft.id : ""
+    const path = typeof draft.path === "string" ? draft.path : ""
+    const body = typeof draft.body === "string" ? draft.body.trim() : ""
+    const side = draft.side === "old" ? "old" : "new"
+    const lines = Array.isArray(draft.lines) && draft.lines.length === 2 && draft.lines.every((line) => Number.isSafeInteger(line) && line > 0)
+      ? draft.lines.filter((line): line is number => typeof line === "number") : undefined
+    if (!project) problems.push("project: is required")
+    if (!path) problems.push("path: is required")
+    if (!body) problems.push("body: is empty")
+    if (draft.lines !== undefined && !lines) problems.push("lines: must be [start, end]")
+    if (problems.length > 0) return invalidFeedback(problems)
+    const existing = find(id, project)
+    if (!existing) return unavailable(id)
+    const time = now()
+    const compare = isFeedbackCompare(draft.compare) ? draft.compare : undefined
+    const thread: FeedbackThread = {
+      number: Math.max(0, ...existing.threads.map((entry) => entry.number)) + 1,
+      status: "open",
+      awaiting: "agent",
+      anchor: { path, side, ...(lines ? { lines } : {}), ...(compare ? { compare } : {}) },
+      location: { state: "anchored", path, side, ...(lines ? { lines } : {}) },
+      messages: [{ number: 1, author: "user", body, bodyHTML: mockBodyHTML(body), createdAt: time }],
+      createdAt: time,
+      updatedAt: time,
+    }
+    save({ ...existing, id: existing.id || "fb-mockcu", threads: [...existing.threads, thread], createdAt: existing.createdAt || time, updatedAt: time })
+    return jsonResponse(200, thread)
+  }
+
+  function postMessage(draft: Record<string, unknown>): MockResponse {
+    const project = typeof draft.project === "string" ? draft.project : ""
+    const id = typeof draft.id === "string" ? draft.id : ""
+    const body = typeof draft.body === "string" ? draft.body.trim() : ""
+    const status = isMockStatus(draft.status) ? draft.status : undefined
+    const author = draft.author === "agent" ? "agent" : "user"
+    if (!body && !status) return invalidFeedback(["body: is empty and no status is set"])
+    const existing = id ? find(id, project) : null
+    if (!existing) return unavailable(id)
+    const target = existing.threads.find((thread) => thread.number === draft.thread)
+    if (!target) return invalidFeedback([`thread: feedback ${id} has no thread ${String(draft.thread)}`])
+    const time = now()
+    const reopen = !status && author === "user" && target.status !== "open"
+    const next = status ?? (reopen ? "open" : target.status)
+    const message = {
+      number: target.messages.length + 1, author, ...(typeof draft.name === "string" && draft.name ? { name: draft.name } : {}),
+      body, bodyHTML: mockBodyHTML(body), ...(status ? { status } : {}), createdAt: time,
+    } satisfies FeedbackThread["messages"][number]
+    const updated: FeedbackThread = { ...target, status: next, messages: [...target.messages, message], updatedAt: time }
+    const thread = { ...updated, awaiting: awaitingOf(updated) }
+    save({ ...existing, threads: existing.threads.map((entry) => entry.number === thread.number ? thread : entry), updatedAt: time })
+    return jsonResponse(200, thread)
+  }
+
+  return {
+    handle({ body, method, url: rawURL }: MockFeedbackRequest): MockResponse | undefined {
+      const url = new URL(rawURL, "http://localhost")
+      const params = url.searchParams
+      const project = params.get("project") ?? ""
+      const id = params.get("id") ?? ""
+      switch (`${method} ${url.pathname}`) {
+        case "GET /feedback": {
+          const feedback = find(id, project)
+          return feedback ? jsonResponse(200, feedback) : unavailable(id)
+        }
+        case "GET /feedback-list":
+          return jsonResponse(200, [...[...store.values()].filter((feedback) => feedback.threads.length > 0).map(summaryOf), ...summaries.values()]
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)))
+        case "POST /feedback-threads": {
+          const draft = parseJSONObject(body)
+          return draft ? createThread(draft) : invalidFeedback(["body: is not a JSON object"])
+        }
+        case "POST /feedback-messages": {
+          const draft = parseJSONObject(body)
+          return draft ? postMessage(draft) : invalidFeedback(["body: is not a JSON object"])
+        }
+        case "DELETE /feedback-threads": {
+          const existing = id ? find(id, project) : null
+          if (!existing) return unavailable(id)
+          save({ ...existing, threads: existing.threads.filter((thread) => String(thread.number) !== params.get("thread")) })
+          return { status: 204, body: "" }
+        }
+        case "DELETE /feedback": {
+          if (!id || !(store.delete(id) || summaries.delete(id))) return unavailable(id)
+          if (id === currentId) currentId = ""
+          return { status: 204, body: "" }
+        }
+        default:
+          return undefined
+      }
+    },
+  }
+}
+
+export type MockFeedbackStore = ReturnType<typeof mockFeedbackStore>

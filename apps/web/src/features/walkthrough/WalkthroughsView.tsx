@@ -2,7 +2,7 @@ import {
   ArrowLeftIcon, BookOpenIcon, CheckIcon, CopyIcon, FileClockIcon, FileCodeIcon, GitCompareArrowsIcon, PresentationIcon, RefreshCwIcon, RouteIcon, StickyNoteIcon,
   Trash2Icon, XIcon,
 } from "lucide-react"
-import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 
 import { Button } from "../../components/ui/button.tsx"
 import { IconButton } from "../../components/ui/icon-button.tsx"
@@ -11,6 +11,7 @@ import { Notice, StatusMessage } from "../../components/ui/notice.tsx"
 import { ViewHeader } from "../../components/ui/view-header.tsx"
 import type { Walkthrough, WalkthroughStep } from "@zero/contracts"
 import { useClipboardCopy } from "../../lib/clipboard.ts"
+import { useRovingRows } from "../../lib/use-roving-rows.ts"
 import { shareableOrigin } from "../../lib/shareable-origin.ts"
 import { commitAge, commitDate, type CompareContext } from "../source-control/compare.ts"
 import { agentInstructions } from "./agent-instructions.ts"
@@ -37,32 +38,6 @@ function stepIcon(step: WalkthroughStep): ReactNode {
   if (target.kind === "file") return target.at ? <FileClockIcon aria-hidden="true" /> : <FileCodeIcon aria-hidden="true" />
   if (target.kind === "diff") return <GitCompareArrowsIcon aria-hidden="true" />
   return <StickyNoteIcon aria-hidden="true" />
-}
-
-// useRovingRows moves focus through a listbox's options with the arrow keys,
-// Home, and End; Enter activates the focused one.
-function useRovingRows(count: number, current: number, activate: (index: number) => void) {
-  const container = useRef<HTMLDivElement>(null)
-  const [focused, setFocused] = useState(-1)
-  const tabIndex = focused >= 0 && focused < count ? focused : Math.max(0, current)
-  function focusRow(index: number) {
-    setFocused(index)
-    container.current?.querySelectorAll<HTMLElement>("[role=option]")[index]?.focus()
-  }
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      const next = tabIndex + (event.key === "ArrowDown" ? 1 : -1)
-      if (next >= 0 && next < count) focusRow(next)
-    } else if (event.key === "Home" || event.key === "End") {
-      focusRow(event.key === "Home" ? 0 : count - 1)
-    } else if (event.key === "Enter" || event.key === " ") {
-      activate(tabIndex)
-    } else {
-      return
-    }
-    event.preventDefault()
-  }
-  return { container, tabIndex, setFocused, onKeyDown }
 }
 
 // WalkthroughsView is the Walkthroughs activity (decision 0047): the

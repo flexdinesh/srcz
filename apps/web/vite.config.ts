@@ -5,13 +5,17 @@ import { fileURLToPath, URL } from "node:url"
 
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
+import { isFeedback, isFeedbackSummary } from "@zero/contracts"
+import type { IncomingMessage } from "node:http"
 import { defineConfig, type Plugin } from "vite"
 
 import {
   devServerPort,
   devServerUrls,
   formatDevServerUrl,
+  mockFeedbackStore,
   mockFixtureName,
+  type MockFeedbackStore,
   primaryLanIpv4,
   shouldOpenBrowser,
 } from "./dev-server.ts"
@@ -65,13 +69,49 @@ const mockFixturesDirectory = fileURLToPath(
   new URL("../../testdata/api/default", import.meta.url),
 )
 
+async function readJSONFixture(name: string): Promise<unknown> {
+  return JSON.parse((await readFile(join(mockFixturesDirectory, name))).toString("utf8"))
+}
+
+// loadFeedbackStore seeds the in-memory feedback from the fixtures.
+async function loadFeedbackStore(): Promise<MockFeedbackStore> {
+  const current = await readJSONFixture("feedback.json")
+  const listed = await readJSONFixture("feedback-list.json")
+  if (!isFeedback(current) || !Array.isArray(listed) || !listed.every(isFeedbackSummary)) throw new Error("invalid feedback fixtures")
+  return mockFeedbackStore(current, listed)
+}
+
+async function readRequestBody(request: IncomingMessage): Promise<string> {
+  const chunks: Buffer[] = []
+  for await (const chunk of request) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)))
+  return Buffer.concat(chunks).toString("utf8")
+}
+
 function mockApi(enabled: boolean): Plugin {
   return {
     name: "zero-mock-api",
     apply: "serve",
     configureServer(server) {
       if (!enabled) return
+      let feedback: Promise<MockFeedbackStore> | undefined
       server.middlewares.use("/api", async (request, response, next) => {
+        if (request.url?.startsWith("/feedback")) {
+          try {
+            feedback ??= loadFeedbackStore()
+            const answer = (await feedback).handle({ method: request.method ?? "", url: request.url, body: await readRequestBody(request) })
+            if (answer !== undefined) {
+              response.statusCode = answer.status
+              response.setHeader("Cache-Control", "no-store")
+              if (answer.body) response.setHeader("Content-Type", "application/json; charset=utf-8")
+              response.end(answer.body)
+              return
+            }
+          } catch {
+            response.statusCode = 500
+            response.end('{"error":"mock feedback unavailable"}')
+            return
+          }
+        }
         const fixture = mockFixtureName(request.method ?? "", request.url ?? "")
         if (fixture === undefined) {
           next()

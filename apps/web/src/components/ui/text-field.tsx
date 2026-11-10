@@ -1,5 +1,5 @@
 import { cn } from "cn"
-import type { InputHTMLAttributes, ReactNode, Ref } from "react"
+import type { InputHTMLAttributes, ReactNode, Ref, TextareaHTMLAttributes } from "react"
 
 export type FieldVariant = "field" | "palette"
 
@@ -31,4 +31,15 @@ export function TextField({
       {trailing && <span className="ui-field-trailing">{trailing}</span>}
     </div>
   )
+}
+
+interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  invalid?: boolean
+  ref?: Ref<HTMLTextAreaElement>
+}
+
+// TextArea is a multi-line field in the field treatment: it grows with its
+// text from its rows up to a cap, then scrolls.
+export function TextArea({ className, invalid, ref, ...props }: TextAreaProps) {
+  return <textarea ref={ref} className={cn("ui-textarea", className)} aria-invalid={invalid || undefined} {...props} />
 }

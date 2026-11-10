@@ -1,4 +1,4 @@
-import { CaseSensitiveIcon, FilterIcon, RefreshCwIcon, SearchIcon, TriangleAlertIcon, XIcon } from "lucide-react"
+import { CaseSensitiveIcon, FilterIcon, MessageSquarePlusIcon, RefreshCwIcon, SearchIcon, TriangleAlertIcon, XIcon } from "lucide-react"
 import { useRef, useState, type ReactNode } from "react"
 
 import { Badge } from "../components/ui/badge.tsx"
@@ -17,7 +17,7 @@ import { Chevron, SectionToggle } from "../components/ui/section-toggle.tsx"
 import { SegmentedControl, SegmentedItem } from "../components/ui/segmented-control.tsx"
 import { Slider } from "../components/ui/slider.tsx"
 import { Select } from "../components/ui/select.tsx"
-import { TextField } from "../components/ui/text-field.tsx"
+import { TextArea, TextField } from "../components/ui/text-field.tsx"
 import { ToggleButton } from "../components/ui/toggle-button.tsx"
 import { ViewHeader } from "../components/ui/view-header.tsx"
 import { useTheme } from "../settings/ThemeProvider.tsx"
@@ -78,6 +78,7 @@ export default function UiGallery() {
           <IconButton label="Close" tone="destructive" icon={<XIcon />} />
           <IconButton label="Refresh" disabledReason="Nothing to refresh" icon={<RefreshCwIcon />} />
           <IconButton label="Disabled" disabled icon={<RefreshCwIcon />} />
+          <IconButton label="Comment on lines" size="xs" variant="gutter" icon={<MessageSquarePlusIcon />} />
         </Row>
       </Section>
 
@@ -116,6 +117,7 @@ export default function UiGallery() {
           <Select aria-label="Disabled select" disabled><option>Disabled</option></Select>
         </Row>
         <div className="gallery-palette">
+          <TextArea aria-label="Comment" placeholder="Reply…" rows={2} />
           <TextField variant="palette" aria-label="Palette" placeholder="Go to file" icon={<SearchIcon />} trailing={<Kbd>Esc</Kbd>} />
         </div>
       </Section>

@@ -21,6 +21,8 @@ interface FilesListProps {
   marked?: ReadonlySet<string>
   // viewed says whether the review's Viewed mark holds for a file.
   viewed(path: string): boolean
+  // threads counts each file's open feedback threads (decision 0120).
+  threads?: ReadonlyMap<string, number>
   // hideViewed leaves viewed files out of the tree; saved per browser.
   hideViewed: boolean
   onHideViewedChange(hide: boolean): void
@@ -32,7 +34,7 @@ interface FilesListProps {
 // FilesList is a review's files as a tree under a header with a count and
 // Expand/Collapse All Folders (decision 0040), and a path filter with Hide
 // viewed (decision 0117).
-function FilesList({ activePath, close, data, hideViewed, itemHeight, marked, viewed, onHideViewedChange, onOpen }: FilesListProps) {
+function FilesList({ activePath, close, data, hideViewed, itemHeight, marked, threads, viewed, onHideViewedChange, onOpen }: FilesListProps) {
   const [anyExpanded, setAnyExpanded] = useState(true)
   const [collapseRequest, setCollapseRequest] = useState<CollapseRequest | null>(null)
   const [query, setQuery] = useState("")
@@ -101,7 +103,7 @@ function FilesList({ activePath, close, data, hideViewed, itemHeight, marked, vi
       )}
       {shown.length > 0 && (
         <FilesTree key={itemHeight} files={shown} stats={data?.stats?.byPath ?? null} marked={marked} activePath={activePath} itemHeight={itemHeight}
-          viewed={viewed} label="Files in this review" collapseRequest={collapseRequest} onExpandedChange={setAnyExpanded} onOpen={onOpen} />
+          viewed={viewed} threads={threads} label="Files in this review" collapseRequest={collapseRequest} onExpandedChange={setAnyExpanded} onOpen={onOpen} />
       )}
     </div>
   </>

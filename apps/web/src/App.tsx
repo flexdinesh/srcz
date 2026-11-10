@@ -114,6 +114,10 @@ import { stepPrompt } from "./features/walkthrough/agent-instructions.ts"
 import { shareableOrigin } from "./lib/shareable-origin.ts"
 import type { SourceAnnotation } from "./features/documents/SourceDocument.tsx"
 import type { ReviewAnnotation } from "./features/source-control/ReviewDocument.tsx"
+import { FeedbackView } from "./features/feedback/FeedbackView.tsx"
+import { routeFeedback, type ThreadRoute } from "./features/feedback/feedback-model.ts"
+import { useFeedbackView } from "./features/feedback/use-feedback-view.ts"
+import { useReviewFeedback } from "./features/feedback/use-review-feedback.tsx"
 
 // routeTab is the tab a route shows: a review, a document (a snapshot with
 // at), a walkthrough's own tab, or Welcome, else none.
@@ -242,6 +246,27 @@ export function App({ project }: AppProps) {
   }, [])
   const sidebar = useSidebar()
   const { reveal: revealSidebar } = sidebar
+  // feedbackVersion rereads feedback: an announcement, a change on disk
+  // (locations move), or a write on this page (decision 0120).
+  const [feedbackVersion, setFeedbackVersion] = useState(0)
+  const rereadFeedback = useCallback(() => setFeedbackVersion((version) => version + 1), [])
+  // fb=<id> reveals the Feedback view at that feedback.
+  const searchFeedback = useSearch({ strict: false, select: (search) => routeFeedback(search.fb) ?? "" })
+  const feedbackView = useFeedbackView({
+    project, version: feedbackVersion, shown: !sidebar.hidden && sidebar.view === "feedback", onChanged: rereadFeedback,
+  })
+  const { show: showFeedback } = feedbackView
+  const revealedFeedback = useRef("")
+  useEffect(() => {
+    if (!searchFeedback || searchFeedback === revealedFeedback.current) return
+    revealedFeedback.current = searchFeedback
+    showFeedback(searchFeedback)
+    revealSidebar("feedback")
+  }, [revealSidebar, searchFeedback, showFeedback])
+  const showOutdatedFeedback = useCallback((id: string, path: string) => {
+    showFeedback(id, path)
+    revealSidebar("feedback")
+  }, [revealSidebar, showFeedback])
   const revealExplorer = useCallback(() => revealSidebar("explorer"), [revealSidebar])
   const revealSearch = useCallback(() => revealSidebar("search"), [revealSidebar])
   const sourceControlActive = !sidebar.hidden && sidebar.view === "source-control"
@@ -493,6 +518,17 @@ export function App({ project }: AppProps) {
     if (!reviewCompare) return
     void navigate({ to: "/view", search: { project, ...compareSearch(reviewCompare), ...stepSearch }, hash: reviewFragment(path, lines), replace: true })
   }, [navigate, project, reviewCompare, stepSearch])
+  // A new thread clears the selection it was made from.
+  const clearReviewLines = useCallback((path: string) => selectReviewLines(path, null), [selectReviewLines])
+  const reviewFeedback = useReviewFeedback({
+    project, compare: shownReview, version: feedbackVersion, showResolved: diffOptions.options.showResolved, navigate: navigateToHref,
+    onChanged: rereadFeedback, onSubmitted: clearReviewLines, onShowOutdated: showOutdatedFeedback,
+  })
+  // A thread opens where it was written: its review, or Source.
+  const openThread = useCallback((route: ThreadRoute) => {
+    prepareDocumentNavigation()
+    void navigate({ to: "/view", search: { ...route.search }, hash: route.hash })
+  }, [navigate, prepareDocumentNavigation])
   const hasReviewTabs = workspace.tabs.some((tab) => tab.kind === "review")
   // Closing the last review tab frees its workers and caches until the next one.
   useEffect(() => {
@@ -577,15 +613,18 @@ export function App({ project }: AppProps) {
   const applyLiveChange = useCallback((change: LiveChange) => {
     const targets = liveTargets(change, liveDocument)
     if (targets.page) reread()
-    if (targets.changes) refreshChanges()
+    if (targets.changes) {
+      refreshChanges()
+      rereadFeedback()
+    }
     if (targets.history) {
       refreshCommits()
       refreshStack()
       setGitVersion((version) => version + 1)
     }
     if (targets.search) markSearchStale(searchShown)
-  }, [liveDocument, markSearchStale, refreshChanges, refreshCommits, refreshStack, reread, searchShown])
-  const liveStatus = useLiveUpdates(project, applyLiveChange)
+  }, [liveDocument, markSearchStale, refreshChanges, refreshCommits, refreshStack, reread, rereadFeedback, searchShown])
+  const liveStatus = useLiveUpdates(project, applyLiveChange, rereadFeedback)
   usePresence()
   const notificationStatus = useNotificationSync(project, settings)
   const languageServers = settings.languageServers === "on"
@@ -782,6 +821,9 @@ export function App({ project }: AppProps) {
           search={<SearchView mobile={sidebar.mobile} onDismiss={sidebar.dismiss}
             onLeave={() => main.current?.focus({ preventScroll: true })} session={search} />}
           unseenWalkthroughs={walkthroughs.unseen}
+          unseenFeedback={feedbackView.unseen}
+          feedback={<FeedbackView project={project} branch={page.branch} view={feedbackView} mobile={sidebar.mobile}
+            onDismiss={sidebar.dismiss} onOpenThread={openThread} navigate={navigateToHref} />}
           walkthroughs={<WalkthroughsView project={project} session={walkthroughs} context={compareContext} mobile={sidebar.mobile} onPresent={present}
             onDismiss={sidebar.dismiss} />}
           sourceControl={<SourceControlView changes={changes} commits={commits} commitFilter={commitFilter} stack={stack} layout={sourceControlLayout} refs={refs}
@@ -835,6 +877,7 @@ export function App({ project }: AppProps) {
               viewedState={viewed.state} onViewedChange={viewed.mark} onSelectLines={selectReviewLines}
               onCurrentFile={setCurrentFile} onStatus={setReviewStatus} onOpenFile={navigateToDocument}
               onAllExpandedChange={setAnyFileExpanded} onRegisterHunkStep={registerHunkStep} annotation={reviewAnnotation}
+              comments={reviewFeedback.comments}
               scope={scope} marked={markedPaths} /> : undefined}
             diffShown={reviewCompare !== null}
             walkthrough={walkthroughRoute ? <WalkthroughTab detail={walkthroughs.detail} position={walkthroughs.position}
@@ -871,7 +914,7 @@ export function App({ project }: AppProps) {
           />
           {shownRail && shownReview && !sidebar.mobile && !sourceControlLayout.railHidden && (
             <Activity mode={reviewCompare ? "visible" : "hidden"}>
-              <ReviewFilesRail data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed}
+              <ReviewFilesRail data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed} threads={reviewFeedback.counts}
                 hideViewed={sourceControlLayout.railHideViewed} onHideViewedChange={sourceControlLayout.setRailHideViewed} itemHeight={treeRowHeight(false, uiScale(settings))}
                 width={sourceControlLayout.railWidth} onResize={sourceControlLayout.setRailWidth}
                 onResetWidth={() => sourceControlLayout.setRailWidth(defaultRailWidth)}
@@ -881,7 +924,7 @@ export function App({ project }: AppProps) {
           )}
           </div>
           {reviewRail && reviewCompare && sidebar.mobile && (
-            <ReviewFilesSheet open={filesSheet} data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed}
+            <ReviewFilesSheet open={filesSheet} data={reviewData} marked={markedPaths} activePath={currentFile} viewed={railViewed} threads={reviewFeedback.counts}
               hideViewed={sourceControlLayout.railHideViewed} onHideViewedChange={sourceControlLayout.setRailHideViewed} itemHeight={treeRowHeight(true, uiScale(settings))}
               onClose={() => setFilesSheet(false)}
               onOpen={(path, focusDocument) => openReview(reviewCompare, focusDocument, path)} />

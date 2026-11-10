@@ -1,0 +1,498 @@
+/* Review feedback threads (decision 0120): thread and composer zones in
+   code, the comment affordances in the review, and the Feedback activity. */
+
+/* A thread is an editor zone in the narration's treatment: a full-width
+   band between lines of code on surface-secondary, 1px border above and
+   below, set in the UI face. Zones sharing a line share their hairlines. */
+.feedback-thread {
+  display: grid;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  border-block: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-secondary);
+  cursor: auto;
+  font-family: var(--font-sans);
+  font-feature-settings: normal;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  row-gap: var(--space-2);
+  user-select: text;
+  white-space: normal;
+}
+
+.feedback-thread + .feedback-thread,
+.narration + .review-zones > .feedback-thread:first-child {
+  border-top: 0;
+}
+
+.feedback-thread > * {
+  max-width: var(--reading-width);
+}
+
+.feedback-thread[data-collapsed] {
+  padding-block: 0;
+}
+
+.feedback-thread-header {
+  display: flex;
+  min-height: var(--control-sm);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.feedback-thread-status {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.feedback-status-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: none;
+  color: var(--color-text-secondary);
+}
+
+.feedback-status-icon[data-status="resolved"] {
+  color: var(--color-success);
+}
+
+.feedback-status-icon[data-status="wontfix"] {
+  color: var(--color-text-muted);
+}
+
+.feedback-thread-number {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedback-thread-place {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-thread-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+/* Closed threads collapse to one line: status, first line, last author. */
+.feedback-thread-summary {
+  width: 100%;
+  min-height: var(--control-lg);
+  justify-content: flex-start;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.feedback-thread-summary:hover .feedback-thread-summary-title {
+  color: var(--color-text-primary);
+}
+
+.feedback-thread-summary-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-thread-summary-author {
+  flex: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.feedback-messages {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  row-gap: var(--space-3);
+}
+
+.feedback-message-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.feedback-message-author {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+}
+
+.feedback-message[data-author="agent"] .feedback-message-author {
+  color: var(--color-accent);
+}
+
+.feedback-message-body article {
+  font-size: var(--text-sm);
+}
+
+.feedback-message-status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* The reply field rests at one line and opens while focused or holding
+   text; its footer shows only then. */
+.feedback-reply {
+  display: grid;
+  row-gap: var(--space-2);
+}
+
+.feedback-reply-field:not(:focus) {
+  resize: none;
+}
+
+.feedback-reply:not(:focus-within, [data-open]) .feedback-reply-footer {
+  display: none;
+}
+
+.feedback-reply:is(:focus-within, [data-open]) .feedback-reply-field {
+  min-height: calc(var(--field-height) * 2);
+}
+
+.feedback-reply-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.feedback-hint {
+  min-width: 0;
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.feedback-error {
+  margin: 0;
+}
+
+.feedback-composer-field {
+  min-height: calc(var(--field-height) * 3);
+}
+
+.review-zones {
+  display: block;
+}
+
+/* The gutter's Comment floats just past the line numbers at the selection's
+   last line, over the line's start: the number cell holds only Copy, and its
+   column clips anything left of it. */
+.diff-line-comment {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+}
+
+/* A file band's outdated threads read as a quiet link to the view. */
+.review-file-outdated {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.review-file-outdated:hover {
+  color: var(--color-text-primary);
+}
+
+/* The Feedback activity. */
+.feedback-view {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  color: var(--color-text-secondary);
+  font-size: var(--text-label);
+}
+
+.feedback-view > .explorer-header {
+  box-shadow: inset 0 -1px var(--color-border);
+}
+
+.feedback-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  padding-bottom: var(--space-2);
+}
+
+.feedback-heading {
+  display: grid;
+  justify-items: start;
+  padding: var(--space-2) var(--space-2) var(--space-1) var(--space-2);
+  row-gap: calc(var(--space-1) / 2);
+}
+
+.feedback-branch {
+  max-width: 100%;
+  gap: var(--space-1);
+  color: var(--color-text-primary);
+}
+
+.feedback-branch svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: none;
+}
+
+.feedback-branch-name {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-branch-name[data-detached] {
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+}
+
+.feedback-branch-detail {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.feedback-branch-check {
+  display: inline-grid;
+  width: var(--icon-sm);
+  place-items: center;
+}
+
+.feedback-branch-check[data-unchecked] {
+  visibility: hidden;
+}
+
+.feedback-branch-check svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+.feedback-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0 var(--space-1);
+  color: var(--color-text-muted);
+  column-gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--text-xs--line-height);
+}
+
+.feedback-id {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+}
+
+.feedback-meta-counts {
+  padding-left: var(--space-1);
+}
+
+/* The filter spans the view; long labels truncate before it overflows. */
+.feedback-filter {
+  margin: var(--space-1) var(--space-3) var(--space-2);
+}
+
+.feedback-filter > .ui-segmented-item {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feedback-narrowed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-1) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.feedback-narrowed-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-narrowed code {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+}
+
+.feedback-note {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+}
+
+.feedback-note p {
+  margin: 0;
+}
+
+.feedback-stale {
+  padding: var(--space-1) var(--space-3);
+}
+
+.feedback-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.feedback-confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.feedback-rows {
+  display: grid;
+}
+
+/* A file's header row, in the Files rail's style. */
+.feedback-group-header {
+  display: flex;
+  min-height: var(--row-list);
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2) 0 var(--space-3);
+  color: var(--color-text-primary);
+}
+
+.feedback-group-header .file-icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: none;
+}
+
+.feedback-group-path {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Rows carry the first line and a muted second line, indented under the
+   file. */
+.feedback-row {
+  align-items: flex-start;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-5);
+}
+
+.feedback-row:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+
+.feedback-row-icon {
+  height: var(--text-sm--line-height);
+}
+
+.feedback-row-text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  line-height: var(--text-sm--line-height);
+}
+
+.feedback-row-title,
+.feedback-row-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feedback-row-title {
+  color: var(--color-text-primary);
+}
+
+.feedback-row-meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+}
+
+.feedback-row-outdated {
+  color: var(--color-warning);
+}
+
+/* An agent reply not yet seen carries the walkthroughs' accent dot. */
+.feedback-row-new {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex: none;
+  align-self: center;
+  background: var(--color-accent);
+}
+
+/* An outdated thread opens in place, the code it was about leading it. */
+.feedback-inline > .feedback-thread {
+  padding-inline: var(--space-3);
+}
+
+.feedback-original {
+  margin: 0;
+  overflow: auto;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre;
+}
+
+@media (max-width: 48rem) {
+  .feedback-thread {
+    padding-inline: var(--space-3);
+  }
+
+  .feedback-thread-header {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+}

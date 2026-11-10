@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
-import { isLiveChange, isLiveStatus, type LiveChange, type LiveStatus } from "../../api/events-contract.ts"
+import { isFeedbackEvent, isLiveChange, isLiveStatus, type FeedbackEvent, type LiveChange, type LiveStatus } from "../../api/events-contract.ts"
 import { projectUrl } from "../../api/project-url.ts"
 import { everything } from "./live-updates.ts"
 
@@ -118,11 +118,17 @@ function eventData(event: Event): unknown {
 }
 
 // useLiveUpdates runs followLiveUpdates for project and calls onChange with
-// each batch. Mount it once per project.
-export function useLiveUpdates(project: string, onChange: (change: LiveChange) => void): LiveStatus | null {
+// each batch, and onFeedback with each feedback announcement (decision
+// 0120). Mount it once per project.
+export function useLiveUpdates(project: string, onChange: (change: LiveChange) => void,
+  onFeedback?: (event: FeedbackEvent) => void): LiveStatus | null {
   const [status, setStatus] = useState<LiveStatus | null>(null)
   const latest = useRef(onChange)
-  useLayoutEffect(() => { latest.current = onChange })
+  const latestFeedback = useRef(onFeedback)
+  useLayoutEffect(() => {
+    latest.current = onChange
+    latestFeedback.current = onFeedback
+  })
 
   useEffect(() => {
     if (!project) return
@@ -136,6 +142,10 @@ export function useLiveUpdates(project: string, onChange: (change: LiveChange) =
         source.addEventListener("change", (event) => {
           const value = eventData(event)
           if (isLiveChange(value)) handlers.change(value)
+        })
+        source.addEventListener("feedback", (event) => {
+          const value = eventData(event)
+          if (isFeedbackEvent(value)) latestFeedback.current?.(value)
         })
         source.addEventListener("error", () => handlers.error())
         return {

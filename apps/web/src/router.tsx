@@ -17,6 +17,7 @@ import { compareSearch, legacyCompare, reviewFragment, routeCompare } from "./fe
 import { isCommitHash } from "./lib/commit-hash.ts"
 import { routeAt } from "./workspace/workspace-tabs.ts"
 import { routeStep, routeWalkthrough } from "./features/walkthrough/walkthrough-steps.ts"
+import { routeFeedback } from "./features/feedback/feedback-model.ts"
 
 interface PageSearch {
   [key: string]: unknown
@@ -43,6 +44,9 @@ interface PageSearch {
   // welcome=1, without a path, review, or walkthrough, opens the Welcome tab
   // (decision 0052).
   welcome?: 1
+  // fb=<id> reveals the Feedback view at that feedback (decision 0120);
+  // alone it opens no tab.
+  fb?: string
   // With a path, diff=1, commit=, branch=1, and from=&to= are per-file diff
   // routes from before review tabs; they redirect to the review.
   diff?: 1
@@ -67,6 +71,7 @@ function validateSearch(search: Record<string, unknown>): PageSearch {
     wt: routeWalkthrough(search.wt),
     step: routeStep(search.step),
     welcome: search.welcome === 1 || search.welcome === "1" ? 1 : undefined,
+    fb: routeFeedback(search.fb),
   }
 }
 
@@ -148,7 +153,7 @@ const viewRoute = createRoute({
   // A review, walkthrough, or Welcome tab loads only the tree; a review's
   // pane reads /api/diff per file.
   loaderDeps: ({ search }) => {
-    const diff = routeCompare(search) !== null || (!search.path && (search.wt !== undefined || search.welcome !== undefined))
+    const diff = routeCompare(search) !== null || (!search.path && (search.wt !== undefined || search.welcome !== undefined || search.fb !== undefined))
     return { project: search.project ?? "", selected: diff ? "" : search.path ?? "", at: diff ? "" : search.at ?? "", diff }
   },
   loader: ({ abortController, deps }) => loadPage({

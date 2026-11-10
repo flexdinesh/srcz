@@ -61,5 +61,7 @@ function viewState(input: EmptyWorkspaceInput): EmptyWorkspace {
       return input.walkthroughs === 0
         ? { heading: "No walkthroughs yet", hint: "Agents publish guided tours of this project here.", action: null }
         : { heading: "Choose a walkthrough", hint: "Open one from the list to start.", action: null }
+    case "feedback":
+      return { heading: "Review feedback", hint: "Open a thread to see it in its code, or comment on lines in a diff.", action: null }
   }
 }

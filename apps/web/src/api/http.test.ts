@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { failureReason, fetchJSON, isAbort, isRecord, RequestError, type RequestFailure } from "./http.ts"
+import { failureReason, fetchJSON, isAbort, isRecord, postJSON, RequestError, type RequestFailure } from "./http.ts"
 
 interface Greeting {
   greeting: string
@@ -32,6 +32,19 @@ test("a valid payload is returned and the request asks for JSON", async (t) => {
   assert.deepEqual(await fetchJSON("/api/greeting", { headers: { "X-Test": "1" } }, isGreeting, describe), { greeting: "hi" })
   const init = fetchMock.mock.calls[0]?.arguments[1]
   assert.deepEqual(init?.headers, { Accept: "application/json", "X-Test": "1" })
+})
+
+test("postJSON sends JSON and fails as reads do", async (t) => {
+  const fetchMock = t.mock.method(globalThis, "fetch", respond('{"greeting":"hi"}'))
+  assert.deepEqual(await postJSON("/api/greeting", { name: "zero" }, {}, isGreeting, describe), { greeting: "hi" })
+  const init = fetchMock.mock.calls[0]?.arguments[1]
+  assert.equal(init?.method, "POST")
+  assert.equal(init?.body, '{"name":"zero"}')
+  assert.deepEqual(init?.headers, { Accept: "application/json", "Content-Type": "application/json" })
+
+  t.mock.method(globalThis, "fetch", respond('{"error":"body: is empty","code":"invalidFeedback"}', 400))
+  assert.deepEqual((await failure(postJSON("/api/greeting", {}, {}, isGreeting, describe))).failure,
+    { kind: "rejected", status: 400, error: "body: is empty", code: "invalidFeedback" })
 })
 
 test("a network failure becomes an unreachable message, never the browser's text", async (t) => {

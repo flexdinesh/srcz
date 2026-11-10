@@ -5,7 +5,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, type KeyboardEvent } fro
 import type { FileStats } from "@zero/contracts"
 import { treeCSS } from "../../lib/tree-css.ts"
 import { ancestorDirectories, type CompareFile } from "./compare-files.ts"
-import { fileDecoration, viewedCSS } from "./files-tree-decoration.ts"
+import { fileDecoration, threadsCSS, viewedCSS } from "./files-tree-decoration.ts"
 
 // Every Source Control folder holds changes, so folder dots add no signal;
 // deleted files read as removed. Line stats keep their width, so long names
@@ -34,6 +34,8 @@ interface FilesTreeProps {
   marked?: ReadonlySet<string>
   // viewed, when given, dims viewed files and checks them.
   viewed?: (path: string) => boolean
+  // threads counts each file's open feedback threads (decision 0120).
+  threads?: ReadonlyMap<string, number>
   onExpandedChange(expanded: boolean): void
   // onOpen reviews a file; focusDocument moves focus to the review.
   onOpen(path: string, focusDocument: boolean): void
@@ -41,7 +43,7 @@ interface FilesTreeProps {
 
 // FilesTree shows one compare's changed files under compact folders, with
 // status letters and line stats (decision 0035).
-export function FilesTree({ activePath, collapseRequest, files, itemHeight, label, marked, stats, viewed, onExpandedChange, onOpen }: FilesTreeProps) {
+export function FilesTree({ activePath, collapseRequest, files, itemHeight, label, marked, stats, threads, viewed, onExpandedChange, onOpen }: FilesTreeProps) {
   const paths = useMemo(() => files.map((file) => file.path), [files])
   const viewedPaths = useMemo(() => viewed ? paths.filter(viewed) : [], [paths, viewed])
   const byPath = useMemo(() => new Map(files.map((file): [string, CompareFile] => [file.path, file])), [files])
@@ -51,8 +53,9 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
   const collapsed = useRef(new Set<string>())
   const previousPaths = useRef(paths)
   const syncing = useRef(false)
-  const current = useRef({ activePath, byPath, marked, stats, viewedPaths, onOpen })
-  useLayoutEffect(() => { current.current = { activePath, byPath, marked, stats, viewedPaths, onOpen } }, [activePath, byPath, marked, stats, viewedPaths, onOpen])
+  const threadPaths = useMemo(() => paths.filter((path) => (threads?.get(path) ?? 0) > 0), [paths, threads])
+  const current = useRef({ activePath, byPath, marked, stats, threads, viewedPaths, onOpen })
+  useLayoutEffect(() => { current.current = { activePath, byPath, marked, stats, threads, viewedPaths, onOpen } }, [activePath, byPath, marked, stats, threads, viewedPaths, onOpen])
 
   const { model } = useFileTree({
     paths,
@@ -69,10 +72,11 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
       if (item.kind !== "file") return null
       // Line stats win the room; the R badge says "renamed" and the title
       // says from where.
-      const { byPath, marked, stats, viewedPaths } = current.current
+      const { byPath, marked, stats, threads: counts, viewedPaths } = current.current
       return fileDecoration(stats?.get(item.path), byPath.get(item.path)?.oldPath, {
         marked: marked?.has(item.path) ?? false,
         viewed: viewedPaths.includes(item.path),
+        threads: counts?.get(item.path) ?? 0,
       })
     },
     onSelectionChange(selected) {
@@ -127,13 +131,14 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
   }, [gitStatus, marked, model, stats])
 
   // Viewed marks follow the review's Viewed toggles: dim their rows (by
-  // path, through the patched setUnsafeCSS) and redraw their checks.
+  // path, through the patched setUnsafeCSS) and redraw their checks. Thread
+  // counts redraw the same way, with their icons.
   useLayoutEffect(() => {
-    if (!viewed) return
-    model.setUnsafeCSS(`${changesTreeCSS}${viewedCSS(viewedPaths)}`)
+    if (!viewed && !threads) return
+    model.setUnsafeCSS(`${changesTreeCSS}${viewedCSS(viewedPaths)}${threadsCSS(threadPaths)}`)
     model.setGitStatus(undefined)
     model.setGitStatus(gitStatus)
-  }, [gitStatus, model, viewed, viewedPaths])
+  }, [gitStatus, model, threadPaths, threads, viewed, viewedPaths])
 
   useLayoutEffect(() => {
     if (!collapseRequest) return

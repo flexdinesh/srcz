@@ -35,6 +35,18 @@
   height: var(--icon-button-glyph);
 }
 
+/* Over code in a line gutter: raised and bordered, as the gutter copy button. */
+.ui-icon-button[data-variant="gutter"] {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-control);
+}
+
+.ui-icon-button[data-variant="gutter"]:hover:not(:disabled, [aria-disabled="true"]) {
+  background: var(--color-surface-raised) linear-gradient(var(--color-hover), var(--color-hover));
+}
+
 .ui-icon-button:hover:not(:disabled, [aria-disabled="true"]) {
   color: var(--color-text-primary);
   background: var(--color-hover);

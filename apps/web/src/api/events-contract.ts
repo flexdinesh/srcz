@@ -1,3 +1,5 @@
+import { isFeedbackEvent, type FeedbackEvent } from "@zero/contracts"
+
 import { isRecord } from "./http.ts"
 
 // Transport contract for /api/events (decision 0050): a server-sent event
@@ -6,7 +8,11 @@ import { isRecord } from "./http.ts"
 // A checkout's stream also sends "head" after the first status and after a
 // git change that moves HEAD (decision 0066), and every stream sends
 // "walkthrough" for one published for its project (decision 0099); the browser
-// ignores both.
+// ignores both. "feedback" says a branch's feedback in the project's
+// repository changed (decision 0120); its body is the generated
+// FeedbackEvent, and open threads reread on it.
+
+export { isFeedbackEvent, type FeedbackEvent }
 
 export type LiveMode = "watching" | "polling" | "off"
 
