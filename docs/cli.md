@@ -50,6 +50,16 @@ zero remote rotate                # new identity; old strings stop working
 
 Bare `zero` on a machine with no UI prints this advice and exits.
 
+## Attach
+
+```sh
+zero attach docker://web/src      # serve /src of running container web on 127.0.0.1
+zero attach docker://web          # the container's working directory
+zero attach --port 8080 --no-open docker://web/src
+```
+
+Needs `docker` (any context) and a writable `/tmp` in the container; no shell.
+
 ## Walkthroughs
 
 ```sh

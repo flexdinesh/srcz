@@ -40,8 +40,8 @@ var (
 	ErrToken = errors.New("the server refused this connection string's token")
 )
 
-// Endpoint is a way to reach a zero server. A later SSH endpoint adds a
-// forward; everything above RoundTripper stays the same.
+// Endpoint is a way to reach a zero server: a socket, TCP, or a command's
+// standard input and output (Exec). Everything above RoundTripper is the same.
 type Endpoint interface {
 	// BaseURL is what requests are addressed to. Its host is always
 	// "localhost", which the web app's Host check accepts; where the bytes go
@@ -242,9 +242,18 @@ func probeHost(ctx context.Context, endpoint TLS) (contract.RemoteInfo, error) {
 	if response.StatusCode == http.StatusUnauthorized {
 		return contract.RemoteInfo{}, ErrToken
 	}
+	info, err := readInfo(response)
+	if err != nil {
+		return contract.RemoteInfo{}, fmt.Errorf("%w: %w", ErrUnreachable, err)
+	}
+	return info, nil
+}
+
+// readInfo reads the answer to contract.RemoteInfoPath.
+func readInfo(response *http.Response) (contract.RemoteInfo, error) {
 	var info contract.RemoteInfo
 	if response.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(response.Body, 64<<10)).Decode(&info) != nil || info.Protocol <= 0 {
-		return contract.RemoteInfo{}, fmt.Errorf("%w: it does not answer as a zero server", ErrUnreachable)
+		return contract.RemoteInfo{}, errors.New("it does not answer as a zero server")
 	}
 	return info, nil
 }

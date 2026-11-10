@@ -26,6 +26,12 @@ import (
 
 const defaultHost = "localhost"
 
+// Default scan limits; `zero serve-stdio` uses them as is.
+const (
+	defaultDepth     = 5
+	defaultScanDepth = 10
+)
+
 type options struct {
 	cliName    cliName
 	paths      []string
@@ -69,6 +75,8 @@ func newNamedRootCommand(name cliName, runApp, runBrowser runner) *cobra.Command
 	command.CompletionOptions.DisableDefaultCmd = true
 	command.AddCommand(newServeCommand("browser [path]", runBrowser, nil))
 	command.AddCommand(newConnectCommand())
+	command.AddCommand(newAttachCommand(runAttach))
+	command.AddCommand(newServeStdioCommand())
 	command.AddCommand(newRemoteCommand(name))
 	command.AddCommand(newWalkthroughCommand(publishWalkthrough))
 	command.AddCommand(newFeedbackCommand())
@@ -139,8 +147,8 @@ func newServeCommand(use string, runCommand runner, addFlags func(*cobra.Command
 func addBrowserFlags(command *cobra.Command, opts *options) {
 	flags := command.Flags()
 	flags.StringArrayVar(&opts.paths, "path", nil, "add a directory to serve (repeatable); a positional path is shorthand for one")
-	flags.IntVar(&opts.depth, "depth", 5, "maximum directory depth to scan within a project")
-	flags.IntVar(&opts.scanDepth, "scan-depth", 10, "maximum directory depth to search for git repositories")
+	flags.IntVar(&opts.depth, "depth", defaultDepth, "maximum directory depth to scan within a project")
+	flags.IntVar(&opts.scanDepth, "scan-depth", defaultScanDepth, "maximum directory depth to search for git repositories")
 	flags.StringVar(&opts.host, "host", defaultHost, "IP address to bind")
 	flags.IntVar(&opts.port, "port", 0, "port (0 asks the OS); defaults to the first free port from 7971 to 7980")
 	flags.BoolVar(&opts.noOpen, "no-open", false, "do not open the browser automatically")
