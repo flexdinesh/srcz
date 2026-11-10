@@ -491,17 +491,18 @@ func TestCandidatesOrderAndFilter(t *testing.T) {
 		{Name: "docker0", Addresses: []net.IP{ip("172.17.0.1")}},
 		{Name: "br-abc", Addresses: []net.IP{ip("172.18.0.1")}},
 		{Name: "wlan0", Addresses: []net.IP{ip("fe80::1"), ip("2001:db8::5"), ip("192.168.1.5")}},
-		{Name: "tailscale0", Addresses: []net.IP{ip("100.64.1.2")}},
+		{Name: "tailscale0", Addresses: []net.IP{ip("fd7a:115c:a1e0::9"), ip("100.64.1.2")}},
 	}
 	for name, test := range map[string]struct {
 		ssh   string
 		route net.IP
 		want  []string
 	}{
-		"ssh, route, then interfaces": {"10.1.1.1 5000 10.0.0.5 22", ip("192.168.1.5"), []string{"10.0.0.5", "192.168.1.5", "100.64.1.2", "2001:db8::5"}},
-		"no ssh":                      {"", ip("192.168.1.5"), []string{"192.168.1.5", "100.64.1.2", "2001:db8::5"}},
-		"malformed ssh ignored":       {"garbage", nil, []string{"192.168.1.5", "100.64.1.2", "2001:db8::5"}},
-		"loopback ssh ignored":        {"::1 5000 ::1 22", nil, []string{"192.168.1.5", "100.64.1.2", "2001:db8::5"}},
+		"ssh, tailnet, route, then interfaces": {"10.1.1.1 5000 10.0.0.5 22", ip("192.168.1.5"), []string{"10.0.0.5", "100.64.1.2", "fd7a:115c:a1e0::9", "192.168.1.5"}},
+		"no ssh":                               {"", ip("192.168.1.5"), []string{"100.64.1.2", "fd7a:115c:a1e0::9", "192.168.1.5", "2001:db8::5"}},
+		"ssh over the tailnet":                 {"100.70.0.1 5000 100.64.1.2 22", nil, []string{"100.64.1.2", "fd7a:115c:a1e0::9", "192.168.1.5", "2001:db8::5"}},
+		"malformed ssh ignored":                {"garbage", nil, []string{"100.64.1.2", "fd7a:115c:a1e0::9", "192.168.1.5", "2001:db8::5"}},
+		"loopback ssh ignored":                 {"::1 5000 ::1 22", nil, []string{"100.64.1.2", "fd7a:115c:a1e0::9", "192.168.1.5", "2001:db8::5"}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if got := Candidates(test.ssh, test.route, interfaces); !slices.Equal(got, test.want) {
