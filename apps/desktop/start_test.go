@@ -13,6 +13,31 @@ import (
 	"github.com/flexdinesh/zero/pkg/connection"
 )
 
+func TestOnlyMacOSHidesTheTitleBar(t *testing.T) {
+	style, lights := windowChrome("darwin")
+	if style != mygo.TitleBarHidden || lights == nil {
+		t.Fatalf("darwin chrome = %q, %v; want a hidden title bar with placed traffic lights", style, lights)
+	}
+	// The traffic lights (16px) center in the 32px band.
+	if lights.Y != 8 {
+		t.Errorf("traffic lights at y %d; want 8", lights.Y)
+	}
+	for _, goos := range []string{"linux", "windows"} {
+		if style, lights := windowChrome(goos); style != mygo.TitleBarDefault || lights != nil {
+			t.Errorf("%s chrome = %q, %v; want the native title bar", goos, style, lights)
+		}
+	}
+}
+
+func TestOnlyMacOSFollowsThePageAppearance(t *testing.T) {
+	if !followsPageAppearance("darwin") {
+		t.Error("macOS keeps the OS appearance")
+	}
+	if followsPageAppearance("linux") || followsPageAppearance("windows") {
+		t.Error("other platforms follow the page appearance")
+	}
+}
+
 func TestWindowIdentityFollowsTheConnection(t *testing.T) {
 	if got := windowStateKey(proxy.Host); got != "main" {
 		t.Errorf("local state key = %q: its remembered bounds would be lost", got)

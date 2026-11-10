@@ -33,9 +33,10 @@
 }
 
 .ui-dialog[data-variant="drawer"] {
-  inset: 0 auto 0 0;
+  /* Below the desktop title band (decision 0119), clear of the window controls. */
+  inset: var(--titlebar-height) auto 0 0;
   width: min(85vw, 22rem);
-  height: 100dvh;
+  height: calc(100dvh - var(--titlebar-height));
   max-height: none;
   margin: 0;
 }

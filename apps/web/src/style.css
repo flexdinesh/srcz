@@ -31,6 +31,7 @@
 @import "./features/source-control/diff.css" layer(features);
 @import "./features/source-control/image-diff.css" layer(features);
 @import "./workspace/status-bar.css" layer(features);
+@import "./workspace/title-bar.css" layer(features);
 @import "./settings/settings.css" layer(features);
 @import "./workspace/command-palette.css" layer(features);
 @import "./features/documents/prose.css" layer(features);

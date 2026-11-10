@@ -24,6 +24,7 @@
 
   .sidebar-resizer,
   .workspace-toolbar,
+  .title-bar,
   .status-bar {
     display: none;
   }

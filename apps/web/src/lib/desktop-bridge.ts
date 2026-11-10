@@ -38,7 +38,9 @@ export interface NotificationStatus {
 // resolves the chosen id, or null when dismissed (decision 0081); closeWindow
 // closes the native window after the final tab (decision 0097);
 // configureNotifications sets what the app notifies about and resolves whether
-// notices can reach the user, or null when it refuses (decision 0099). A window
+// notices can reach the user, or null when it refuses (decision 0099);
+// setAppearance has the app's menus and window controls follow the theme's
+// polarity, or the OS for "system" (decision 0119). A window
 // on a remote server has no openFolder or revealPath: its files are not on this
 // computer (decision 0098).
 export interface DesktopBridge {
@@ -49,13 +51,17 @@ export interface DesktopBridge {
   revealPath: ((project: string, path: string) => void) | null
   showContextMenu: ((items: readonly NativeMenuItem[], x: number, y: number) => Promise<string | null>) | null
   configureNotifications: ((config: NotificationConfig) => Promise<NotificationStatus | null>) | null
+  setAppearance: ((appearance: DesktopAppearance) => void) | null
 }
+
+// DesktopAppearance is the polarity native surfaces take: the OS's, or one.
+export type DesktopAppearance = "system" | "light" | "dark"
 
 // readDesktopBridge accepts a bridge of version 1 or later; any other value
 // means no bridge. Methods that are missing or not functions are null.
 export function readDesktopBridge(value: unknown): DesktopBridge | null {
   if (!isRecord(value) || typeof value.version !== "number" || !Number.isInteger(value.version) || value.version < 1) return null
-  const { openFolder, closeWindow, showAppMenu, revealPath, showContextMenu, configureNotifications } = value
+  const { openFolder, closeWindow, showAppMenu, revealPath, showContextMenu, configureNotifications, setAppearance } = value
   return {
     version: value.version,
     openFolder: typeof openFolder === "function"
@@ -99,6 +105,11 @@ export function readDesktopBridge(value: unknown): DesktopBridge | null {
         } catch {
           return null
         }
+      }
+      : null,
+    setAppearance: typeof setAppearance === "function"
+      ? (appearance) => {
+        setAppearance.call(value, appearance)
       }
       : null,
   }

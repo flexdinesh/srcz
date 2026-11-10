@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/flexdinesh/zero/apps/desktop/internal/appearance"
 )
 
 const (
@@ -156,6 +158,13 @@ func ParseReveal(project, relative any) (string, string, bool) {
 		return "", "", false
 	}
 	return p, r, true
+}
+
+// ParseAppearance validates the source a page asks native surfaces to follow
+// (decision 0119): "system", "light", or "dark".
+func ParseAppearance(value any) (string, bool) {
+	source, ok := value.(string)
+	return source, ok && appearance.IsSource(source)
 }
 
 // Notifications is what a page tells the notifier: the project it shows and
