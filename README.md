@@ -8,7 +8,7 @@
 Zero (`zero`) is the code viewer for the agentic era: browse files and review
 what agents change. Read-only and lean: rendered Markdown, image previews, formatted
 JSON/YAML/HTML/CSS/JavaScript, highlighted source, commit, branch, and range diffs,
-commit search and file history, agent walkthroughs, code navigation, and live updates. Desktop app, browser, or a
+commit search and file history, agent walkthroughs, review feedback threads agents answer, code navigation, and live updates. Desktop app, browser, or a
 remote box served to your laptop.
 
 ## Install
@@ -52,3 +52,4 @@ zero --help
 - [User guides](apps/site/src/pages/docs)
 - [Development](docs/development.md), [architecture](docs/architecture.md), [release](docs/release.md)
 - Agent skill: `npx skills add flexdinesh/zero --skill zero-walkthrough`
+- Feedback skill: `npx skills add flexdinesh/zero --skill zero-feedback`

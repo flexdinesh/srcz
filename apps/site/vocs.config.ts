@@ -26,6 +26,7 @@ export default defineConfig({
         { text: 'Browsing', link: '/docs/browsing' },
         { text: 'Code navigation', link: '/docs/code-navigation' },
         { text: 'Walkthroughs', link: '/docs/walkthroughs' },
+        { text: 'Review feedback', link: '/docs/feedback' },
       ],
     },
   ],
