@@ -7,7 +7,10 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/flexdinesh/zero/internal/daemon"
@@ -80,7 +83,11 @@ func serveRemote(ctx context.Context, opts options, stdout, stderr io.Writer, de
 	if _, err := openDaemonRoots(ctx, roots, opts.depth, opts.scanDepth, deps.roots, stderr); err != nil {
 		return err
 	}
-	startCtx, cancel := context.WithTimeout(ctx, daemonTimeout)
+	timeout := daemonTimeout
+	if opts.tailscale {
+		timeout = tailscaleStartTimeout
+	}
+	startCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	status, err := deps.start(startCtx, socket, remoteRequest(opts))
 	if err != nil {
@@ -89,6 +96,21 @@ func serveRemote(ctx context.Context, opts options, stdout, stderr io.Writer, de
 	served, err := deps.served(startCtx, socket)
 	if err != nil {
 		return err
+	}
+	if opts.tailscale {
+		writeRemoteStartup(stdout, remoteStartup{
+			CLIName:     opts.cliName,
+			Version:     "zero " + version.Number(),
+			Directories: served,
+			Tailnet:     tailnetURL(status),
+			FirstWait:   opts.remoteFirstWait,
+			Grace:       opts.remoteGrace,
+			Foreground:  opts.foreground,
+		})
+		if foreground != nil {
+			return foreground.wait()
+		}
+		return nil
 	}
 	hosts := connectHosts(opts, deps.candidates)
 	if len(hosts) == 0 {
@@ -127,6 +149,9 @@ func remoteRequest(opts options) contract.DaemonRemoteRequest {
 	request := contract.DaemonRemoteRequest{FirstWait: opts.remoteFirstWait.String(), Grace: opts.remoteGrace.String()}
 	if opts.foreground {
 		request.FirstWait, request.Grace = "", ""
+	}
+	if opts.tailscale {
+		request.Exposure = contract.RemoteExposureTailscale
 	}
 	if opts.hostSet {
 		request.Host = opts.host
@@ -247,13 +272,33 @@ func resolveSocket(socket string) (string, error) {
 
 var errRemoteUnavailable = errors.New("the running zero daemon cannot serve remotely; stop it with `zero daemon stop` and run this again")
 
-// remoteFailure explains an answer from a daemon older than --remote.
+// tailscaleStartTimeout covers asking Tailscale for this machine's name and
+// waiting for `tailscale serve` to report serving.
+const tailscaleStartTimeout = 50 * time.Second
+
+// remoteFailure explains an answer from a daemon older than --remote, or
+// than --tailscale, which refuses the exposure field as an unknown body.
 func remoteFailure(err error) error {
 	var failure *daemon.ControlError
 	if errors.As(err, &failure) && (failure.Status == http.StatusNotFound || failure.Code == contract.CodeRemoteUnavailable) {
 		return errRemoteUnavailable
 	}
+	if errors.As(err, &failure) && failure.Status == http.StatusBadRequest && failure.Code == contract.CodeInvalidRequest && strings.HasPrefix(failure.Message, "Send ") {
+		return errRemoteUnavailable
+	}
+	if errors.As(err, &failure) && failure.Code == contract.CodeTailscaleUnavailable {
+		return errors.New(failure.Message)
+	}
 	return err
+}
+
+// tailnetURL is where the tailnet reaches a Tailscale exposure.
+func tailnetURL(status contract.DaemonRemote) string {
+	host := status.Host
+	if status.Port != 443 {
+		host = net.JoinHostPort(host, strconv.Itoa(status.Port))
+	}
+	return (&url.URL{Scheme: "https", Host: host, Path: "/"}).String()
 }
 
 // newRemoteCommand manages the daemon's TCP listener.
@@ -261,7 +306,7 @@ func newRemoteCommand(name cliName) *cobra.Command {
 	var socket string
 	command := &cobra.Command{
 		Use:           "remote",
-		Short:         fmt.Sprintf("Manage serving to other machines, started by %s --remote", name),
+		Short:         fmt.Sprintf("Manage serving to other machines, started by %s --remote or --tailscale", name),
 		Args:          cobra.NoArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -288,13 +333,13 @@ func newRemoteCommand(name cliName) *cobra.Command {
 		}
 	}
 	var asJSON bool
-	status := subcommand("status", "Print whether this machine serves over TCP, and the connect string", func(ctx context.Context, client *daemon.Client, stdout io.Writer) error {
+	status := subcommand("status", "Print whether this machine serves to other machines, and how to reach it", func(ctx context.Context, client *daemon.Client, stdout io.Writer) error {
 		return remoteStatus(ctx, client, asJSON, detectCandidates, stdout)
 	})
 	status.Flags().BoolVar(&asJSON, "json", false, "print status as JSON")
 	command.AddCommand(
 		status,
-		subcommand("stop", "Stop serving over TCP now", remoteStop),
+		subcommand("stop", "Stop serving to other machines now", remoteStop),
 		subcommand("rotate", "Replace the identity; existing connect strings stop working", func(ctx context.Context, client *daemon.Client, stdout io.Writer) error {
 			return remoteRotate(ctx, client, remote.DefaultIdentityFile, detectCandidates, stdout)
 		}),
@@ -315,6 +360,10 @@ func remoteStatus(ctx context.Context, client *daemon.Client, asJSON bool, candi
 	}
 	if !status.Listening {
 		_, _ = fmt.Fprintln(stdout, "not serving over TCP")
+		return nil
+	}
+	if status.Exposure == contract.RemoteExposureTailscale {
+		_, _ = fmt.Fprintf(stdout, "serving over Tailscale, %d connected\nopen: %s\n", status.Clients, tailnetURL(status))
 		return nil
 	}
 	_, _ = fmt.Fprintf(stdout, "serving on port %d, %d connected\n", status.Port, status.Clients)
@@ -358,6 +407,10 @@ func remoteStop(ctx context.Context, client *daemon.Client, stdout io.Writer) er
 	}
 	if err := client.RemoteStop(ctx); err != nil {
 		return remoteFailure(err)
+	}
+	if status.Exposure == contract.RemoteExposureTailscale {
+		_, _ = fmt.Fprintln(stdout, "stopped serving over Tailscale")
+		return nil
 	}
 	_, _ = fmt.Fprintln(stdout, "stopped serving over TCP")
 	return nil

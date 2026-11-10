@@ -12,7 +12,9 @@ import (
 
 	"github.com/flexdinesh/zero/internal/projects"
 	"github.com/flexdinesh/zero/internal/runtime"
+	"github.com/flexdinesh/zero/internal/tailscale"
 	"github.com/flexdinesh/zero/internal/version"
+	"github.com/flexdinesh/zero/pkg/contract"
 )
 
 // ProtocolVersion versions what clients rely on: /_daemon/* and Status. Only
@@ -36,6 +38,9 @@ type Config struct {
 	Log io.Writer
 	// IdentityFile holds the identity for serving over TCP; "" never does.
 	IdentityFile string
+	// Tailscale serves over Tailscale on request; nil never does (decision
+	// 0126).
+	Tailscale *tailscale.Client
 }
 
 var (
@@ -85,11 +90,28 @@ func Run(ctx context.Context, config Config) error {
 	defer cancel(nil)
 	idle := newIdleTracker(config.Lifetime.IdleExit, func() { cancel(errIdle) })
 	defer idle.stop()
-	var remoteControl RemoteControl
+	// An exposure closing on its own exits the daemon only if no other one
+	// serves.
+	exposed := &exposures{}
+	exit := func() {
+		if !exposed.listening() {
+			cancel(errIdle)
+		}
+	}
 	if config.IdentityFile != "" {
-		server := newRemoteServer(rt, rt.Handler(), config.IdentityFile, config.Lifetime, idle, func() { cancel(errIdle) }, log)
+		server := newRemoteServer(rt, rt.Handler(), config.IdentityFile, config.Lifetime, idle, exit, log)
 		defer server.shutdown()
-		remoteControl = server
+		exposed.add(contract.RemoteExposureTLS, server)
+		exposed.tls = server
+	}
+	if config.Tailscale != nil {
+		server := newTailscaleServer(rt, config.Tailscale, config.Lifetime, idle, exit, log)
+		defer server.shutdown()
+		exposed.add(contract.RemoteExposureTailscale, server)
+	}
+	var remoteControl RemoteControl
+	if len(exposed.list) > 0 {
+		remoteControl = exposed
 	}
 	control := NewController(ControllerConfig{
 		Remote:    remoteControl,

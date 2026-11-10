@@ -59,6 +59,7 @@ type remoteStartup struct {
 	Version     string
 	Directories []string
 	Connect     string // the connection string, ready for a shell
+	Tailnet     string // with --tailscale, the URL instead of Connect
 	Web         string // "" unless --web
 	Links       bool   // write Web as an OSC 8 hyperlink
 	FirstWait   time.Duration
@@ -87,11 +88,17 @@ func writeRemoteStartup(output io.Writer, info remoteStartup) {
 		writeStartupValue(output, label, path, name, directory)
 	}
 	_, _ = fmt.Fprintln(output)
-	_, _ = fmt.Fprint(output, "  ")
-	_, _ = label.Fprintln(output, "on your computer, run:")
-	_, _ = fmt.Fprint(output, "  ")
-	_, _ = command.Fprintln(output, "zero connect "+info.Connect)
-	writeConnectNameHint(output)
+	if info.Tailnet != "" {
+		writeStartupValue(output, label, url, "tailnet:  ", info.Tailnet)
+		_, _ = fmt.Fprint(output, "  ")
+		_, _ = label.Fprintln(output, "open it on any device your tailnet's access rules let reach this machine; they can all read the served files.")
+	} else {
+		_, _ = fmt.Fprint(output, "  ")
+		_, _ = label.Fprintln(output, "on your computer, run:")
+		_, _ = fmt.Fprint(output, "  ")
+		_, _ = command.Fprintln(output, "zero connect "+info.Connect)
+		writeConnectNameHint(output)
+	}
 	if info.Web != "" {
 		_, _ = fmt.Fprintln(output)
 		writeStartupValue(output, label, url, "web:  ", hyperlink(info.Web, info.Links))

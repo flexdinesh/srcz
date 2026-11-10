@@ -688,6 +688,37 @@ func TestServerRefusesOtherHosts(t *testing.T) {
 	}
 }
 
+func TestHostPolicyAllowsListedNamesOnItsHandlerOnly(t *testing.T) {
+	app := newTestApp(t, t.TempDir())
+	tailnet := app.Handler(HostPolicy{AllowedHosts: []string{"box.tail1234.ts.net"}})
+	for host, want := range map[string][2]int{
+		// [ServeHTTP, the tailnet handler]
+		"box.tail1234.ts.net":       {http.StatusForbidden, http.StatusOK},
+		"box.tail1234.ts.net:7971":  {http.StatusForbidden, http.StatusOK},
+		"BOX.Tail1234.ts.net.:7971": {http.StatusForbidden, http.StatusOK},
+		"127.0.0.1:7971":            {http.StatusOK, http.StatusOK},
+		"localhost":                 {http.StatusOK, http.StatusOK},
+		"other.tail1234.ts.net":     {http.StatusForbidden, http.StatusForbidden},
+		"box.tail1234.ts.net.evil":  {http.StatusForbidden, http.StatusForbidden},
+		"evil.box.tail1234.ts.net":  {http.StatusForbidden, http.StatusForbidden},
+		"attacker.example:7971":     {http.StatusForbidden, http.StatusForbidden},
+		"":                          {http.StatusForbidden, http.StatusForbidden},
+	} {
+		for i, handler := range []http.Handler{app, tailnet} {
+			req := httptest.NewRequest(http.MethodGet, "/api/projects", nil)
+			req.Host = host
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, req)
+			if response.Code != want[i] {
+				t.Errorf("handler %d, Host %q status = %d, want %d", i, host, response.Code, want[i])
+			}
+		}
+	}
+	if (HostPolicy{AllowedHosts: []string{""}}).Allows("") {
+		t.Error("an empty allowed name allows an empty Host")
+	}
+}
+
 // testRoots builds the served root set from paths.
 func testRoots(t *testing.T, paths ...string) *projects.RootSet {
 	t.Helper()

@@ -55,6 +55,19 @@ func Authenticate(token string, info contract.RemoteInfo, next http.Handler) htt
 	})
 }
 
+// Info answers contract.RemoteInfoPath and passes every other request to
+// next, for a listener whose network authenticates, as a tailnet does
+// (decision 0126).
+func Info(info contract.RemoteInfo, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == contract.RemoteInfoPath {
+			writeInfo(w, r, info)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func authorized(r *http.Request, matches func(string) bool) bool {
 	if scheme, value, ok := strings.Cut(r.Header.Get("Authorization"), " "); ok && strings.EqualFold(scheme, "Bearer") {
 		return matches(value)

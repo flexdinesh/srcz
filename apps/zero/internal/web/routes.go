@@ -14,27 +14,68 @@ import (
 // fonts, and workers.
 const contentSecurityPolicy = "default-src 'none'; img-src 'self' data: blob: http: https:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'"
 
-// ServeHTTP refuses requests for other hosts, then routes. Every request
-// rescans the project it names.
+// ServeHTTP serves under the zero HostPolicy: localhost and IP literals.
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a.serve(HostPolicy{}, w, r)
+}
+
+// Handler serves under policy, for a listener that is reached by name, such
+// as through a Tailscale proxy (decision 0126).
+func (a *App) Handler(policy HostPolicy) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { a.serve(policy, w, r) })
+}
+
+// serve refuses requests for hosts policy does not allow, then routes. Every
+// request rescans the project it names.
+func (a *App) serve(policy HostPolicy, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if !localHost(r.Host) {
+	if !policy.Allows(r.Host) {
 		http.Error(w, "forbidden host", http.StatusForbidden)
 		return
 	}
 	a.routes.ServeHTTP(w, r)
 }
 
-// localHost reports whether a request's Host names this machine directly:
-// localhost or an IP literal. A site that rebinds its own hostname to this
-// address is refused, so other origins cannot read served files.
-func localHost(host string) bool {
+// HostPolicy is which Host headers a listener answers. A site that rebinds
+// its own hostname to this address is refused, so other origins cannot read
+// served files. localhost and IP literals name this machine directly and are
+// always allowed; a name is allowed only when listed.
+type HostPolicy struct {
+	// AllowedHosts are further names, without a port, matched without case.
+	// List only names whose requests a trusted proxy delivers.
+	AllowedHosts []string
+}
+
+// Allows reports whether policy answers host, a Host header with an optional
+// port.
+func (p HostPolicy) Allows(host string) bool {
 	if name, _, err := net.SplitHostPort(host); err == nil {
 		host = name
 	}
 	host = strings.TrimSuffix(strings.TrimPrefix(host, "["), "]")
-	return strings.EqualFold(host, "localhost") || net.ParseIP(host) != nil
+	if strings.EqualFold(host, "localhost") || net.ParseIP(host) != nil {
+		return true
+	}
+	host = strings.TrimSuffix(host, ".")
+	for _, allowed := range p.AllowedHosts {
+		if allowed = strings.TrimSuffix(allowed, "."); allowed != "" && strings.EqualFold(host, allowed) {
+			return true
+		}
+	}
+	return false
+}
+
+// Guard refuses requests for hosts policy does not allow before next, for
+// what a listener answers outside the web app.
+func (p HostPolicy) Guard(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !p.Allows(r.Host) {
+			http.Error(w, "forbidden host", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // apiHandler serves one JSON endpoint from its query.

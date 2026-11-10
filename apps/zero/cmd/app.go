@@ -61,7 +61,7 @@ const (
 // asks for a server; a machine with no UI gets advice, never an open port.
 func chooseLaunch(opts options, goos string, getenv func(string) string) launch {
 	switch {
-	case opts.remote:
+	case opts.remote || opts.tailscale:
 		return launchRemote
 	case opts.hostSet || opts.portSet:
 		return launchBrowser

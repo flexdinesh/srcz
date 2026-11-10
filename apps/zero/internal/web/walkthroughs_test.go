@@ -265,6 +265,35 @@ func TestPublishGuardsAgainstOtherSitesAndBadBodies(t *testing.T) {
 	}
 }
 
+// A page reached through a proxy by an allowed name, as over Tailscale
+// (decision 0126), writes from its own https origin; other names cannot.
+func TestPublishFromAnAllowedHostsOwnHTTPSOrigin(t *testing.T) {
+	root := t.TempDir()
+	app, _ := walkthroughApp(t, root)
+	handler := app.Handler(HostPolicy{AllowedHosts: []string{"box.tail1234.ts.net"}})
+	valid := draftJSON(t, walkthrough.Draft{Project: root, Title: "t", Steps: []walkthrough.Step{{Title: "s"}}})
+	for _, test := range []struct {
+		host, origin string
+		status       int
+	}{
+		{"box.tail1234.ts.net:7971", "https://box.tail1234.ts.net:7971", http.StatusCreated},
+		{"box.tail1234.ts.net", "https://box.tail1234.ts.net", http.StatusCreated},
+		{"box.tail1234.ts.net:7971", "https://other.tail1234.ts.net:7971", http.StatusForbidden},
+		{"box.tail1234.ts.net:7971", "https://box.tail1234.ts.net:8443", http.StatusForbidden},
+		{"other.tail1234.ts.net:7971", "https://other.tail1234.ts.net:7971", http.StatusForbidden},
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/api/walkthroughs", strings.NewReader(valid))
+		req.Host = test.host
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Origin", test.origin)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, req)
+		if response.Code != test.status {
+			t.Errorf("Host %s, Origin %s = %d %s; want %d", test.host, test.origin, response.Code, response.Body.String(), test.status)
+		}
+	}
+}
+
 func TestWalkthroughsListGetAndDelete(t *testing.T) {
 	root := t.TempDir()
 	app, opened := walkthroughApp(t, root)

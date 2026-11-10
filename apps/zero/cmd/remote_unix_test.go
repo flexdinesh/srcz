@@ -16,12 +16,19 @@ import (
 
 	"github.com/flexdinesh/zero/internal/daemon"
 	"github.com/flexdinesh/zero/internal/desktopapp"
+	"github.com/flexdinesh/zero/internal/tailscale"
 	"github.com/flexdinesh/zero/pkg/connection"
 	"github.com/flexdinesh/zero/pkg/contract"
 )
 
 // realRemote runs a real daemon, and the deps `zero --remote` uses against it.
 func realRemote(t *testing.T) (remoteDeps, string) {
+	t.Helper()
+	return realRemoteWith(t, nil)
+}
+
+// realRemoteWith is realRemote with the daemon's config changed by change.
+func realRemoteWith(t *testing.T, change func(*daemon.Config)) (remoteDeps, string) {
 	t.Helper()
 	// Unix socket paths are short: t.TempDir() names can be too long.
 	socketDir, err := os.MkdirTemp("", "zero-cmd")
@@ -36,6 +43,9 @@ func realRemote(t *testing.T) (remoteDeps, string) {
 		Depth:        5,
 		ScanDepth:    10,
 		IdentityFile: filepath.Join(t.TempDir(), "identity.json"),
+	}
+	if change != nil {
+		change(&config)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
@@ -365,6 +375,11 @@ func TestRemoteExplainsAnOlderDaemon(t *testing.T) {
 	if !strings.Contains(err.Error(), "zero daemon stop") {
 		t.Errorf("err = %v", err)
 	}
+	// A daemon older than --tailscale refuses the exposure field.
+	err = remoteFailure(&daemon.ControlError{Status: 400, Code: contract.CodeInvalidRequest, Message: `Send {"host": "", "port": 7971}.`})
+	if !errors.Is(err, errRemoteUnavailable) {
+		t.Errorf("older than --tailscale: %v", err)
+	}
 	err = remoteFailure(&daemon.ControlError{Status: 503, Code: contract.CodePortBusy, Message: "busy"})
 	var failure *daemon.ControlError
 	if !errors.As(err, &failure) {
@@ -466,5 +481,70 @@ func TestConnectWithoutTheAppOffersTheBrowser(t *testing.T) {
 				t.Errorf("stdout = %q", stdout.String())
 			}
 		})
+	}
+}
+
+// fakeTailscaleCLI puts a tailscale CLI on PATH that answers status with
+// status and serves until stopped.
+func fakeTailscaleCLI(t *testing.T, status string) {
+	t.Helper()
+	directory := t.TempDir()
+	script := "#!/bin/sh\ncase \"$1\" in\nstatus) echo '" + status + "' ;;\nserve) echo 'Available within your tailnet:'; exec sleep 600 ;;\nesac\n"
+	if err := os.WriteFile(filepath.Join(directory, "tailscale"), []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", directory+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+func TestTailscalePrintsTheTailnetURLAndRemoteManagesIt(t *testing.T) {
+	disableColor(t)
+	fakeTailscaleCLI(t, `{"BackendState":"Running","Self":{"DNSName":"box.tail1234.ts.net."},"CertDomains":["box.tail1234.ts.net"]}`)
+	root := appRoot(t)
+	deps, socket := realRemoteWith(t, func(config *daemon.Config) { config.Tailscale = &tailscale.Client{} })
+	opts := remoteOptions(root)
+	opts.tailscale, opts.portSet = true, false
+	var printed, stderr bytes.Buffer
+	if err := serveRemote(context.Background(), opts, &printed, &stderr, deps); err != nil {
+		t.Fatalf("serveRemote() = %v\n%s", err, stderr.String())
+	}
+	if !strings.Contains(printed.String(), "tailnet:  https://box.tail1234.ts.net:7971/") || strings.Contains(printed.String(), "zero connect") {
+		t.Errorf("output = %q", printed.String())
+	}
+	client := daemon.NewClient(socket)
+	var status bytes.Buffer
+	if err := remoteStatus(context.Background(), client, false, deps.candidates, &status); err != nil || !strings.Contains(status.String(), "serving over Tailscale, 0 connected\nopen: https://box.tail1234.ts.net:7971/") {
+		t.Errorf("status = %q, %v", status.String(), err)
+	}
+	var stopped bytes.Buffer
+	if err := remoteStop(context.Background(), client, &stopped); err != nil || stopped.String() != "stopped serving over Tailscale\n" {
+		t.Errorf("stop = %q, %v", stopped.String(), err)
+	}
+}
+
+func TestTailscaleExplainsWhatToFix(t *testing.T) {
+	fakeTailscaleCLI(t, `{"BackendState":"NeedsLogin","Self":{"DNSName":""}}`)
+	root := appRoot(t)
+	deps, _ := realRemoteWith(t, func(config *daemon.Config) { config.Tailscale = &tailscale.Client{} })
+	opts := remoteOptions(root)
+	opts.tailscale, opts.portSet = true, false
+	err := serveRemote(context.Background(), opts, io.Discard, io.Discard, deps)
+	if err == nil || !strings.HasPrefix(err.Error(), "tailscale is not connected; run `tailscale up`") {
+		t.Errorf("serveRemote() = %v", err)
+	}
+}
+
+func TestTailscaleRequestAndURL(t *testing.T) {
+	opts := options{host: defaultHost, tailscale: true, remoteFirstWait: time.Minute, remoteGrace: time.Second}
+	if request := remoteRequest(opts); request.Exposure != contract.RemoteExposureTailscale || request.Host != "" || request.Port != nil {
+		t.Errorf("request = %+v", request)
+	}
+	opts.port, opts.portSet = 443, true
+	if request := remoteRequest(opts); request.Port == nil || *request.Port != 443 {
+		t.Errorf("--port: %+v", request)
+	}
+	for port, want := range map[int]string{443: "https://box.ts.net/", 7971: "https://box.ts.net:7971/"} {
+		if got := tailnetURL(contract.DaemonRemote{Host: "box.ts.net", Port: port}); got != want {
+			t.Errorf("tailnetURL(%d) = %s, want %s", port, got, want)
+		}
 	}
 }

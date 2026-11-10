@@ -68,6 +68,10 @@ func (r *Runtime) Application() *app.App { return r.app.Application() }
 // Handler is the web application (Host check, CSP, routes).
 func (r *Runtime) Handler() http.Handler { return r.app }
 
+// HandlerFor is the web application under policy's Host check, for a
+// listener reached by name.
+func (r *Runtime) HandlerFor(policy web.HostPolicy) http.Handler { return r.app.Handler(policy) }
+
 // Serve serves handler on listener until ctx ends or serving fails. On ctx
 // end it shuts down with every Binding: event streams end first, then in-flight
 // requests get ShutdownTimeout. It returns nil after a clean stop. listener is

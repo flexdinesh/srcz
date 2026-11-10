@@ -126,7 +126,7 @@ func TestRootCommandForegroundNeedsRemote(t *testing.T) {
 		return nil
 	})
 	command.SetArgs([]string{"docs", "--foreground"})
-	if err := command.Execute(); err == nil || err.Error() != "--foreground needs --remote" {
+	if err := command.Execute(); err == nil || err.Error() != "--foreground needs --remote or --tailscale" {
 		t.Errorf("--foreground alone = %v", err)
 	}
 	command.SetArgs([]string{"docs", "--remote", "--foreground"})
@@ -139,6 +139,43 @@ func TestRootCommandForegroundNeedsRemote(t *testing.T) {
 	command.SetArgs([]string{"browser", "--foreground"})
 	if err := command.Execute(); err == nil {
 		t.Error("zero browser accepted --foreground")
+	}
+}
+
+func TestRootCommandTailscaleFlags(t *testing.T) {
+	var got options
+	// Flags persist across runs of one command.
+	fresh := func() *cobra.Command {
+		return newRootCommand(func(_ context.Context, opts options, _ io.Reader, _, _ io.Writer) error {
+			got = opts
+			return nil
+		})
+	}
+	for _, test := range []struct {
+		args []string
+		err  string
+	}{
+		{[]string{"docs", "--tailscale", "--remote"}, "--tailscale and --remote cannot be combined"},
+		{[]string{"docs", "--tailscale", "--host", "127.0.0.1"}, "--host does not apply to --tailscale"},
+		{[]string{"docs", "--tailscale", "--port", "0"}, "--port must be between 1 and 65535 with --tailscale"},
+		{[]string{"docs", "--tailscale", "--web"}, "--web needs --remote"},
+	} {
+		command := fresh()
+		command.SetArgs(test.args)
+		if err := command.Execute(); err == nil || !strings.HasPrefix(err.Error(), test.err) {
+			t.Errorf("%v = %v, want %s", test.args, err, test.err)
+		}
+	}
+	command := fresh()
+	command.SetArgs([]string{"docs", "--tailscale", "--foreground", "--port", "443"})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !got.tailscale || !got.foreground || got.port != 443 || !got.portSet || got.remote {
+		t.Errorf("parsed options = %+v", got)
+	}
+	if chooseLaunch(got, "linux", func(string) string { return "" }) != launchRemote {
+		t.Error("--tailscale does not serve")
 	}
 }
 
