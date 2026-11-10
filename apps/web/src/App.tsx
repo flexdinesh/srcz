@@ -118,6 +118,7 @@ import { FeedbackView } from "./features/feedback/FeedbackView.tsx"
 import { routeFeedback, type ThreadRoute } from "./features/feedback/feedback-model.ts"
 import { useFeedbackView } from "./features/feedback/use-feedback-view.ts"
 import { useReviewFeedback } from "./features/feedback/use-review-feedback.tsx"
+import { useSourceFeedback } from "./features/feedback/use-source-feedback.tsx"
 
 // routeTab is the tab a route shows: a review, a document (a snapshot with
 // at), a walkthrough's own tab, or Welcome, else none.
@@ -584,6 +585,14 @@ export function App({ project }: AppProps) {
     void navigate({ to: "/view", search: { ...search, ...stepSearch }, hash: range ? lineAnchor(range) : "", replace: true })
   }, [navigate, page.at, page.selected, project, stepSearch])
   const showSource = view.kind === "source" && !loadError && !page.error
+  // Source comments on the working tree's text: never a snapshot, a review,
+  // or a walkthrough or Welcome tab (decision 0120).
+  const clearLines = useCallback(() => selectLines(null), [selectLines])
+  const sourceComments = useSourceFeedback({
+    project, path: page.selected, enabled: showSource && !page.at && !reviewCompare && !walkthroughRoute && !welcomeRoute,
+    version: feedbackVersion, showResolved: diffOptions.options.showResolved, navigate: navigateToHref, onChanged: rereadFeedback,
+    onSubmitted: clearLines,
+  })
 
   // The name last clicked in Source, per file, for F12 and the palette.
   const caret = useRef<{ path: string; target: SourceTarget } | null>(null)
@@ -899,6 +908,7 @@ export function App({ project }: AppProps) {
               onAction={runEmptyAction} onWelcome={openWelcome} />}
             sourceAnnotation={sourceAnnotation}
             sourceChanges={sourceChanges}
+            sourceComments={sourceComments}
             hasData={hasData}
             image={image}
             isLoading={isLoading}

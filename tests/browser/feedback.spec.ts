@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process"
 import { existsSync } from "node:fs"
 import path from "node:path"
 
@@ -92,7 +93,7 @@ test("lines in a review take a comment, replies, an agent's answer, and resolve"
   // Resolve collapses the thread to one line; Show resolved comments hides it.
   await first.getByRole("button", { name: "Resolve" }).click()
   await expect(first).toHaveAccessibleName("Thread 1: Resolved, src/app.ts:1")
-  await expect(first.getByRole("button", { name: /after what it counts\./ })).toBeVisible()
+  await expect(first.getByRole("button", { name: /Name the answer after what it counts\./ })).toBeVisible()
   await page.getByRole("button", { name: "View options" }).click()
   await page.getByRole("menuitemcheckbox", { name: "Show resolved comments" }).click()
   await page.keyboard.press("Escape")
@@ -134,6 +135,65 @@ test("a whole file takes a comment from its band", async ({ page, live }) => {
   await composer.fill("Split the install section.")
   await page.keyboard.press("ControlOrMeta+Enter")
   await expect(thread(page, 1)).toHaveAccessibleName("Thread 1: Open, README.md")
+})
+
+test("Source lines take a comment that the Feedback view opens there", async ({ page, request, live }) => {
+  const project = encodeURIComponent(live.root)
+  await page.goto(`${live.origin}/view?project=${project}&path=src/app.ts`)
+  const source = page.getByRole("textbox", { name: "TypeScript source" })
+  const number = (line: number) => source.locator(`[data-line="${line}"] .source-document-line-number`)
+  await number(3).click()
+  await number(5).click({ modifiers: ["Shift"] })
+  await expect(page).toHaveURL(/#L3-L5$/)
+
+  // C opens the composer after the selection; submitting clears it.
+  await page.keyboard.press("c")
+  const composer = page.getByRole("textbox", { name: "Comment on src/app.ts:3-5" })
+  await expect(composer).toBeFocused()
+  await composer.fill("Return the **answer** directly.")
+  await page.keyboard.press("ControlOrMeta+Enter")
+  const first = thread(page, 1)
+  await expect(first).toHaveAccessibleName("Thread 1: Open, src/app.ts:3-5")
+  await expect(source.locator('[data-line="5"] + .source-annotation')).toContainText("Return the answer directly.")
+  await expect(page).not.toHaveURL(/#L/)
+
+  // A Source thread has no compare; it resolves against the working tree.
+  const read = await request.get(`${live.origin}/api/feedback?project=${project}`)
+  const { id, threads }: { id: string; threads: Array<{ anchor: { compare?: unknown; side: string } }> } = await read.json()
+  expect(threads[0]?.anchor.compare).toBeUndefined()
+  expect(threads[0]?.anchor.side).toBe("new")
+
+  // The gutter's Comment sits beside Copy.
+  await number(1).click()
+  await source.getByRole("button", { name: "Comment on Lines" }).click()
+  await page.getByRole("textbox", { name: "Comment on src/app.ts:1" }).fill("Name it after what it counts.")
+  await page.getByRole("button", { name: "Comment", exact: true }).click()
+  await expect(thread(page, 2)).toHaveAccessibleName("Thread 2: Open, src/app.ts:1")
+
+  // An agent's reply arrives over the live stream; resolving collapses it.
+  const answered = await request.post(`${live.origin}/api/feedback-messages`, {
+    data: { project: live.root, id, thread: 2, body: "Renamed it.", status: "resolved", author: "agent" },
+  })
+  expect(answered.ok()).toBe(true)
+  await expect(thread(page, 2)).toHaveAccessibleName("Thread 2: Resolved, src/app.ts:1")
+  await expect(thread(page, 2).getByRole("button", { name: /Name it after what it counts\./ })).toBeVisible()
+
+  // A snapshot shows no threads and takes no comments.
+  const head = execFileSync("git", ["-C", live.root, "rev-parse", "HEAD"], { encoding: "utf8" }).trim()
+  await page.goto(`${live.origin}/view?project=${project}&path=src/app.ts&at=${head}#L1`)
+  await expect(page.getByRole("textbox", { name: "TypeScript source" }).locator('[data-line="1"]')).toHaveClass(/selected/)
+  await expect(page.getByRole("region", { name: /^Thread / })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Comment on Lines" })).toHaveCount(0)
+
+  // The Feedback view opens a Source thread at its lines, zone showing.
+  await page.goto(`${live.origin}/?project=${project}`)
+  await page.getByRole("button", { name: /^Feedback/ }).click()
+  const rows = page.locator(".feedback-view").getByRole("listbox", { name: "Threads" }).getByRole("option")
+  await expect(rows.first()).toHaveAccessibleName(/^Thread 1, Open: Return the answer directly\., src\/app\.ts:3-5/)
+  await rows.first().click()
+  await expect(page).toHaveURL(/[?&]path=src%2Fapp\.ts.*#L3-L5$/)
+  await expect(thread(page, 1)).toBeVisible()
+  await expect(page.getByRole("textbox", { name: "TypeScript source" }).locator('[data-line="3"]')).toHaveClass(/selected/)
 })
 
 test("the Feedback view lists, filters, opens, and copies threads", async ({ page, request, live }) => {
