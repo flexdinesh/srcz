@@ -5,7 +5,9 @@ name: Build
 # result. cli (Go archives, archive smoke) -> desktop-linux and desktop-macos
 # (packages bundling those binaries, smoke checks) -> assets (the expected set,
 # checksums.txt). Every job uploads an assets-* artifact; callers download them
-# all with pattern assets-*. Nothing is committed or pushed.
+# all with pattern assets-*. image (decision 0125) builds the container image
+# from the same linux binaries and uploads it as the image artifact, which
+# callers push. Nothing is committed or pushed.
 
 on:
   workflow_call:
@@ -126,6 +128,89 @@ jobs:
           if-no-files-found: error
           retention-days: ${{ inputs.retention-days }}
           compression-level: 0
+
+  # The container image (decision 0125): the archives' linux binaries on
+  # distroless, built for both architectures as one OCI archive. Its Dockerfile
+  # only copies, so no emulation is needed.
+  image:
+    needs: cli
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Download CLI archives
+        uses: actions/download-artifact@v8
+        with:
+          name: assets-archives
+          path: release-dist
+
+      - name: Extract linux binaries
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          for arch in amd64 arm64; do
+            mkdir -p "image-context/linux/${arch}"
+            tar -C "image-context/linux/${arch}" --strip-components=1 \
+              -xzf "release-dist/zero_${VERSION}_linux_${arch}.tar.gz" \
+              "zero_${VERSION}_linux_${arch}/zero"
+          done
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build amd64 image for the smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: image-context
+          file: apps/zero/Dockerfile
+          platforms: linux/amd64
+          tags: zero:smoke
+          load: true
+          provenance: false
+
+      # The README recipe: the default command serves the mounted directory.
+      - name: Smoke test image
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          docker run --rm zero:smoke --version | grep -F "zero ${VERSION} $(git rev-parse --short=12 HEAD) "
+          dir="$(mktemp -d)"
+          docker run -d --name zero-smoke -p 127.0.0.1:7999:7971 -v "$dir:$dir" -w "$dir" --user "$(id -u):$(id -g)" zero:smoke
+          trap 'docker logs zero-smoke; docker rm -f zero-smoke' EXIT
+          for _ in $(seq 50); do curl -fsS -o /dev/null http://127.0.0.1:7999/ && break; sleep 0.2; done
+          curl -fsS http://127.0.0.1:7999/ | grep -q '<div id="root"'
+
+      - name: Build multi-arch image
+        uses: docker/build-push-action@v6
+        with:
+          context: image-context
+          file: apps/zero/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ inputs.version }}
+            org.opencontainers.image.revision=${{ inputs.ref }}
+          provenance: false
+          outputs: type=oci,dest=image/zero.tar
+
+      # Not assets-*: the image is pushed to ghcr.io, never attached to a
+      # release.
+      - name: Upload image
+        uses: actions/upload-artifact@v7
+        with:
+          name: image
+          path: image/zero.tar
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention-days }}
 
   # The desktop app (decisions 0094, 0095) bundles the archives' Go binary as
   # resources/bin/zero. mygo needs no cgo, so one Linux runner builds both

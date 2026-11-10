@@ -122,7 +122,7 @@ var jsonHeader = http.Header{"Content-Type": {"application/json"}}
 
 func TestRunServesStatusRootsAndWebRoutes(t *testing.T) {
 	config := daemonConfig(t)
-	config.IdleExit = 2 * time.Minute
+	config.Lifetime.IdleExit = 2 * time.Minute
 	parent := t.TempDir()
 	work, personal := canonicalDir(t, parent, "work"), canonicalDir(t, parent, "personal")
 	missing := filepath.Join(parent, "unmounted")
@@ -282,7 +282,7 @@ func TestStopEndsRunAndRemovesSocket(t *testing.T) {
 
 func TestRunExitsWhenIdle(t *testing.T) {
 	config := daemonConfig(t)
-	config.IdleExit = 200 * time.Millisecond
+	config.Lifetime.IdleExit = 200 * time.Millisecond
 	d := startDaemon(t, config)
 	if err := d.wait(t); err != nil {
 		t.Fatalf("Run() = %v, want nil", err)

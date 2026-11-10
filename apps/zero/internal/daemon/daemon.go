@@ -30,9 +30,8 @@ type Config struct {
 	RootsFile string // required
 	Depth     int
 	ScanDepth int
-	// IdleExit stops the daemon after this long with no request in flight;
-	// 0 never stops.
-	IdleExit time.Duration
+	// Lifetime is when the daemon and its remote listener stop on their own.
+	Lifetime Lifetime
 	// Log receives startup, skipped roots, and the stop reason; nil discards.
 	Log io.Writer
 	// IdentityFile holds the identity for serving over TCP; "" never does.
@@ -51,6 +50,9 @@ var (
 func Run(ctx context.Context, config Config) error {
 	if config.Socket == "" || config.RootsFile == "" {
 		return errors.New("daemon: socket and roots file are required")
+	}
+	if err := config.Lifetime.validate(); err != nil {
+		return err
 	}
 	log := config.Log
 	if log == nil {
@@ -81,11 +83,11 @@ func Run(ctx context.Context, config Config) error {
 
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
-	idle := newIdleTracker(config.IdleExit, func() { cancel(errIdle) })
+	idle := newIdleTracker(config.Lifetime.IdleExit, func() { cancel(errIdle) })
 	defer idle.stop()
 	var remoteControl RemoteControl
 	if config.IdentityFile != "" {
-		server := newRemoteServer(rt, rt.Handler(), config.IdentityFile, idle, func() { cancel(errIdle) }, log)
+		server := newRemoteServer(rt, rt.Handler(), config.IdentityFile, config.Lifetime, idle, func() { cancel(errIdle) }, log)
 		defer server.shutdown()
 		remoteControl = server
 	}
@@ -105,7 +107,7 @@ func Run(ctx context.Context, config Config) error {
 			Socket:    config.Socket,
 			Depth:     config.Depth,
 			ScanDepth: config.ScanDepth,
-			IdleExit:  config.IdleExit.String(),
+			IdleExit:  config.Lifetime.IdleExit.String(),
 			StartedAt: time.Now().UTC().Truncate(time.Second),
 		},
 	})

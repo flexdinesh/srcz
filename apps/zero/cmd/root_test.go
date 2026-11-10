@@ -119,6 +119,29 @@ func TestRootCommandParsesAdditiveFlags(t *testing.T) {
 	}
 }
 
+func TestRootCommandForegroundNeedsRemote(t *testing.T) {
+	var got options
+	command := newRootCommand(func(_ context.Context, opts options, _ io.Reader, _, _ io.Writer) error {
+		got = opts
+		return nil
+	})
+	command.SetArgs([]string{"docs", "--foreground"})
+	if err := command.Execute(); err == nil || err.Error() != "--foreground needs --remote" {
+		t.Errorf("--foreground alone = %v", err)
+	}
+	command.SetArgs([]string{"docs", "--remote", "--foreground"})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !got.remote || !got.foreground {
+		t.Errorf("parsed options = %+v", got)
+	}
+	command.SetArgs([]string{"browser", "--foreground"})
+	if err := command.Execute(); err == nil {
+		t.Error("zero browser accepted --foreground")
+	}
+}
+
 func TestRootCommandMergesPaths(t *testing.T) {
 	for _, test := range []struct {
 		args []string

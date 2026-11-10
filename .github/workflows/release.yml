@@ -1,7 +1,8 @@
 name: Release
 
 # Pushing a vX.Y.Z tag that points at a main commit publishes that stable
-# release (decision 0079): check -> build (build.yml) -> publish. The tag is
+# release (decision 0079): check -> build (build.yml) -> publish -> image
+# (ghcr.io/flexdinesh/zero:X.Y.Z and latest, decision 0125). The tag is
 # the plain main commit; nothing is committed or pushed. A published release
 # is never rebuilt or replaced.
 on:
@@ -106,3 +107,30 @@ jobs:
             --generate-notes \
             --verify-tag \
             --latest
+
+  # Pushes the image build.yml made from this release's archives.
+  image:
+    needs: [check, build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Download image
+        uses: actions/download-artifact@v8
+        with:
+          name: image
+          path: image
+
+      - name: Push image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ghcr.io/flexdinesh/zero
+          VERSION: ${{ needs.check.outputs.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          skopeo login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<<"$GH_TOKEN"
+          for tag in "$VERSION" latest; do
+            skopeo copy --all oci-archive:image/zero.tar "docker://${IMAGE}:${tag}"
+          done

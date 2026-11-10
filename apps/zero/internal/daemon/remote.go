@@ -53,7 +53,8 @@ type timerFunc func(time.Duration, func()) (stop func() bool)
 func realTimer(d time.Duration, fire func()) func() bool { return time.AfterFunc(d, fire).Stop }
 
 // uiLifetime fires once when a listener has served no UI for too long: first
-// when none has come yet, grace after the last leaves.
+// when none has come yet, grace after the last leaves. A zero wait never
+// fires.
 type uiLifetime struct {
 	after timerFunc
 	fire  func()
@@ -87,6 +88,9 @@ func (l *uiLifetime) stop() {
 
 func (l *uiLifetime) arm(d time.Duration) {
 	l.disarm()
+	if d == 0 {
+		return
+	}
 	generation := l.generation
 	l.stopTimer = l.after(d, func() {
 		l.mu.Lock()
@@ -147,6 +151,7 @@ type remoteServer struct {
 	runtime      *runtime.Runtime
 	web          http.Handler
 	identityFile string
+	policy       Lifetime
 	idle         *idleTracker
 	exit         func()
 	after        timerFunc
@@ -160,8 +165,8 @@ type remoteServer struct {
 	port     int
 }
 
-func newRemoteServer(rt *runtime.Runtime, web http.Handler, identityFile string, idle *idleTracker, exit func(), log io.Writer) *remoteServer {
-	r := &remoteServer{runtime: rt, web: web, identityFile: identityFile, idle: idle, exit: exit, after: realTimer, log: log}
+func newRemoteServer(rt *runtime.Runtime, web http.Handler, identityFile string, policy Lifetime, idle *idleTracker, exit func(), log io.Writer) *remoteServer {
+	r := &remoteServer{runtime: rt, web: web, identityFile: identityFile, policy: policy, idle: idle, exit: exit, after: realTimer, log: log}
 	r.lifetime = &uiLifetime{after: r.after, fire: func() {
 		_, _ = fmt.Fprintln(r.log, "remote listener closing: no UI connected")
 		r.closeListener()
@@ -192,11 +197,11 @@ func (r *remoteServer) statusLocked() contract.DaemonRemote {
 
 // Start implements RemoteControl.
 func (r *remoteServer) Start(request contract.DaemonRemoteRequest) (contract.DaemonRemote, error) {
-	first, err := remoteDuration(request.FirstWait, DefaultRemoteFirstWait)
+	first, err := remoteDuration(request.FirstWait, r.policy.FirstWait)
 	if err != nil {
 		return contract.DaemonRemote{}, err
 	}
-	grace, err := remoteDuration(request.Grace, DefaultRemoteGrace)
+	grace, err := remoteDuration(request.Grace, r.policy.Grace)
 	if err != nil {
 		return contract.DaemonRemote{}, err
 	}
@@ -322,7 +327,7 @@ func (r *remoteServer) Rotate() (contract.DaemonRemote, error) {
 	if err := r.listenLocked(r.host, &port); err != nil {
 		return contract.DaemonRemote{}, err
 	}
-	r.lifetime.start(DefaultRemoteFirstWait, r.lifetime.currentGrace())
+	r.lifetime.start(r.policy.FirstWait, r.lifetime.currentGrace())
 	return r.statusLocked(), nil
 }
 

@@ -26,6 +26,8 @@ type remoteDeps struct {
 	candidates func() []string
 	getenv     func(string) string
 	terminal   func(io.Writer) bool
+	// foreground runs the daemon in this process until ctx ends.
+	foreground func(ctx context.Context, opts daemonOptions, stderr io.Writer) error
 }
 
 func defaultRemoteDeps() remoteDeps {
@@ -36,6 +38,7 @@ func defaultRemoteDeps() remoteDeps {
 		candidates: detectCandidates,
 		getenv:     os.Getenv,
 		terminal:   isTerminal,
+		foreground: runForegroundDaemon,
 	}
 }
 
@@ -45,7 +48,8 @@ func runRemote(ctx context.Context, opts options, stdout, stderr io.Writer) erro
 
 // serveRemote opens the paths in the daemon, starts its TCP listener, and
 // prints how to connect. The daemon outlives this command: it stops itself
-// when no UI needs it (decision 0098).
+// when no UI needs it (decision 0098). With --foreground the daemon runs in
+// this process instead, never stops itself, and ends with it (decision 0125).
 func serveRemote(ctx context.Context, opts options, stdout, stderr io.Writer, deps remoteDeps) error {
 	roots, err := validateRoots(opts.paths, opts.scanDepth)
 	if err != nil {
@@ -57,6 +61,22 @@ func serveRemote(ctx context.Context, opts options, stdout, stderr io.Writer, de
 	}
 	deps.roots.socket = socket
 	deps.roots.cliName = opts.cliName
+	var foreground *foregroundDaemon
+	if opts.foreground {
+		runCtx, cancel := context.WithCancel(ctx)
+		foreground = startForegroundDaemon(runCtx, deps.foreground, daemonOptions{socket: socket, depth: opts.depth, scanDepth: opts.scanDepth}, stderr)
+		defer func() {
+			cancel()
+			_ = foreground.wait()
+		}()
+		readyCtx, cancelReady := context.WithTimeout(ctx, daemonTimeout)
+		status, err := foreground.ready(readyCtx, socket)
+		cancelReady()
+		if err != nil {
+			return err
+		}
+		deps.roots.ensure = func(context.Context, daemonOptions) (daemon.Status, bool, error) { return status, true, nil }
+	}
 	if _, err := openDaemonRoots(ctx, roots, opts.depth, opts.scanDepth, deps.roots, stderr); err != nil {
 		return err
 	}
@@ -86,6 +106,7 @@ func serveRemote(ctx context.Context, opts options, stdout, stderr io.Writer, de
 		Connect:     endpoint.Shell(),
 		FirstWait:   opts.remoteFirstWait,
 		Grace:       opts.remoteGrace,
+		Foreground:  opts.foreground,
 	}
 	if opts.web {
 		if info.Web, err = endpoint.WebURL(); err != nil {
@@ -94,11 +115,19 @@ func serveRemote(ctx context.Context, opts options, stdout, stderr io.Writer, de
 		info.Links = deps.terminal(stdout) && deps.getenv("TERM") != "dumb"
 	}
 	writeRemoteStartup(stdout, info)
+	if foreground != nil {
+		return foreground.wait()
+	}
 	return nil
 }
 
+// remoteRequest asks for the listener. A foreground daemon's own lifetime,
+// which never closes it, applies instead of the waits.
 func remoteRequest(opts options) contract.DaemonRemoteRequest {
 	request := contract.DaemonRemoteRequest{FirstWait: opts.remoteFirstWait.String(), Grace: opts.remoteGrace.String()}
+	if opts.foreground {
+		request.FirstWait, request.Grace = "", ""
+	}
 	if opts.hostSet {
 		request.Host = opts.host
 	}
@@ -116,6 +145,73 @@ func connectHosts(opts options, candidates func() []string) []string {
 		return []string{opts.host}
 	}
 	return candidates()
+}
+
+// foregroundDaemon is the daemon `--remote --foreground` runs in this
+// process.
+type foregroundDaemon struct {
+	done chan struct{}
+	err  error
+}
+
+// startForegroundDaemon runs the daemon until ctx ends.
+func startForegroundDaemon(ctx context.Context, run func(context.Context, daemonOptions, io.Writer) error, opts daemonOptions, stderr io.Writer) *foregroundDaemon {
+	d := &foregroundDaemon{done: make(chan struct{})}
+	go func() {
+		d.err = run(ctx, opts, stderr)
+		close(d.done)
+	}()
+	return d
+}
+
+// wait returns the daemon's result once it has stopped.
+func (d *foregroundDaemon) wait() error {
+	<-d.done
+	return d.err
+}
+
+// ready waits until this process's daemon answers on socket. Another
+// process's daemon there is an error: the foreground one cannot take the
+// socket.
+func (d *foregroundDaemon) ready(ctx context.Context, socket string) (daemon.Status, error) {
+	client := daemon.NewClient(socket)
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		status, err := client.Status(ctx)
+		if err == nil && status.PID == os.Getpid() {
+			return status, nil
+		}
+		if err == nil {
+			return daemon.Status{}, fmt.Errorf("%w at %s (pid %d); stop it with `zero daemon stop` to run in the foreground", daemon.ErrRunning, socket, status.PID)
+		}
+		if !errors.Is(err, daemon.ErrNotRunning) {
+			return daemon.Status{}, err
+		}
+		select {
+		case <-d.done:
+			if d.err == nil {
+				return daemon.Status{}, errors.New("zero daemon stopped before it answered")
+			}
+			return daemon.Status{}, d.err
+		case <-ctx.Done():
+			return daemon.Status{}, fmt.Errorf("zero daemon did not answer at %s: %w", socket, ctx.Err())
+		case <-ticker.C:
+		}
+	}
+}
+
+// runForegroundDaemon serves the daemon in this process with a lifetime that
+// never stops it, so the container or service manager decides (decision
+// 0125).
+func runForegroundDaemon(ctx context.Context, opts daemonOptions, stderr io.Writer) error {
+	if err := daemonSupported(); err != nil {
+		return err
+	}
+	if _, err := remote.DefaultIdentityFile(); err != nil {
+		return fmt.Errorf("cannot serve over TCP: %w", err)
+	}
+	return serveDaemon(ctx, opts, daemon.Lifetime{}, stderr)
 }
 
 func detectCandidates() []string {

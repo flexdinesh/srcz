@@ -92,6 +92,33 @@ zero browser .    # serve on localhost and open the browser
 `zero browser --host <address>` serves plain http with **no authentication**:
 anyone who can reach the address can read the files. Prefer `--remote`.
 
+### Docker
+
+```sh
+docker run --rm -p 127.0.0.1:7971:7971 -v "$PWD:$PWD" -w "$PWD" \
+  --user "$(id -u):$(id -g)" ghcr.io/flexdinesh/zero
+```
+
+Open http://localhost:7971. The image (`latest`, `<version>`, or `edge`) runs
+`zero browser`: plain http with no authentication. `127.0.0.1:` keeps the port
+on this machine; `-p 7971:7971` would serve your files to every network the
+host is on. The directory mounts at its own path because linked worktrees store
+absolute host paths; run it from a directory that holds the repository and its
+worktrees. `--user` reads files as you.
+
+To serve to another machine over TLS, run the server in the foreground and keep
+its identity in a config volume, so the string survives restarts:
+
+```sh
+mkdir -p ~/.config/zero-docker
+docker run --rm -p 127.0.0.1:7971:7971 -v "$PWD:$PWD" -w "$PWD" \
+  --user "$(id -u):$(id -g)" -v "$HOME/.config/zero-docker:/tmp/.config/zero" \
+  ghcr.io/flexdinesh/zero . --remote --foreground
+zero connect --host localhost <string>   # the printed string names the container's address
+```
+
+`--foreground` never stops on its own; `docker stop` ends it.
+
 `zero --help` lists every command; see the [CLI reference](docs/cli.md).
 
 ## Docs

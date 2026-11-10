@@ -63,6 +63,7 @@ type remoteStartup struct {
 	Links       bool   // write Web as an OSC 8 hyperlink
 	FirstWait   time.Duration
 	Grace       time.Duration
+	Foreground  bool // serves until this process stops
 }
 
 func writeRemoteStartup(output io.Writer, info remoteStartup) {
@@ -99,6 +100,10 @@ func writeRemoteStartup(output io.Writer, info remoteStartup) {
 	}
 	_, _ = fmt.Fprintln(output)
 	_, _ = fmt.Fprint(output, "  ")
+	if info.Foreground {
+		_, _ = label.Fprintln(output, "serves until this process stops (Ctrl+C or SIGTERM).")
+		return
+	}
 	_, _ = label.Fprintf(output, "stops %s after this if nothing connects, and %s after the last UI closes. `%s remote stop` stops it now.\n", minutesText(info.FirstWait), minutesText(info.Grace), info.CLIName)
 }
 

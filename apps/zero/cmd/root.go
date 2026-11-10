@@ -40,6 +40,7 @@ type options struct {
 	// Root command only (decision 0098).
 	remote          bool
 	web             bool
+	foreground      bool
 	remoteFirstWait time.Duration
 	remoteGrace     time.Duration
 }
@@ -80,6 +81,7 @@ func addRemoteFlags(command *cobra.Command, opts *options) {
 	flags := command.Flags()
 	flags.BoolVar(&opts.remote, "remote", false, "serve to other machines over TLS and print a zero connect string")
 	flags.BoolVar(&opts.web, "web", false, "with --remote, also print a browser link")
+	flags.BoolVar(&opts.foreground, "foreground", false, "with --remote, run the daemon in this process until it is stopped, as in a container")
 	flags.DurationVar(&opts.remoteFirstWait, "remote-first-wait", daemon.DefaultRemoteFirstWait, "how long --remote waits for a first UI")
 	flags.DurationVar(&opts.remoteGrace, "remote-grace", daemon.DefaultRemoteGrace, "how long --remote outlives its last UI")
 	_ = flags.MarkHidden("remote-first-wait")
@@ -117,6 +119,9 @@ func newServeCommand(use string, runCommand runner, addFlags func(*cobra.Command
 			}
 			if opts.web && !opts.remote {
 				return errors.New("--web needs --remote")
+			}
+			if opts.foreground && !opts.remote {
+				return errors.New("--foreground needs --remote")
 			}
 			opts.hostSet = command.Flags().Changed("host")
 			opts.portSet = command.Flags().Changed("port")

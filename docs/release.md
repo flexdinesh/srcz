@@ -57,8 +57,15 @@ No repository secrets are needed; publishing uses the workflow's
      handler, and the icon; macOS checks the arm64 app's versions, its signature,
      and `CFBundleURLSchemes`.
    - `assets` checks the exact asset set and writes `checksums.txt`.
+   - `image` copies the linux archives' binaries onto
+     `gcr.io/distroless/static:nonroot` (`apps/zero/Dockerfile`) for amd64 and
+     arm64, smoke tests the amd64 image, and uploads one OCI archive as the
+     `image` artifact (not an asset).
 6. `publish` creates the GitHub Release for the tag with generated notes and
    marks it latest.
+7. `image` pushes that archive to `ghcr.io/flexdinesh/zero:<version>` and
+   `:latest` with skopeo (decision 0125). ghcr creates the package private on
+   its first push; make it public once in the package settings.
 
 Published releases are never rebuilt or replaced: `check` and `publish` both
 skip an existing release, so re-running failed jobs is safe. To redo a
@@ -75,7 +82,8 @@ never latest, notes name the commit), uploads the assets with `--clobber`
 (same names every time, so each is replaced in place), and deletes assets
 no longer built. A newer push cancels an older build; publishing is never
 cancelled, and an older run skips publishing when `edge` already has a newer
-commit. The first green push creates the prerelease.
+commit. The first green push creates the prerelease. Each publish then pushes
+the image to `ghcr.io/flexdinesh/zero:edge`.
 
 Edge binaries report `zero 0.0.0-edge <commit> <date>`; the desktop app
 reports `zero-desktop 0.0.0-edge <commit>`.

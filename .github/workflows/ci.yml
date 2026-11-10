@@ -3,7 +3,8 @@ name: Edge
 # Each push to main builds the stable asset set (build.yml) without macOS Intel
 # (decision 0093), stamped 0.0.0-edge and, once every build job passes, replaces
 # the assets of the one `edge` prerelease and moves its tag to that commit
-# (decision 0079). Nothing is committed to any branch.
+# (decision 0079), then pushes ghcr.io/flexdinesh/zero:edge (decision 0125).
+# Nothing is committed to any branch.
 on:
   push:
     branches:
@@ -30,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     concurrency:
       group: edge-publish
       cancel-in-progress: false
@@ -46,10 +48,17 @@ jobs:
           path: release-dist
           merge-multiple: true
 
+      - name: Download image
+        uses: actions/download-artifact@v8
+        with:
+          name: image
+          path: image
+
       # Same names every time, so --clobber replaces each asset in place and
       # downloads keep working while the others upload; names no longer built
       # are deleted afterwards.
       - name: Publish edge prerelease
+        id: edge
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -81,3 +90,18 @@ jobs:
               gh release delete-asset edge "$name" --yes
             fi
           done
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      # Only after this commit's release, so an older build never replaces a
+      # newer image.
+      - name: Push edge image
+        if: steps.edge.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ghcr.io/flexdinesh/zero
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          skopeo login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<<"$GH_TOKEN"
+          skopeo copy --all oci-archive:image/zero.tar "docker://${IMAGE}:edge"

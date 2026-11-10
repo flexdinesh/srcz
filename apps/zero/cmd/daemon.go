@@ -123,6 +123,14 @@ func validateDaemonOptions(opts daemonOptions) error {
 }
 
 func runDaemon(ctx context.Context, opts daemonOptions, _, stderr io.Writer) error {
+	lifetime := daemon.DefaultLifetime()
+	lifetime.IdleExit = opts.idleExit
+	return serveDaemon(ctx, opts, lifetime, stderr)
+}
+
+// serveDaemon runs the daemon in this process until ctx ends or lifetime
+// stops it.
+func serveDaemon(ctx context.Context, opts daemonOptions, lifetime daemon.Lifetime, stderr io.Writer) error {
 	rootsFile := opts.rootsFile
 	if rootsFile == "" {
 		var err error
@@ -135,7 +143,7 @@ func runDaemon(ctx context.Context, opts daemonOptions, _, stderr io.Writer) err
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "cannot serve over TCP: %v\n", err)
 	}
-	err = daemon.Run(ctx, daemon.Config{Socket: opts.socket, RootsFile: rootsFile, Depth: opts.depth, ScanDepth: opts.scanDepth, IdleExit: opts.idleExit, Log: stderr, IdentityFile: identityFile})
+	err = daemon.Run(ctx, daemon.Config{Socket: opts.socket, RootsFile: rootsFile, Depth: opts.depth, ScanDepth: opts.scanDepth, Lifetime: lifetime, Log: stderr, IdentityFile: identityFile})
 	if errors.Is(err, daemon.ErrRunning) {
 		return fmt.Errorf("%w at %s", err, opts.socket)
 	}
