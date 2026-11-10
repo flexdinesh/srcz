@@ -1,4 +1,4 @@
-import { CaseSensitiveIcon, FilterIcon, MessageSquarePlusIcon, RefreshCwIcon, SearchIcon, TriangleAlertIcon, XIcon } from "lucide-react"
+import { FilterIcon, MessageSquarePlusIcon, RefreshCwIcon, SearchIcon, TriangleAlertIcon, XIcon } from "lucide-react"
 import { useRef, useState, type ReactNode } from "react"
 
 import { Badge } from "../components/ui/badge.tsx"
@@ -18,7 +18,7 @@ import { SegmentedControl, SegmentedItem } from "../components/ui/segmented-cont
 import { Slider } from "../components/ui/slider.tsx"
 import { Select } from "../components/ui/select.tsx"
 import { TextArea, TextField } from "../components/ui/text-field.tsx"
-import { ToggleButton } from "../components/ui/toggle-button.tsx"
+import { ToggleButton, ToggleGlyph } from "../components/ui/toggle-button.tsx"
 import { ViewHeader } from "../components/ui/view-header.tsx"
 import { useTheme } from "../settings/ThemeProvider.tsx"
 import { isTheme, themeOptions } from "../settings/theme.ts"
@@ -84,8 +84,8 @@ export default function UiGallery() {
 
       <Section title="ToggleButton and SegmentedControl">
         <Row>
-          <ToggleButton label="Match case" pressed={caseSensitive} onPressedChange={setCaseSensitive}><CaseSensitiveIcon /></ToggleButton>
-          <ToggleButton label="Match case off" pressed={false} onPressedChange={() => undefined}><CaseSensitiveIcon /></ToggleButton>
+          <ToggleButton label="Match case" pressed={caseSensitive} onPressedChange={setCaseSensitive}><ToggleGlyph>Aa</ToggleGlyph></ToggleButton>
+          <ToggleButton label="Match case off" pressed={false} onPressedChange={() => undefined}><ToggleGlyph>Aa</ToggleGlyph></ToggleButton>
           <ToggleButton size="text" pressed={!caseSensitive} onPressedChange={(next) => setCaseSensitive(!next)}>Show modified</ToggleButton>
         </Row>
         <Row>
@@ -111,7 +111,7 @@ export default function UiGallery() {
       <Section title="TextField and Select">
         <Row>
           <TextField aria-label="Filter" placeholder="Filter files" icon={<FilterIcon />} trailing={<span>12</span>} />
-          <TextField aria-label="Search" placeholder="Search" trailing={<ToggleButton label="Match case" pressed={caseSensitive} onPressedChange={setCaseSensitive}><CaseSensitiveIcon /></ToggleButton>} />
+          <TextField aria-label="Search" placeholder="Search" trailing={<ToggleButton label="Match case" pressed={caseSensitive} onPressedChange={setCaseSensitive}><ToggleGlyph>Aa</ToggleGlyph></ToggleButton>} />
           <TextField aria-label="Invalid" defaultValue="[unclosed" invalid />
           <Select aria-label="Select"><option>Option one</option><option>Option two</option></Select>
           <Select aria-label="Disabled select" disabled><option>Disabled</option></Select>

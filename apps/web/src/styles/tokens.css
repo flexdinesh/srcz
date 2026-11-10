@@ -101,13 +101,15 @@
      scale is authored at 13px, where 1rem is 16px. */
   --font-size-base: 13px;
 
-  /* Type roles on top of the Tailwind scale. */
-  --text-badge: 0.5625rem;
-  /* Git status letters (M, A, D) sit a step under the 12px stats beside them:
-     600-weight capitals read larger than digits at the same size. */
-  --text-status: 0.6875rem;
+  /* Type roles on top of the Tailwind scale (decision 0122). The UI uses
+     three steps: metadata 12px, label 13px, list 14px; hierarchy beyond
+     them comes from weight and color. The badge is the one exception. */
+  --text-badge: 0.625rem;
   --text-metadata: var(--text-xs);
   --text-label: 0.8125rem;
+  /* Sidebar rows (Explorer, Search, Source Control, Walkthroughs, Feedback):
+     Inter at 14px matches the optical size of 13px monospace source. */
+  --text-list: var(--text-sm);
   --text-supporting: var(--text-sm);
   --text-code: 0.8125rem;
   /* Tabs, view and pane headers, and the review rail's header (decision 0102). */
@@ -150,7 +152,7 @@
   --icon-sm: 0.875rem;
   --icon-md: 1rem;
   --icon-lg: 1.125rem;
-  --row-list: 1.375rem;
+  --row-list: 1.5rem;
   --row-menu: 1.75rem;
   --row-pick: 2rem;
   --row-drawer: 2rem;

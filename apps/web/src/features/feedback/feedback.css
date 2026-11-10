@@ -238,7 +238,7 @@
   flex: 1;
   flex-direction: column;
   color: var(--color-text-secondary);
-  font-size: var(--text-label);
+  font-size: var(--text-list);
 }
 
 .feedback-view > .explorer-header {
@@ -276,7 +276,7 @@
   min-width: 0;
   overflow: hidden;
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: var(--text-code);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

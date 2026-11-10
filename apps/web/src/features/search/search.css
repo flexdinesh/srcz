@@ -4,7 +4,7 @@
   flex: 1;
   flex-direction: column;
   color: var(--color-text-secondary);
-  font-size: var(--text-label);
+  font-size: var(--text-list);
 }
 
 .search-details-toggle {
