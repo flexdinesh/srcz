@@ -156,7 +156,7 @@ func TestRemoteStringConnects(t *testing.T) {
 	if err != nil || !found {
 		t.Fatalf("Lookup() = %v, %t, %v", saved, found, err)
 	}
-	if saved.Credential != endpoint.Credential.Encode() || saved.Port != endpoint.Port || saved.Label == "" {
+	if saved.TLS == nil || saved.TLS.Credential != endpoint.Credential.Encode() || saved.TLS.Port != endpoint.Port || saved.Label == "" {
 		t.Errorf("saved = %+v", saved)
 	}
 	info, err := os.Stat(fake.store)

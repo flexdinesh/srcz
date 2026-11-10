@@ -122,11 +122,14 @@ zero connect --host localhost <string>   # the printed string names the containe
 ### Attach to a running container
 
 ```sh
-zero attach docker://<container>/src   # browse /src in a running container
+zero attach docker://<container>/src             # open /src of a running container in the desktop app
+zero attach --browser docker://<container>/src   # or in a web browser
 ```
 
-zero copies itself into the container's `/tmp/.zero` (no shell needed), serves
-it on `127.0.0.1`, and removes the copy on Ctrl-C. See [remote hosts](apps/site/src/pages/docs/remote.mdx#containers).
+zero copies itself into the container's `/tmp/.zero` (no shell needed). With the
+desktop app installed, the container gets its own window, which runs zero there
+while it is open. Otherwise, or with `--browser`, zero serves it on `127.0.0.1`
+and removes the copy on Ctrl-C. See [remote hosts](apps/site/src/pages/docs/remote.mdx#containers).
 
 `zero --help` lists every command; see the [CLI reference](docs/cli.md).
 

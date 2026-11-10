@@ -210,7 +210,7 @@ func transports() []transport {
 			if !ok {
 				t.Fatalf("listener = %v", running.Listener.Addr())
 			}
-			return client.NewRemote(connection.TLS{Hosts: []string{"127.0.0.1"}, Port: address.Port, Credential: connection.Credential{Fingerprint: connection.FingerprintOf(certificate.RawSubjectPublicKeyInfo)}})
+			return client.NewEndpoint(connection.TLS{Hosts: []string{"127.0.0.1"}, Port: address.Port, Credential: connection.Credential{Fingerprint: connection.FingerprintOf(certificate.RawSubjectPublicKeyInfo)}})
 		}},
 	}
 }

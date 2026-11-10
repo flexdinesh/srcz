@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -17,8 +18,9 @@ inspect)
 	case "$FAKE_DOCKER_STATE" in
 	missing) echo "Error response from daemon: No such container: $6" >&2; exit 1 ;;
 	stopped) echo "false sha256:img" ;;
-	*) echo "true sha256:img" ;;
+	*) if [ "$5" = "{{.Id}}" ]; then echo 3f2a9c1b7d4e0000; else echo "true sha256:img"; fi ;;
 	esac ;;
+info) echo engine-1 ;;
 image) echo "${FAKE_DOCKER_PLATFORM:-linux/arm64}" ;;
 create)
 	if [ -n "$FAKE_DOCKER_PULL_ERROR" ]; then
@@ -97,8 +99,50 @@ func TestPlatformExplainsMissingAndStoppedContainers(t *testing.T) {
 	}
 }
 
+func TestIdentityIsTheContainerAndEngineIDs(t *testing.T) {
+	f := installFake(t)
+	ref, engine, err := web.Identity(t.Context())
+	if err != nil || ref != "3f2a9c1b7d4e0000" || engine != "engine-1" {
+		t.Fatalf("Identity = %q, %q, %v", ref, engine, err)
+	}
+	want := []string{"inspect --type container --format {{.Id}} web", "info --format {{.ID}}"}
+	if calls := f.calls(t); strings.Join(calls, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("calls = %q, want %q", calls, want)
+	}
+	t.Setenv("FAKE_DOCKER_STATE", "missing")
+	if _, _, err := web.Identity(t.Context()); err == nil || !strings.Contains(err.Error(), `no container "web"`) {
+		t.Fatalf("missing: %v", err)
+	}
+}
+
+// withInstallDirs replaces where docker is looked for off PATH.
+func withInstallDirs(t *testing.T, dirs ...string) {
+	t.Helper()
+	saved := installDirs
+	installDirs = dirs
+	t.Cleanup(func() { installDirs = saved })
+}
+
+func TestDockerOffPathIsFoundWhereItInstalls(t *testing.T) {
+	f := installFake(t)
+	empty := t.TempDir()
+	t.Setenv("PATH", empty)
+	withInstallDirs(t, filepath.Join(t.TempDir(), "missing"), f.dir)
+	if got, err := web.Platform(t.Context()); err != nil || got != "linux/arm64" {
+		t.Fatalf("Platform = %q, %v", got, err)
+	}
+	cmd, err := web.Exec(t.Context(), []string{"/tmp/.zero/zero"}, nil)
+	if err != nil || cmd.Path != filepath.Join(f.dir, "docker") {
+		t.Fatalf("Exec = %+v, %v", cmd, err)
+	}
+	if want := "PATH=" + f.dir + string(os.PathListSeparator) + empty; !slices.Contains(cmd.Env, want) {
+		t.Fatalf("Env lacks %q", want)
+	}
+}
+
 func TestWithoutDockerEveryStepSaysSo(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
+	withInstallDirs(t)
 	if _, err := web.Platform(t.Context()); !errors.Is(err, ErrNoDocker) {
 		t.Fatalf("Platform = %v", err)
 	}

@@ -129,3 +129,4 @@ rewriting history; update `Status` on the old record.
 | [0124](0124-change-steps.md) | Change steps land on changes, answer anywhere in the review, and show their place | Accepted; supersedes 0034 step unit and F7 scope, extends 0117 |
 | [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098 |
 | [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098 |
+| [0128](0128-sandbox-connections-in-the-desktop-app.md) | Sandbox connections in the desktop app | Accepted; extends 0098, 0127 |

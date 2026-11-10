@@ -8,7 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"slices"
+	"reflect"
 	"sync"
 	"time"
 
@@ -57,33 +57,74 @@ type Store interface {
 }
 
 // Connections resolves "local" to the daemon and connection ids to saved
-// remote servers. A page load reads the store again, so running `zero
-// connect` with new addresses applies to a window already open.
+// servers: remote ones over TLS, and sandboxes through `zero connection
+// stdio` (decision 0128). A page load reads the store again, so running
+// `zero connect` with new addresses applies to a window already open.
 type Connections struct {
 	local *Local
 	store Store
+	// zero is the zero binary sandbox connections run; "" when there is none.
+	zero string
 
 	mu      sync.Mutex
 	remotes map[string]*Remote
 }
 
-// NewConnections returns the app's connections.
-func NewConnections(daemon Daemon, store Store) *Connections {
-	return &Connections{local: NewLocal(daemon), store: store, remotes: map[string]*Remote{}}
+// NewConnections returns the app's connections. zero is the zero binary that
+// serves sandbox connections.
+func NewConnections(daemon Daemon, store Store, zero string) *Connections {
+	return &Connections{local: NewLocal(daemon), store: store, zero: zero, remotes: map[string]*Remote{}}
 }
+
+// errNotSaved is a connection id the store does not have.
+var errNotSaved = errors.New("no such saved connection")
 
 // Resolve implements Resolver.
 func (c *Connections) Resolve(host string, document bool) (Upstream, *Failure) {
 	if host == Host {
 		return c.local, nil
 	}
-	if !connection.IsID(host) {
+	remote, err := c.remote(host, document)
+	switch {
+	case errors.Is(err, errNotSaved):
 		return nil, notPaired()
+	case errors.Is(err, errStore):
+		return nil, &Failure{Status: http.StatusServiceUnavailable, Code: "connectionsUnavailable", Title: "zero can't read its saved connections", Detail: err.Error()}
+	case err != nil:
+		return nil, &Failure{Status: http.StatusServiceUnavailable, Code: "connectionsUnavailable", Title: "zero can't read this saved connection", Detail: err.Error()}
+	}
+	return remote, nil
+}
+
+// Endpoint is how the rest of the app reaches a saved connection's server:
+// through the transport its pages use, so a sandbox runs one zero for both.
+// It reads the store again, as a page load does; found is false when host is
+// not a saved connection.
+func (c *Connections) Endpoint(host string) (endpoint connection.Endpoint, found bool, err error) {
+	remote, err := c.remote(host, true)
+	if errors.Is(err, errNotSaved) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	return remote, true, nil
+}
+
+// errStore is a store that could not be read.
+var errStore = errors.New("read saved connections")
+
+// remote returns host's server. reread reads the store again, replacing the
+// server when its connection changed; a store that cannot be read keeps the
+// one in use.
+func (c *Connections) remote(host string, reread bool) (*Remote, error) {
+	if !connection.IsID(host) {
+		return nil, errNotSaved
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	existing := c.remotes[host]
-	if existing != nil && !document {
+	if existing != nil && !reread {
 		return existing, nil
 	}
 	saved, found, err := c.store.Lookup(host)
@@ -91,27 +132,38 @@ func (c *Connections) Resolve(host string, document bool) (Upstream, *Failure) {
 		if existing != nil {
 			return existing, nil
 		}
-		return nil, &Failure{Status: http.StatusServiceUnavailable, Code: "connectionsUnavailable", Title: "zero can't read its saved connections", Detail: err.Error()}
+		return nil, fmt.Errorf("%w: %w", errStore, err)
 	}
 	if !found {
 		if existing != nil {
 			existing.Close()
 			delete(c.remotes, host)
 		}
-		return nil, notPaired()
+		return nil, errNotSaved
 	}
-	if existing != nil && existing.matches(saved) {
+	if existing != nil && sameConnection(existing.saved, saved) {
 		return existing, nil
 	}
-	created, err := newRemote(saved)
+	created, err := newRemote(saved, c.zero)
 	if err != nil {
-		return nil, &Failure{Status: http.StatusServiceUnavailable, Code: "connectionsUnavailable", Title: "zero can't read this saved connection", Detail: err.Error()}
+		return nil, err
 	}
 	if existing != nil {
 		existing.Close()
 	}
 	c.remotes[host] = created
 	return created, nil
+}
+
+// Drop ends a saved connection's server when its window closes: a sandbox's
+// zero stops.
+func (c *Connections) Drop(host string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if remote := c.remotes[host]; remote != nil {
+		remote.Close()
+		delete(c.remotes, host)
+	}
 }
 
 // Label names a saved connection for people; "" when there is none.
@@ -135,7 +187,7 @@ func (c *Connections) Known(host string) bool {
 	return err == nil && found
 }
 
-// Close drops idle connections to every server.
+// Close ends every server's connections.
 func (c *Connections) Close() {
 	c.local.Close()
 	c.mu.Lock()
@@ -145,12 +197,15 @@ func (c *Connections) Close() {
 	}
 }
 
+// NotPairedDetail says how to save a connection.
+const NotPairedDetail = "Run `zero connect` with the string `zero <path> --remote` prints on the server, or `zero attach` with a container."
+
 func notPaired() *Failure {
 	return &Failure{
 		Status: http.StatusNotFound,
 		Code:   "unknownConnection",
 		Title:  "This computer has no such zero connection",
-		Detail: "Run `zero connect` with the string `zero <path> --remote` prints on the server.",
+		Detail: NotPairedDetail,
 	}
 }
 
@@ -245,28 +300,43 @@ func daemonFailure(err error) *Failure {
 	return &Failure{Status: http.StatusServiceUnavailable, Code: "daemonUnavailable", Title: "zero can't reach its daemon", Detail: err.Error()}
 }
 
-// Remote is a saved connection to a server over pinned TLS. The page never
-// sees the credential: only this transport adds it.
+// Remote is a saved connection's server: over pinned TLS, or zero in a
+// sandbox on a command's standard input and output. The page never sees a
+// credential: only this transport adds it.
 type Remote struct {
 	saved     connection.Saved
 	base      string
 	transport http.RoundTripper
 }
 
-func newRemote(saved connection.Saved) (*Remote, error) {
-	endpoint, err := saved.Endpoint()
+func newRemote(saved connection.Saved, zero string) (*Remote, error) {
+	endpoint, err := saved.Endpoint(zero)
 	if err != nil {
 		return nil, err
 	}
 	return &Remote{saved: saved, base: endpoint.BaseURL(), transport: endpoint.RoundTripper()}, nil
 }
 
-func (r *Remote) matches(saved connection.Saved) bool {
-	return r.saved.Credential == saved.Credential && r.saved.Port == saved.Port && r.saved.Label == saved.Label && slices.Equal(r.saved.Hosts, saved.Hosts)
+// sameConnection reports a saved connection that has not changed, whenever it
+// was saved.
+func sameConnection(a, b connection.Saved) bool {
+	a.AddedAt, b.AddedAt = time.Time{}, time.Time{}
+	return reflect.DeepEqual(a, b)
 }
 
-// Close implements Upstream.
+// BaseURL implements connection.Endpoint.
+func (r *Remote) BaseURL() string { return r.base }
+
+// RoundTripper implements connection.Endpoint: the transport pages use.
+func (r *Remote) RoundTripper() http.RoundTripper { return r.transport }
+
+// Close implements Upstream: a sandbox's command ends; a remote server's idle
+// connections close.
 func (r *Remote) Close() {
+	if closer, ok := r.transport.(io.Closer); ok {
+		_ = closer.Close()
+		return
+	}
 	if closer, ok := r.transport.(interface{ CloseIdleConnections() }); ok {
 		closer.CloseIdleConnections()
 	}
@@ -302,7 +372,17 @@ func (r *Remote) Send(request *http.Request, body []byte, document bool) (*http.
 	return response, nil
 }
 
+// unreachable says what to do when the server does not answer, by kind.
 func (r *Remote) unreachable(err error) *Failure {
+	if r.saved.Sandbox != nil {
+		return &Failure{
+			Status:      http.StatusServiceUnavailable,
+			Code:        "sandboxUnavailable",
+			Title:       "zero can't reach " + r.saved.Label,
+			Detail:      fmt.Sprintf("If it stopped or was replaced, start it and run `zero attach %s` again. %v", r.saved.Label, err),
+			jsonMessage: fmt.Sprintf("zero can't reach %s: %v", r.saved.Label, err),
+		}
+	}
 	return &Failure{
 		Status:      http.StatusServiceUnavailable,
 		Code:        "remoteUnavailable",

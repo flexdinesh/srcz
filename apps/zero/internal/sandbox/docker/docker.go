@@ -67,11 +67,8 @@ func ImageRef(version string) string {
 // Platform implements sandbox.Environment: the platform of the container's
 // image. It fails when the container is missing or stopped.
 func (c Container) Platform(ctx context.Context) (string, error) {
-	state, err := run(ctx, "inspect", "--type", "container", "--format", "{{.State.Running}} {{.Image}}", c.Name)
+	state, err := c.inspect(ctx, "{{.State.Running}} {{.Image}}")
 	if err != nil {
-		if strings.Contains(err.Error(), "No such container") {
-			return "", fmt.Errorf("no container %q: `docker ps` lists the running ones", c.Name)
-		}
 		return "", err
 	}
 	running, image, _ := strings.Cut(state, " ")
@@ -83,6 +80,29 @@ func (c Container) Platform(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return platform, nil
+}
+
+// Identity implements sandbox.Environment: the container's full ID, which
+// New accepts as a name, and the ID of the Docker engine that runs it.
+func (c Container) Identity(ctx context.Context) (string, string, error) {
+	id, err := c.inspect(ctx, "{{.Id}}")
+	if err != nil {
+		return "", "", err
+	}
+	engine, err := run(ctx, "info", "--format", "{{.ID}}")
+	if err != nil {
+		return "", "", err
+	}
+	return id, engine, nil
+}
+
+// inspect reads the container's format, explaining a missing container.
+func (c Container) inspect(ctx context.Context, format string) (string, error) {
+	text, err := run(ctx, "inspect", "--type", "container", "--format", format, c.Name)
+	if err != nil && strings.Contains(err.Error(), "No such container") {
+		return "", fmt.Errorf("no container %q: `docker ps` lists the running ones", c.Name)
+	}
+	return text, err
 }
 
 // Install implements sandbox.Environment. It copies zero for the
@@ -143,9 +163,9 @@ func (c Container) Install(ctx context.Context, version string) (string, error) 
 // Exec implements sandbox.Environment with `docker exec -i`: no terminal, so
 // the bytes pass unchanged, and the end of input reaches argv.
 func (c Container) Exec(_ context.Context, argv, env []string) (*exec.Cmd, error) {
-	docker, err := exec.LookPath("docker")
+	docker, dockerEnv, err := lookDocker()
 	if err != nil {
-		return nil, ErrNoDocker
+		return nil, err
 	}
 	args := []string{"exec", "--interactive"}
 	for _, value := range env {
@@ -153,18 +173,49 @@ func (c Container) Exec(_ context.Context, argv, env []string) (*exec.Cmd, error
 	}
 	args = append(args, c.Name)
 	args = append(args, argv...)
-	return exec.Command(docker, args...), nil
+	cmd := exec.Command(docker, args...)
+	cmd.Env = dockerEnv
+	return cmd, nil
+}
+
+// installDirs are where docker installs put the CLI, for a PATH without it:
+// an app started from a desktop session gets a short one (macOS gives
+// /usr/bin:/bin:/usr/sbin:/sbin), and the desktop app runs docker through
+// `zero connection stdio` (decision 0128).
+var installDirs = func() []string {
+	dirs := []string{"/usr/local/bin", "/opt/homebrew/bin"}
+	if home, err := os.UserHomeDir(); err == nil {
+		dirs = append(dirs, filepath.Join(home, ".docker", "bin"), filepath.Join(home, ".orbstack", "bin"), filepath.Join(home, ".rd", "bin"))
+	}
+	return dirs
+}()
+
+// lookDocker finds the docker CLI on PATH, else in installDirs. One found
+// there runs with its directory first on PATH, so the credential helpers
+// beside it are found too; env is nil otherwise, inheriting this process's.
+func lookDocker() (path string, env []string, err error) {
+	if found, err := exec.LookPath("docker"); err == nil {
+		return found, nil, nil
+	}
+	for _, dir := range installDirs {
+		candidate := filepath.Join(dir, "docker")
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() && info.Mode()&0o111 != 0 {
+			return candidate, append(os.Environ(), "PATH="+dir+string(os.PathListSeparator)+os.Getenv("PATH")), nil
+		}
+	}
+	return "", nil, ErrNoDocker
 }
 
 // run runs the docker CLI and returns its trimmed output, or an error with
 // what it said.
 func run(ctx context.Context, args ...string) (string, error) {
-	docker, err := exec.LookPath("docker")
+	docker, env, err := lookDocker()
 	if err != nil {
-		return "", ErrNoDocker
+		return "", err
 	}
 	var stdout, stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, docker, args...)
+	cmd.Env = env
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Run(); err != nil {
 		if said := lastLine(stderr.String()); said != "" {

@@ -1,6 +1,7 @@
 // Command zero-desktop is the zero desktop app (decisions 0094, 0095, 0098):
 // one window per connection, whose page is the web app, served through a custom
-// scheme from the local daemon or a saved remote server. It runs once per user:
+// scheme from the local daemon, a saved remote server, or a saved sandbox
+// (decision 0128). It runs once per user:
 // links (zero://) and `zero-desktop [path]` reach the first instance.
 package main
 
@@ -87,7 +88,8 @@ func main() {
 		log.Printf("zero-desktop: %v", err)
 	}
 	app.store = connection.NewStore(storePath)
-	app.connections = proxy.NewConnections(app.daemon, app.store)
+	// Sandbox connections run the same zero the daemon does (decision 0128).
+	app.connections = proxy.NewConnections(app.daemon, app.store, binary)
 	app.looks = appearance.Open(looksPath())
 	// The app starts in the appearance the local window had last, before
 	// any page reports one.
@@ -181,6 +183,8 @@ func (h *host) openWindow(start string) {
 		h.mu.Unlock()
 		if current {
 			h.stopNotifier(connectionHost)
+			// A sandbox's zero stops with its window.
+			h.connections.Drop(connectionHost)
 		}
 	})
 	page := window.Page()
@@ -389,7 +393,7 @@ func (h *host) loadLink(target link.Target) {
 }
 
 func (h *host) reportNotPaired() {
-	h.report("This computer has no such zero connection", "Run `zero connect` with the string `zero <path> --remote` prints on the server.")
+	h.report("This computer has no such zero connection", proxy.NotPairedDetail)
 }
 
 func (h *host) openAndLoad(folder string) {

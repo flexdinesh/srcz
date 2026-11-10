@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/flexdinesh/zero/apps/desktop/internal/notifier"
@@ -51,38 +54,68 @@ func goneError(t *testing.T) error {
 	return err
 }
 
-type savedConnections map[string]connection.Saved
-
-func (s savedConnections) Lookup(id string) (connection.Saved, bool, error) {
-	saved, ok := s[id]
-	return saved, ok, nil
+// endpoints serves saved connections by id; err fails every lookup.
+type endpoints struct {
+	saved map[string]connection.Endpoint
+	err   error
 }
 
+func (e *endpoints) Endpoint(id string) (connection.Endpoint, bool, error) {
+	if e.err != nil {
+		return nil, false, e.err
+	}
+	endpoint, found := e.saved[id]
+	return endpoint, found, nil
+}
+
+// named answers /api/projects with one root, its name.
+func named(t *testing.T, name string) connection.Endpoint {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"roots":[{"path":"/`+name+`","name":"`+name+`"}],"projects":[]}`)
+	}))
+	t.Cleanup(server.Close)
+	return httpEndpoint(server.URL)
+}
+
+// httpEndpoint is a plain HTTP server.
+type httpEndpoint string
+
+func (e httpEndpoint) BaseURL() string               { return string(e) }
+func (httpEndpoint) RoundTripper() http.RoundTripper { return &http.Transport{} }
+
 func TestRemoteClientsFollowTheSavedConnection(t *testing.T) {
-	const id = "r-0123456789ab"
-	credential := connection.Credential{Fingerprint: [connection.FingerprintSize]byte{1}, Token: [connection.TokenSize]byte{2}}
-	saved := connection.Saved{ID: id, Hosts: []string{"127.0.0.1"}, Port: 8443, Credential: credential.Encode()}
-	store := savedConnections{id: saved}
-	connect := RemoteClients(store, id)
-
-	first, err := connect(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
+	const id = "s-0123456789ab"
+	saved := &endpoints{saved: map[string]connection.Endpoint{id: named(t, "first")}}
+	connect := RemoteClients(saved, id)
+	root := func() string {
+		t.Helper()
+		reached, err := connect(context.Background(), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		projects, err := reached.Projects(context.Background())
+		if err != nil || len(projects.Roots) != 1 {
+			t.Fatalf("Projects = %+v, %v", projects, err)
+		}
+		return projects.Roots[0].Name
 	}
-	if again, err := connect(context.Background(), errors.New("the stream was reset")); err != nil || again != first {
-		t.Errorf("an unchanged connection: same client %v, %v", again == first, err)
-	}
-
-	// `zero connect` with a new address applies to the next attempt.
-	saved.Hosts = []string{"10.0.0.2"}
-	store[id] = saved
-	moved, err := connect(context.Background(), nil)
-	if err != nil || moved == first {
-		t.Errorf("a changed connection: same client %v, %v", moved == first, err)
+	if got := root(); got != "first" {
+		t.Fatalf("reached %q", got)
 	}
 
-	delete(store, id)
+	// A changed connection applies to the next attempt.
+	saved.saved[id] = named(t, "second")
+	if got := root(); got != "second" {
+		t.Errorf("after a change, reached %q", got)
+	}
+
+	delete(saved.saved, id)
 	if _, err := connect(context.Background(), nil); !errors.Is(err, notifier.ErrNoConnection) {
 		t.Errorf("a forgotten connection: %v", err)
+	}
+	saved.err = io.ErrUnexpectedEOF
+	if _, err := connect(context.Background(), nil); !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Errorf("an unreadable store: %v", err)
 	}
 }

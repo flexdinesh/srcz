@@ -141,6 +141,32 @@ zero attach docker://web/src
 
 ```text
   installing zero in docker://web/src
+attached to docker://web/src (zero 1.4.0 on 3f2a9c1b7d4e)
+desktop: zero://s-5c1e0b7a2d94/
+```
+
+opens `/src` of the running container `web` in its own desktop app window.
+Without a path, it serves the container's working directory. The container
+needs no shell and no published port, only a writable `/tmp`: zero copies itself
+into `/tmp/.zero` as the container's user and runs there through `docker exec`.
+It uses your current Docker context, so remote Docker hosts work too.
+
+The window runs zero in the container while it is open, and zero deletes its
+copy when the window closes; it copies itself in again each time. `zero attach`
+saves the container as a connection, like `zero connect`, so its link
+(`zero://s-…/`) reopens it while the container runs. A container that stopped or
+was replaced shows a page saying to run `zero attach` again. `--no-open` saves
+it and prints the link.
+
+With `--browser` or `--port`, without the desktop app, or on a machine with no
+UI, it serves your browser instead:
+
+```sh
+zero attach --browser docker://web/src
+```
+
+```text
+  installing zero in docker://web/src
   zero 1.4.0
   attached to:  docker://web/src (zero 1.4.0 on 3f2a9c1b7d4e)
   web:          http://127.0.0.1:7971/
@@ -148,14 +174,9 @@ zero attach docker://web/src
   ctrl-c to stop.
 ```
 
-browses `/src` in the running container `web`, in your browser. Without a path,
-it serves the container's working directory. The container needs no shell and
-no published port, only a writable `/tmp`: zero copies itself into
-`/tmp/.zero` as the container's user, runs there through `docker exec`, and
-deletes that copy when you press Ctrl-C. It uses your current Docker context,
-so remote Docker hosts work too.
+and deletes the copy when you press Ctrl-C.
 
 zero gets the copy from its image, `ghcr.io/flexdinesh/zero`, at its own
 version, for the container's platform (linux amd64 or arm64), so the first
-attach needs the network. Like `zero browser`, it serves `127.0.0.1` without
-authentication; `--port` and `--no-open` work the same.
+attach needs the network. Like `zero browser`, browser mode serves `127.0.0.1`
+without authentication; `--port` and `--no-open` work the same.

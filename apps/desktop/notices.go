@@ -49,7 +49,7 @@ func (h *host) newNotifier(connectionHost string, window *mygo.Window) *notifier
 	}
 	if connectionHost != proxy.Host {
 		options.Label = h.connections.Label(connectionHost)
-		options.Connect = connect.RemoteClients(h.store, connectionHost)
+		options.Connect = connect.RemoteClients(h.connections, connectionHost)
 	}
 	return notifier.New(options)
 }

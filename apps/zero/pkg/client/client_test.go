@@ -3,6 +3,8 @@ package client_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +20,7 @@ import (
 	"github.com/flexdinesh/zero/internal/lsp"
 	"github.com/flexdinesh/zero/internal/projects"
 	"github.com/flexdinesh/zero/internal/remote"
+	"github.com/flexdinesh/zero/internal/stdio"
 	"github.com/flexdinesh/zero/internal/watch"
 	"github.com/flexdinesh/zero/internal/web"
 	"github.com/flexdinesh/zero/pkg/client"
@@ -32,8 +36,9 @@ type transport struct {
 	daemon bool
 }
 
-// fixture serves one root through every transport: TCP to the web app, a
-// Unix socket to the daemon's control API before it, and in process.
+// fixture serves one root through every transport: TCP to the web app, TLS
+// as a remote server, a command's standard input and output, a Unix socket to
+// the daemon's control API before it, and in process.
 type fixture struct {
 	root       string
 	transports []transport
@@ -121,10 +126,13 @@ func serveFixtureWith(t *testing.T, root string, servers *lsp.Manager) fixture {
 	if err != nil {
 		t.Fatal(err)
 	}
+	relaySocket := filepath.Join(dir, "relay.sock")
+	stopRelay := serveStdioRelay(t, relaySocket, webApp)
 	t.Cleanup(func() {
 		// Streams end first, as zero's shutdown does.
 		close(done)
 		webApp.StopLiveUpdates()
+		stopRelay()
 		tcp.Close()
 		secure.Close()
 		_ = unix.Close()
@@ -133,10 +141,64 @@ func serveFixtureWith(t *testing.T, root string, servers *lsp.Manager) fixture {
 	})
 	return fixture{root: root, transports: []transport{
 		{name: "tcp", client: client.NewTCP(tcp.URL)},
-		{name: "remote", client: client.NewRemote(connection.TLS{Hosts: []string{"127.0.0.1"}, Port: securePort, Credential: identity.Credential})},
+		{name: "remote", client: client.NewEndpoint(connection.TLS{Hosts: []string{"127.0.0.1"}, Port: securePort, Credential: identity.Credential})},
+		{name: "exec", client: client.NewEndpoint(connection.Exec{Argv: []string{os.Args[0]}, Env: append(os.Environ(), relayEnv+"="+relaySocket)})},
 		{name: "unix", client: client.NewUnix(socket), daemon: true},
 		{name: "in-process", client: inprocess.New(webApp.Application(), control), daemon: true},
 	}}
+}
+
+// relayEnv makes the test binary the exec transport's command: it relays its
+// standard input and output to the Unix socket the variable names.
+const relayEnv = "ZERO_CLIENT_TEST_RELAY"
+
+// serveStdioRelay serves handler over the stdio wire to each connection on
+// socket, as `zero serve-stdio` does on its standard input and output. stop
+// ends every connection, so each relay, and the command, exits.
+func serveStdioRelay(t *testing.T, socket string, handler http.Handler) (stop func()) {
+	t.Helper()
+	listener, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	var served sync.WaitGroup
+	served.Go(func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			served.Go(func() {
+				_ = stdio.Serve(ctx, conn, handler, contract.RemoteInfo{Protocol: 1, Version: "test", Name: "test"})
+			})
+		}
+	})
+	return func() {
+		_ = listener.Close()
+		cancel()
+		served.Wait()
+	}
+}
+
+// relay copies standard input to socket and socket to standard output until
+// either ends.
+func relay(socket string) {
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	ended := make(chan struct{}, 2)
+	go func() {
+		_, _ = io.Copy(conn, os.Stdin)
+		ended <- struct{}{}
+	}()
+	go func() {
+		_, _ = io.Copy(os.Stdout, conn)
+		ended <- struct{}{}
+	}()
+	<-ended
 }
 
 // outcome is a call's result and error, comparable across transports.

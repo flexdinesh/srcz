@@ -53,12 +53,15 @@ Bare `zero` on a machine with no UI prints this advice and exits.
 ## Attach
 
 ```sh
-zero attach docker://web/src      # serve /src of running container web on 127.0.0.1
+zero attach docker://web/src      # open /src of running container web in the desktop app
 zero attach docker://web          # the container's working directory
-zero attach --port 8080 --no-open docker://web/src
+zero attach --no-open docker://web/src   # save it and print the zero:// link
+zero attach --browser docker://web/src   # serve it on 127.0.0.1 instead
+zero attach --port 8080 --no-open docker://web/src   # --port also serves in a browser
 ```
 
 Needs `docker` (any context) and a writable `/tmp` in the container; no shell.
+Without the desktop app, or with no UI, attach serves in a browser.
 
 ## Walkthroughs
 

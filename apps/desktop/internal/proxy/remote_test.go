@@ -48,7 +48,7 @@ func savedFor(t *testing.T, server *httptest.Server, token [connection.TokenSize
 	if !ok {
 		t.Fatalf("listener %s on %s:%s is not TCP", server.Listener.Addr(), host, portText)
 	}
-	return connection.Saved{ID: credential.ID(), Label: "box", Hosts: []string{host}, Port: tcp.Port, Credential: credential.Encode()}
+	return connection.Saved{ID: credential.ID(), Label: "box", TLS: &connection.SavedTLS{Hosts: []string{host}, Port: tcp.Port, Credential: credential.Encode()}}
 }
 
 func remoteProxy(t *testing.T, saved ...connection.Saved) (*Proxy, *fakeStore) {
@@ -57,7 +57,7 @@ func remoteProxy(t *testing.T, saved ...connection.Saved) (*Proxy, *fakeStore) {
 	for _, entry := range saved {
 		store.put(entry)
 	}
-	p := New(NewConnections(&fakeDaemon{}, store))
+	p := New(NewConnections(&fakeDaemon{}, store, ""))
 	t.Cleanup(p.Close)
 	return p, store
 }
@@ -178,12 +178,14 @@ func TestRemoteFailuresSayWhatToDo(t *testing.T) {
 	t.Run("another certificate answers", func(t *testing.T) {
 		remote := startPinned(t, http.NotFoundHandler())
 		saved := remote.saved
-		other, err := connection.ParseCredential(saved.Credential)
+		other, err := connection.ParseCredential(saved.TLS.Credential)
 		if err != nil {
 			t.Fatal(err)
 		}
 		other.Fingerprint[0]++
-		saved.Credential, saved.ID = other.Encode(), other.ID()
+		moved := *saved.TLS
+		moved.Credential = other.Encode()
+		saved.TLS, saved.ID = &moved, other.ID()
 		code, body := document(t, saved)
 		if code != http.StatusBadGateway || !strings.Contains(body, "different identity") {
 			t.Errorf("status %d, body %q", code, body)
@@ -248,7 +250,9 @@ func TestAPageLoadRereadsTheStore(t *testing.T) {
 	if !ok {
 		t.Fatal("not TCP")
 	}
-	moved.Port = tcp.Port
+	movedTLS := *moved.TLS
+	movedTLS.Port = tcp.Port
+	moved.TLS = &movedTLS
 	store.put(moved)
 	if got := get("/", "text/html"); got != "second" {
 		t.Errorf("after a new connect, page %q", got)
@@ -287,7 +291,7 @@ func TestPageLoadsSurviveAStoreThatCannotBeRead(t *testing.T) {
 func TestKnownAndLabel(t *testing.T) {
 	store := &fakeStore{}
 	store.put(connection.Saved{ID: "r-0123456789ab", Label: "box"})
-	connections := NewConnections(&fakeDaemon{}, store)
+	connections := NewConnections(&fakeDaemon{}, store, "")
 	for host, want := range map[string]bool{Host: true, "r-0123456789ab": true, "r-000000000000": false, "other": false} {
 		if got := connections.Known(host); got != want {
 			t.Errorf("Known(%q) = %v", host, got)

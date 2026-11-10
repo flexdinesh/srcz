@@ -5,18 +5,23 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/flexdinesh/zero/internal/daemon"
+	"github.com/flexdinesh/zero/internal/desktopapp"
+	"github.com/flexdinesh/zero/internal/sandbox"
 	"github.com/flexdinesh/zero/pkg/connection"
 	"github.com/flexdinesh/zero/pkg/contract"
 )
@@ -68,8 +73,10 @@ func TestServeStdioFailsForAMissingPath(t *testing.T) {
 // attachDocker plays the docker CLI for a container whose zero is this test
 // binary: `exec` runs it here.
 const attachDocker = `#!/bin/sh
+[ -z "$ZERO_ATTACH_TEST_LOG" ] || printf '%s\n' "$*" >> "$ZERO_ATTACH_TEST_LOG"
 case "$1" in
-inspect) echo "true sha256:img" ;;
+inspect) if [ "$5" = "{{.Id}}" ]; then echo 3f2a9c1b7d4e0000; else echo "true sha256:img"; fi ;;
+info) echo engine-1 ;;
 image) echo "linux/amd64" ;;
 create) echo created ;;
 cp) [ "$2" = "--archive" ] || printf zero > "$3" ;;
@@ -99,7 +106,11 @@ func (b *lockedBuffer) String() string {
 	return b.buffer.String()
 }
 
-func TestAttachServesTheContainersFilesToTheBrowser(t *testing.T) {
+// fakeAttachDocker puts attachDocker first on PATH for this process and the
+// ones it starts, which run this test binary as zero with their own user
+// dirs. It returns the file docker logs its calls to.
+func fakeAttachDocker(t *testing.T) string {
+	t.Helper()
 	self, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
@@ -116,8 +127,14 @@ func TestAttachServesTheContainersFilesToTheBrowser(t *testing.T) {
 	}
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Setenv("ZERO_ATTACH_TEST_BIN", self)
-	dir := t.TempDir()
+	log := filepath.Join(bin, "log")
+	t.Setenv("ZERO_ATTACH_TEST_LOG", log)
+	return log
+}
 
+func TestAttachServesTheContainersFilesToTheBrowser(t *testing.T) {
+	fakeAttachDocker(t)
+	dir := t.TempDir()
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	var stdout, stderr lockedBuffer
@@ -220,4 +237,188 @@ func TestServeStdioIsHidden(t *testing.T) {
 	if err != nil || found.Name() != "serve-stdio" || !found.Hidden {
 		t.Fatalf("serve-stdio = %v, %v", found, err)
 	}
+}
+
+// desktopAttachDeps play a Linux desktop with the app installed, recording
+// what it opens and whether browser mode ran.
+func desktopAttachDeps(t *testing.T, opened *[]string, browsed *bool) attachDeps {
+	t.Helper()
+	return attachDeps{
+		goos:      "linux",
+		getenv:    func(name string) string { return map[string]string{"DISPLAY": ":0"}[name] },
+		terminal:  func(io.Writer) bool { return false },
+		storePath: connection.DefaultStorePath,
+		installed: func(context.Context) (bool, error) { return true, nil },
+		openApp: func(_ context.Context, link string) error {
+			*opened = append(*opened, link)
+			return nil
+		},
+		now: func() time.Time { return time.Date(2026, 11, 11, 1, 2, 3, 0, time.UTC) },
+		browser: func(context.Context, attachOptions, sandbox.Target, io.Writer, io.Writer) error {
+			*browsed = true
+			return nil
+		},
+	}
+}
+
+func TestAttachSavesTheSandboxAndOpensItInTheDesktopApp(t *testing.T) {
+	log := fakeAttachDocker(t)
+	dir := t.TempDir()
+	var opened []string
+	var browsed bool
+	var stdout, stderr bytes.Buffer
+	err := attachWith(t.Context(), attachOptions{cliName: "zero", target: "docker://web" + dir}, &stdout, &stderr, desktopAttachDeps(t, &opened, &browsed))
+	if err != nil {
+		t.Fatalf("attach = %v\n%s", err, stderr.String())
+	}
+	id := connection.SandboxID("docker", "engine-1", "3f2a9c1b7d4e0000")
+	if browsed || !slices.Equal(opened, []string{"zero://" + id + "/"}) {
+		t.Fatalf("opened %q, browsed %v", opened, browsed)
+	}
+	if !strings.Contains(stdout.String(), "attached to docker://web"+dir+" (zero ") || !strings.Contains(stdout.String(), "desktop: zero://"+id+"/") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	path, err := connection.DefaultStorePath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved, found, err := connection.NewStore(path).Lookup(id)
+	want := connection.Saved{ID: id, Label: "docker://web" + dir, AddedAt: time.Date(2026, 11, 11, 1, 2, 3, 0, time.UTC), Sandbox: &connection.SavedSandbox{Provider: "docker", Ref: "3f2a9c1b7d4e0000", Path: dir}}
+	if err != nil || !found || !reflect.DeepEqual(saved, want) {
+		t.Fatalf("saved = %+v, %t, %v, want %+v", saved, found, err, want)
+	}
+	// The check installed and ran zero once, and it has exited.
+	if installs := strings.Count(readFile(t, log), "cp --archive"); installs != 1 {
+		t.Fatalf("installs = %d", installs)
+	}
+
+	// The app reaches the saved sandbox through `zero connection stdio`, which
+	// installs zero again for every run: zero deletes itself when it stops.
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	endpoint, err := saved.Endpoint(self)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for run := 2; run <= 3; run++ {
+		transport := endpoint.RoundTripper()
+		projects := getProjects(t, &http.Client{Transport: transport}, endpoint.BaseURL()+"/")
+		if len(projects.Roots) != 1 || projects.Roots[0].Path != dir {
+			t.Fatalf("roots = %+v, want %s", projects.Roots, dir)
+		}
+		if closer, ok := transport.(io.Closer); !ok || closer.Close() != nil {
+			t.Fatal("the transport does not close")
+		}
+		if installs := strings.Count(readFile(t, log), "cp --archive"); installs != run {
+			t.Fatalf("installs after run %d = %d", run, installs)
+		}
+	}
+	if !strings.Contains(readFile(t, log), "exec --interactive --env HOME=/tmp/.zero 3f2a9c1b7d4e0000 /tmp/.zero/zero serve-stdio -- "+dir) {
+		t.Fatalf("docker calls:\n%s", readFile(t, log))
+	}
+}
+
+func TestConnectionStdioRefusesWhatIsNotASavedSandbox(t *testing.T) {
+	fakeAttachDocker(t)
+	path, err := connection.DefaultStorePath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	remote := connection.Saved{ID: "r-000000000001", Label: "box", TLS: &connection.SavedTLS{Hosts: []string{"10.0.0.5"}, Port: 7971, Credential: "x"}}
+	if err := connection.NewStore(path).Put(remote); err != nil {
+		t.Fatal(err)
+	}
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"s-000000000001", "r-000000000001"} {
+		transport := connection.Exec{Argv: []string{self, "connection", "stdio", id}}.Transport()
+		_, err := transport.Connect(t.Context())
+		_ = transport.Close()
+		if err == nil || !strings.Contains(err.Error(), "no saved sandbox connection "+id) {
+			t.Errorf("connection stdio %s = %v", id, err)
+		}
+	}
+}
+
+func TestAttachServesTheBrowserWhenTheAppCannotOpen(t *testing.T) {
+	tests := []struct {
+		name   string
+		opts   attachOptions
+		change func(*attachDeps)
+		notice string
+	}{
+		{name: "--browser", opts: attachOptions{browser: true}},
+		{name: "--port", opts: attachOptions{portSet: true}},
+		{name: "ssh", change: func(d *attachDeps) {
+			d.getenv = func(name string) string { return map[string]string{"SSH_CONNECTION": "1", "DISPLAY": ":0"}[name] }
+		}},
+		{name: "no display", change: func(d *attachDeps) { d.getenv = func(string) string { return "" } }},
+		{name: "windows", change: func(d *attachDeps) { d.goos = "windows" }},
+		{name: "not installed", change: func(d *attachDeps) {
+			d.installed = func(context.Context) (bool, error) { return false, nil }
+		}, notice: "serving in browser mode"},
+		{name: "open fails", change: func(d *attachDeps) {
+			d.openApp = func(context.Context, string) error { return desktopapp.ErrNotInstalled }
+		}, notice: "serving in browser mode"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fakeAttachDocker(t)
+			var opened []string
+			var browsed bool
+			deps := desktopAttachDeps(t, &opened, &browsed)
+			if test.change != nil {
+				test.change(&deps)
+			}
+			opts := test.opts
+			opts.cliName, opts.target = "zero", "docker://web"+t.TempDir()
+			var stdout, stderr bytes.Buffer
+			if err := attachWith(t.Context(), opts, &stdout, &stderr, deps); err != nil {
+				t.Fatal(err)
+			}
+			if !browsed || len(opened) != 0 {
+				t.Fatalf("browsed %v, opened %q", browsed, opened)
+			}
+			if !strings.Contains(stderr.String(), test.notice) {
+				t.Fatalf("stderr = %q, want %q", stderr.String(), test.notice)
+			}
+		})
+	}
+}
+
+func TestAttachNoOpenSavesAndPrintsTheLink(t *testing.T) {
+	fakeAttachDocker(t)
+	var opened []string
+	var browsed bool
+	deps := desktopAttachDeps(t, &opened, &browsed)
+	deps.installed = func(context.Context) (bool, error) { return false, errors.New("not asked") }
+	var stdout, stderr bytes.Buffer
+	if err := attachWith(t.Context(), attachOptions{cliName: "zero", target: "docker://web" + t.TempDir(), noOpen: true}, &stdout, &stderr, deps); err != nil {
+		t.Fatal(err)
+	}
+	id := connection.SandboxID("docker", "engine-1", "3f2a9c1b7d4e0000")
+	if browsed || len(opened) != 0 || !strings.Contains(stdout.String(), "desktop: zero://"+id+"/") {
+		t.Fatalf("browsed %v, opened %q, stdout %q", browsed, opened, stdout.String())
+	}
+}
+
+func TestConnectionIsHidden(t *testing.T) {
+	command := newRootCommandWith(nil, nil)
+	found, _, err := command.Find([]string{"connection", "stdio"})
+	if err != nil || found.Name() != "stdio" || !found.Parent().Hidden {
+		t.Fatalf("connection stdio = %v, %v", found, err)
+	}
+}
+
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
 }

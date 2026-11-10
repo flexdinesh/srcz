@@ -1,13 +1,13 @@
 // Package link parses what opens zero-desktop: zero:// links and
 // command-line arguments. It is pure: no I/O.
 //
-// The CLI prints these links (decisions 0063, 0098):
+// The CLI prints these links (decisions 0063, 0098, 0128):
 //
 //	zero://local/?project=<abs>&path=<rel>   the local daemon
-//	zero://<id>/?project=<abs>&path=<rel>    a saved connection
+//	zero://<id>/?project=<abs>&path=<rel>    a saved connection: r-… remote, s-… sandbox
 //
-// A link names a connection and carries no secret: `zero connect` saves the
-// credential. The route is "/" or "/view". The query and fragment are the web
+// A link names a connection and carries no secret or address: `zero connect`
+// and `zero attach` save them. The route is "/" or "/view". The query and fragment are the web
 // app's.
 package link
 

@@ -93,12 +93,10 @@ func runConnect(ctx context.Context, opts connectOptions, stdout, stderr io.Writ
 		return err
 	}
 	saved := connection.Saved{
-		ID:         working.Credential.ID(),
-		Label:      info.Name,
-		Hosts:      working.Hosts,
-		Port:       working.Port,
-		Credential: working.Credential.Encode(),
-		AddedAt:    deps.now().UTC().Truncate(time.Second),
+		ID:      working.Credential.ID(),
+		Label:   info.Name,
+		AddedAt: deps.now().UTC().Truncate(time.Second),
+		TLS:     &connection.SavedTLS{Hosts: working.Hosts, Port: working.Port, Credential: working.Credential.Encode()},
 	}
 	if err := connection.NewStore(path).Put(saved); err != nil {
 		return err

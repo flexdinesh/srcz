@@ -128,7 +128,7 @@ func TestStartURLReportsWhatItCouldNotOpen(t *testing.T) {
 			daemon := connect.NewDaemon("", errors.New("no daemon"), nil, nil)
 			h := &host{
 				daemon:      daemon,
-				connections: proxy.NewConnections(daemon, connection.NewStore(filepath.Join(t.TempDir(), "connections.json"))),
+				connections: proxy.NewConnections(daemon, connection.NewStore(filepath.Join(t.TempDir(), "connections.json")), ""),
 				notify:      func(message, _ string) { reported = append(reported, message) },
 			}
 			if got := h.startURL(c.args, "/"); got != proxy.Origin+"/" {
