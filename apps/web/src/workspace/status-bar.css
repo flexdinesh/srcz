@@ -68,6 +68,7 @@
   color: color-mix(in srgb, var(--color-destructive), var(--color-text-primary) 30%);
 }
 
+.status-change,
 .status-lines {
   font-variant-numeric: tabular-nums;
 }
@@ -96,6 +97,7 @@
   }
 
   .status-document-detail,
+  .status-change,
   .status-lines,
   .status-file-size,
   .status-file-type,

@@ -4,7 +4,7 @@ import test from "node:test"
 import type { LineDiff } from "@zero/contracts"
 import { lineDiffOf } from "./line-diff-testing.ts"
 import { diffLineTarget } from "./diff-line-selection.ts"
-import { adjacentHunk, fileOrder, gapForLine, hunkCursor, hunkInFile, hunkSelection } from "./diff-hunks.ts"
+import { changeCursor, changePosition, changeSelection, diffChanges, fileOrder, gapForLine, hunkInFile } from "./diff-hunks.ts"
 
 function diff(before: string | null, after: string | null): LineDiff {
   return lineDiffOf(before, after)
@@ -19,55 +19,80 @@ function numbered(count: number, change: (line: number) => string[] = (line) => 
 const original = numbered(40)
 const edited = diff(original, numbered(40, (line) => line === 10 ? ["ten", "TEN"] : line === 30 ? [] : [`line ${line}`]))
 
-test("a hunk selects its rows as shown, context included", () => {
+test("changes list each run of changed rows, without context", () => {
   assert.equal(edited.hunks.length, 2)
-  for (const style of ["unified", "split"] as const) {
-    assert.deepEqual(hunkSelection(edited, 0, style), { start: 6, side: "additions", end: 15, endSide: "additions" })
-    assert.deepEqual(hunkSelection(edited, 1, style), { start: 27, side: "additions", end: 34, endSide: "additions" })
-  }
-  assert.equal(hunkSelection(edited, 2, "unified"), null)
+  assert.deepEqual(diffChanges(edited), [
+    { hunk: 0, oldStart: 10, oldCount: 1, newStart: 10, newCount: 2 },
+    { hunk: 1, oldStart: 30, oldCount: 1, newStart: 31, newCount: 0 },
+  ])
+  // Two edits three lines apart share one hunk but are two changes.
+  const near = diff(numbered(20), numbered(20, (line) => [line === 5 ? "five" : line === 8 ? "eight" : `line ${line}`]))
+  assert.equal(near.hunks.length, 1)
+  assert.equal(diffChanges(near).length, 2)
+  assert.deepEqual(changeSelection(near, 0, "split"), { start: 5, side: "additions", end: 5, endSide: "additions" })
+  assert.deepEqual(changeSelection(near, 1, "split"), { start: 8, side: "additions", end: 8, endSide: "additions" })
 })
 
-test("a hunk ending in deletions ends on the old side", () => {
-  // Without context after it, the last row is a deletion.
+test("a change selects its rows as shown", () => {
+  // Unified lists the deletion first; Split pairs it with the additions.
+  assert.deepEqual(changeSelection(edited, 0, "unified"), { start: 10, side: "deletions", end: 11, endSide: "additions" })
+  assert.deepEqual(changeSelection(edited, 0, "split"), { start: 10, side: "additions", end: 11, endSide: "additions" })
+  for (const style of ["unified", "split"] as const) {
+    assert.deepEqual(changeSelection(edited, 1, style), { start: 30, side: "deletions", end: 30, endSide: "deletions" })
+  }
+  assert.equal(changeSelection(edited, 2, "unified"), null)
+})
+
+test("changes of only deletions or only additions stay on their side", () => {
   const tail = diff(numbered(5), numbered(3))
   for (const style of ["unified", "split"] as const) {
-    assert.deepEqual(hunkSelection(tail, 0, style), { start: 1, side: "additions", end: 5, endSide: "deletions" })
+    assert.deepEqual(changeSelection(tail, 0, style), { start: 4, side: "deletions", end: 5, endSide: "deletions" })
   }
   const deleted = diff(numbered(3), null)
-  assert.deepEqual(hunkSelection(deleted, 0, "unified"), { start: 1, side: "deletions", end: 3, endSide: "deletions" })
+  assert.deepEqual(changeSelection(deleted, 0, "unified"), { start: 1, side: "deletions", end: 3, endSide: "deletions" })
   const added = diff(null, numbered(3))
-  assert.deepEqual(hunkSelection(added, 0, "split"), { start: 1, side: "additions", end: 3, endSide: "additions" })
+  for (const style of ["unified", "split"] as const) {
+    assert.deepEqual(changeSelection(added, 0, style), { start: 1, side: "additions", end: 3, endSide: "additions" })
+  }
+  // Split ends on the old side when more lines went than came.
+  const shrunk = diff(numbered(8), numbered(8, (line) => line === 3 ? ["three"] : line === 4 ? [] : [`line ${line}`]))
+  assert.deepEqual(changeSelection(shrunk, 0, "split"), { start: 3, side: "additions", end: 4, endSide: "deletions" })
 })
 
-test("a hunk starting with a change starts where its rows start", () => {
-  // Line 1 became A: Unified shows the deletion first, Split pairs them.
+test("a cross-side change copies the new lines it covers", () => {
   const head = diff(numbered(8), numbered(8, (line) => [line === 1 ? "A" : `line ${line}`]))
-  assert.deepEqual(hunkSelection(head, 0, "unified"), { start: 1, side: "deletions", end: 5, endSide: "additions" })
-  assert.deepEqual(hunkSelection(head, 0, "split"), { start: 1, side: "additions", end: 5, endSide: "additions" })
-  // The cross-side selection still copies the new lines it covers.
-  const selection = hunkSelection(head, 0, "unified")
+  const selection = changeSelection(head, 0, "unified")
+  assert.deepEqual(selection, { start: 1, side: "deletions", end: 1, endSide: "additions" })
   assert.ok(selection)
-  assert.deepEqual(diffLineTarget(head, selection, "unified"), { side: "new", range: { start: 1, end: 5 } })
+  assert.deepEqual(diffLineTarget(head, selection, "unified"), { side: "new", range: { start: 1, end: 1 } })
 })
 
-test("lines place a cursor inside or between hunks", () => {
-  assert.deepEqual(hunkCursor(edited, "additions", 3), { kind: "before", index: 0 })
-  assert.deepEqual(hunkCursor(edited, "additions", 7), { kind: "at", index: 0 })
-  assert.deepEqual(hunkCursor(edited, "additions", 20), { kind: "before", index: 1 })
-  assert.deepEqual(hunkCursor(edited, "deletions", 30), { kind: "at", index: 1 })
-  assert.deepEqual(hunkCursor(edited, "additions", 38), { kind: "before", index: 2 })
+test("lines place a cursor inside or between changes", () => {
+  assert.deepEqual(changeCursor(edited, "additions", 3), { kind: "before", index: 0 })
+  assert.deepEqual(changeCursor(edited, "additions", 10), { kind: "at", index: 0 })
+  assert.deepEqual(changeCursor(edited, "additions", 11), { kind: "at", index: 0 })
+  assert.deepEqual(changeCursor(edited, "deletions", 10), { kind: "at", index: 0 })
+  // Context inside a hunk sits before the next change.
+  assert.deepEqual(changeCursor(edited, "additions", 12), { kind: "before", index: 1 })
+  assert.deepEqual(changeCursor(edited, "deletions", 30), { kind: "at", index: 1 })
+  // A deletion has no new rows: the new line after it is past it.
+  assert.deepEqual(changeCursor(edited, "additions", 31), { kind: "before", index: 2 })
 })
 
-test("hunk steps wrap within the file", () => {
-  assert.equal(adjacentHunk(2, { kind: "at", index: 0 }, 1), 1)
-  assert.equal(adjacentHunk(2, { kind: "at", index: 1 }, 1), 0)
-  assert.equal(adjacentHunk(2, { kind: "at", index: 0 }, -1), 1)
-  assert.equal(adjacentHunk(2, { kind: "before", index: 1 }, 1), 1)
-  assert.equal(adjacentHunk(2, { kind: "before", index: 1 }, -1), 0)
-  assert.equal(adjacentHunk(2, { kind: "before", index: 0 }, -1), 1)
-  assert.equal(adjacentHunk(2, { kind: "before", index: 2 }, 1), 0)
-  assert.equal(adjacentHunk(0, { kind: "before", index: 0 }, 1), null)
+test("a selection that covers a change exactly has its position", () => {
+  for (const style of ["unified", "split"] as const) {
+    for (const index of [0, 1]) {
+      const selection = changeSelection(edited, index, style)
+      assert.ok(selection)
+      assert.deepEqual(changePosition(edited, selection, style), { index: index + 1, count: 2 })
+    }
+  }
+  // An end side left out is the start's.
+  assert.deepEqual(changePosition(edited, { start: 30, side: "deletions", end: 30 }, "split"), { index: 2, count: 2 })
+  // Context, part of a change, or another layout's shape have none.
+  assert.equal(changePosition(edited, { start: 6, side: "additions", end: 15, endSide: "additions" }, "split"), null)
+  assert.equal(changePosition(edited, { start: 10, side: "additions", end: 10, endSide: "additions" }, "split"), null)
+  assert.equal(changePosition(edited, { start: 10, side: "additions", end: 11, endSide: "additions" }, "unified"), null)
 })
 
 test("gaps between hunks hold the unchanged lines they collapse", () => {

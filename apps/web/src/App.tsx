@@ -138,6 +138,7 @@ function reviewStatusBar(status: ReviewStatus | null, currentFile: string, data:
   return {
     path,
     lines: status?.target ?? null,
+    change: status?.change ?? null,
     stats: countedLines(stats),
     typeLabel: status?.typeLabel ?? "",
   }

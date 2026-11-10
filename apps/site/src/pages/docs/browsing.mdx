@@ -65,10 +65,11 @@ stays visible; comment syntax inside code stays literal.
   Links name the file and side: `#f=src/App.tsx&R12-R20` for the new side,
   `&L5` for the old; they open scrolled to the lines, expanding unchanged
   lines they name.
-- Step through a review's changes with F7 and Shift+F7 or the toolbar's
-  Previous change and Next change; steps cross into the next or previous
-  file and select the change, so its link and `path:12-20` copy are one
-  click away.
+- Step through a review's changes with `n` and `p`, F7 and Shift+F7, or the
+  toolbar's Previous change and Next change; steps cross into the next or
+  previous file and select the changed lines, so their link and
+  `path:12-20` copy are one click away. The status bar shows where the
+  change sits in its file: "Change 2 of 5".
 - Copy the open file's or reviewed file's path from the status bar.
 
 ## Search
@@ -150,8 +151,9 @@ Zero remembers Hide viewed.
 Mark a file Viewed to fold it away and move on to the next file you have not
 viewed; the rail checks viewed files and dims their names. When a viewed
 file changes, it opens again and reads "Changed since viewed" until you mark
-it again. Outside text fields, `]` and `[` go to the next and previous file,
-and `v` marks the file in view Viewed or unmarks it.
+it again. Outside text fields, `n` and `p` go to the next and previous
+change, `]` and `[` to the next and previous file, and `v` marks the file in
+view Viewed or unmarks it.
 
 Changed images (PNG, JPEG, GIF, WebP, and other raster formats) show both
 versions side by side with their dimensions and size (2-up), or one over the

@@ -13,12 +13,15 @@ import { NavigationStatusPanel, type NavigationStatusPanelProps } from "../featu
 import type { DiffStats } from "../features/source-control/diff-stats.ts"
 import { DiffStatsText } from "../features/source-control/DiffStatsText.tsx"
 import type { DiffLineTarget } from "../features/source-control/diff-line-selection.ts"
+import type { ChangePosition } from "../features/source-control/diff-hunks.ts"
 import type { LiveStatus } from "../api/events-contract.ts"
 import { liveIndicator } from "../features/live-updates/live-updates.ts"
 
 // DiffStatus describes the active diff tab, which replaces document status.
 export interface DiffStatus {
   lines: DiffLineTarget | null
+  // change places a stepped change among its file's (decision 0124).
+  change: ChangePosition | null
   path: string
   stats: DiffStats | null
   typeLabel: string
@@ -108,6 +111,9 @@ export function StatusBar({ detail, diff, isLoading, error, lines, live, navigat
         </Button>
         <span className="status-grow" />
         {diff ? <>
+          {diff.change && <span className="status-change">
+            Change {diff.change.index.toLocaleString()} of {diff.change.count.toLocaleString()}
+          </span>}
           {diff.lines && <span className="status-lines">
             {diff.lines.side === "old" ? `Old ${lineRangeLabel(diff.lines.range)}` : lineRangeLabel(diff.lines.range)}
           </span>}

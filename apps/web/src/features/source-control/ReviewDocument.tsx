@@ -33,7 +33,9 @@ import { LineCopyButton } from "../documents/SourceDocument.tsx"
 import { commitDate, type Compare, type CompareName } from "./compare.ts"
 import { displayOrder, statusLetters, statusNames, type CompareFile } from "./compare-files.ts"
 import { binaryChangeLabel } from "./diff-content.ts"
-import { fileOrder, gapForLine, hunkCursor, hunkInFile, hunkSelection, type HunkCursor } from "./diff-hunks.ts"
+import {
+  changeCursor, changePosition, changeSelection, diffChanges, fileOrder, gapForLine, hunkInFile, type ChangeCursor, type ChangePosition,
+} from "./diff-hunks.ts"
 import { diffLineAnchor, diffLineTarget, type DiffLineTarget } from "./diff-line-selection.ts"
 import { diffMetrics } from "./diff-metrics.ts"
 import { effectiveDiffStyle, type DiffOptions, type InlineChanges } from "./diff-options.ts"
@@ -128,6 +130,8 @@ function sideLines(fileDiff: FileDiffMetadata | null, side: SelectionSide): (lin
 export interface ReviewStatus {
   path: string
   target: DiffLineTarget | null
+  // change is the stepped change the selection covers, among its file's.
+  change: ChangePosition | null
   typeLabel: string
 }
 
@@ -180,7 +184,7 @@ export interface ReviewScope {
 }
 
 // A HunkStep selects and reveals the next (1) or previous (-1) change,
-// crossing into other files (decisions 0034, 0035).
+// crossing into other files (decisions 0034, 0035, 0124).
 export type HunkStep = (direction: 1 | -1) => void
 
 // A ShownDiff is a rendered file diff, which places and expands its rows.
@@ -470,7 +474,8 @@ function ReviewBody({
 
   // Steps walk the open files' changes in order: the next change in the
   // file holding the selection (else the file in view), then the first of
-  // the next file with any, wrapping past the ends. A file not yet shown is
+  // the next file with any, wrapping past the ends. A step selects the
+  // change's rows without context (decision 0124). A file not yet shown is
   // read first.
   const style = effectiveDiffStyle(options, narrow)
   const stepping = useRef<AbortController | null>(null)
@@ -496,17 +501,21 @@ function ReviewBody({
     }
     // cursor places the step in its first file: at the selection, else below
     // the pane's top.
-    const cursor = (path: string, lineDiff: LineDiff): HunkCursor => {
+    const cursor = (path: string, lineDiff: LineDiff, count: number): ChangeCursor => {
       const lines = selected?.path === path ? selected.lines : null
-      if (lines) return hunkCursor(lineDiff, lines.side ?? "additions", lines.start)
+      if (lines) return changeCursor(lineDiff, lines.side ?? "additions", lines.start)
       const view = shown.current.get(path)
       const scrollTop = root?.scrollTop ?? 0
-      const below = view ? lineDiff.hunks.findIndex((_, index) => {
-        const first = hunkSelection(lineDiff, index, shownStyle)
+      let below = -1
+      for (let index = 0; view && index < count; index++) {
+        const first = changeSelection(lineDiff, index, shownStyle)
         const line = first ? view.lineBox(first.side ?? "additions", first.start) : null
-        return line !== null && line.top >= scrollTop
-      }) : -1
-      return { kind: "before", index: below >= 0 ? below : direction === 1 && !view ? 0 : lineDiff.hunks.length }
+        if (line !== null && line.top >= scrollTop) {
+          below = index
+          break
+        }
+      }
+      return { kind: "before", index: below >= 0 ? below : direction === 1 && !view ? 0 : count }
     }
     const step = async () => {
       const fromPath = selected?.lines ? selected.path : currentFile.current
@@ -514,15 +523,16 @@ function ReviewBody({
       const start = candidates[from]
       const startDiff = start ? await load(start) : null
       if (start && startDiff) {
-        const index = hunkInFile(startDiff.hunks.length, cursor(start.path, startDiff), direction)
-        const next = index === null ? null : hunkSelection(startDiff, index, shownStyle)
+        const count = diffChanges(startDiff).length
+        const index = hunkInFile(count, cursor(start.path, startDiff, count), direction)
+        const next = index === null ? null : changeSelection(startDiff, index, shownStyle)
         if (next) return onSelectLines(start.path, next)
       }
       for (const index of fileOrder(candidates.length, from, direction)) {
         const file = candidates[index]
         const lineDiff = file ? await load(file) : null
-        const count = lineDiff?.hunks.length ?? 0
-        const next = file && lineDiff && count > 0 ? hunkSelection(lineDiff, direction === 1 ? 0 : count - 1, shownStyle) : null
+        const count = lineDiff ? diffChanges(lineDiff).length : 0
+        const next = file && lineDiff && count > 0 ? changeSelection(lineDiff, direction === 1 ? 0 : count - 1, shownStyle) : null
         if (file && next) return onSelectLines(file.path, next)
       }
     }
@@ -536,20 +546,6 @@ function ReviewBody({
     onRegisterHunkStep(stepHunk)
     return () => onRegisterHunkStep(null)
   }, [onRegisterHunkStep, stepHunk])
-
-  // F7 and Shift+F7 step through changes while focus is in the pane, as in
-  // VS Code's diff editor.
-  useEffect(() => {
-    const root = scrollRoot.current
-    if (!root) return
-    const step = (event: KeyboardEvent) => {
-      if (event.key !== "F7" || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
-      event.preventDefault()
-      stepHunk(event.shiftKey ? -1 : 1)
-    }
-    root.addEventListener("keydown", step)
-    return () => root.removeEventListener("keydown", step)
-  }, [scrollRoot, stepHunk])
 
   // goToFile shows a file at the pane's top, as the fragment does. The
   // fragment's own file, already revealed, scrolls there directly.
@@ -585,15 +581,21 @@ function ReviewBody({
 
   // ] and [ go to the next and previous file, and v toggles Viewed on the
   // file in view, outside text fields (decision 0117); c comments on the
-  // selected lines (decision 0120).
-  const latestKeys = useRef({ files, markViewed, goToFile, viewed, comments })
-  useLayoutEffect(() => { latestKeys.current = { files, markViewed, goToFile, viewed, comments } })
+  // selected lines (decision 0120); n and p, or F7 and Shift+F7, step
+  // through changes (decision 0124). They answer wherever the review keys
+  // do, so the toolbar's own buttons keep them working.
+  const latestKeys = useRef({ files, markViewed, goToFile, viewed, comments, stepHunk })
+  useLayoutEffect(() => { latestKeys.current = { files, markViewed, goToFile, viewed, comments, stepHunk } })
   useEffect(() => {
     const root = scrollRoot.current
     if (!root) return
     const run = (command: ReviewKeyCommand) => {
-      const { files: all, markViewed: mark, goToFile: go, viewed: isViewed, comments: commenting } = latestKeys.current
+      const { files: all, markViewed: mark, goToFile: go, viewed: isViewed, comments: commenting, stepHunk: stepChange } = latestKeys.current
       const path = currentFile.current
+      if (command === "nextChange" || command === "previousChange") {
+        stepChange(command === "nextChange" ? 1 : -1)
+        return
+      }
       if (command === "comment") {
         const status = selectedStatus.current
         if (commenting && status?.target) commenting.onComment(status.path, status.target.side, [status.target.range.start, status.target.range.end])
@@ -609,8 +611,8 @@ function ReviewBody({
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || !inReview(event.target, root)) return
       const command = reviewKeyCommand({
-        key: event.key, altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, isComposing: event.isComposing,
-        textField: isTextField(event.target),
+        key: event.key, altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey,
+        isComposing: event.isComposing, textField: isTextField(event.target),
       })
       if (!command) return
       event.preventDefault()
@@ -628,7 +630,7 @@ function ReviewBody({
       <ShownContext.Provider value={registerShown}>
       <VirtualizerContext.Provider value={virtualizer}>
         <div ref={container} className="review"
-          aria-keyshortcuts={`${reviewKeyShortcuts.nextFile} ${reviewKeyShortcuts.previousFile} ${reviewKeyShortcuts.toggleViewed}${comments ? ` ${reviewKeyShortcuts.comment}` : ""}`}>
+          aria-keyshortcuts={`${reviewKeyShortcuts.nextChange} ${reviewKeyShortcuts.previousChange} ${reviewKeyShortcuts.nextFile} ${reviewKeyShortcuts.previousFile} ${reviewKeyShortcuts.toggleViewed}${comments ? ` ${reviewKeyShortcuts.comment}` : ""}`}>
           <header className="review-header">
             <h1 className="review-title" title={name.title}>{reviewHeading(data, name)}</h1>
             <ReviewMeta compare={compare} data={data} />
@@ -684,7 +686,7 @@ function ReviewBody({
 }
 
 // reviewKeysHint names the review keys where the review counts its progress.
-const reviewKeysHint = "] and [ go to the next and previous file; V toggles Viewed on the file in view"
+const reviewKeysHint = "N and P go to the next and previous change; ] and [ to the next and previous file; V toggles Viewed on the file in view"
 
 // reviewHeading is the compare's tab label, as every review titles itself;
 // a commit reads its subject.
@@ -823,12 +825,16 @@ function ReviewFile({
   const targetSide = target?.side ?? null
   const targetStart = target?.range.start ?? 0
   const targetEnd = target?.range.end ?? 0
+  const position = rendered && lines ? changePosition(rendered.lineDiff, lines, style) : null
+  const changeIndex = position?.index ?? 0
+  const changeCount = position?.count ?? 0
   useEffect(() => {
     if (!selected) return
     const reported = targetSide ? { side: targetSide, range: { start: targetStart, end: targetEnd } } : null
-    onStatus({ path: file.path, target: reported, typeLabel })
+    const change = changeCount > 0 ? { index: changeIndex, count: changeCount } : null
+    onStatus({ path: file.path, target: reported, change, typeLabel })
     return () => onStatus(null)
-  }, [file.path, onStatus, selected, targetEnd, targetSide, targetStart, typeLabel])
+  }, [changeCount, changeIndex, file.path, onStatus, selected, targetEnd, targetSide, targetStart, typeLabel])
 
   const commentLines = onComment && target ? () => onComment(target.side, [target.range.start, target.range.end]) : null
   const commentFile = onComment ? () => {

@@ -1,6 +1,6 @@
 # 0034: Diff anchor reveal and hunk navigation
 
-- Status: Accepted; extended to review tabs, steps crossing files, by [0035](0035-compare-list-and-review-tab.md)
+- Status: Accepted; extended to review tabs, steps crossing files, by [0035](0035-compare-list-and-review-tab.md); steps by change, not hunk, and F7 beyond pane focus by [0124](0124-change-steps.md)
 - Date: 2026-10-23
 - Extends: [0028](0028-diff-line-links-and-copy.md)
 
