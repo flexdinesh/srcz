@@ -105,9 +105,9 @@ rewriting history; update `Status` on the old record.
 | [0099](0099-desktop-notifications.md) | Desktop notifications | Accepted |
 | [0100](0100-rename-to-srcz.md) | Rename to srcz (Source Zero) | Accepted |
 | [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted |
-| [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted |
+| [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130 |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
-| [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108 |
+| [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130 |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
 | [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105 |
 | [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |
@@ -124,11 +124,12 @@ rewriting history; update `Status` on the old record.
 | [0119](0119-desktop-title-band-on-macos.md) | Themed desktop shell on macOS | Accepted; revises 0081, 0095 |
 | [0120](0120-review-feedback-threads.md) | Review feedback threads | Accepted; extends 0028, 0035, 0047, 0050, 0066, 0080, 0099 |
 | [0121](0121-final-tab-close-keeps-window.md) | Closing the final tab keeps the desktop window | Accepted; supersedes 0097 final-tab close |
-| [0122](0122-type-roles-and-list-size.md) | Type roles and the list size | Accepted; revises 0033 |
-| [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112; Commits and Branches action rows superseded by 0129 |
+| [0122](0122-type-roles-and-list-size.md) | Type roles and the list size | Accepted; revises 0033; file rows revised by 0130 |
+| [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112; Commits and Branches action rows superseded by 0129; Uncommitted action row by 0130 |
 | [0124](0124-change-steps.md) | Change steps land on changes, answer anywhere in the review, and show their place | Accepted; supersedes 0034 step unit and F7 scope, extends 0117 |
 | [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098 |
 | [0126](0126-tailscale-exposure.md) | Tailscale exposure | Accepted; extends 0098, 0125 |
 | [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098 |
 | [0128](0128-sandbox-connections-in-the-desktop-app.md) | Sandbox connections in the desktop app | Accepted; extends 0098, 0127 |
-| [0129](0129-base-row-picker-inline-commit-filter-and-lanes.md) | Base row picker, inline commit filter, and stack lanes | Accepted; supersedes 0035 and 0123 base picker trigger, 0114 filter toggle; extends 0040, 0042, 0123 |
+| [0129](0129-base-row-picker-inline-commit-filter-and-lanes.md) | Base row picker, inline commit filter, and stack lanes | Accepted; supersedes 0035 and 0123 base picker trigger, 0114 filter toggle; extends 0040, 0042, 0123; rails and chip borders superseded by 0130 |
+| [0130](0130-ibm-plex-mono-quiet-scm-chrome-and-container-focus.md) | IBM Plex Mono, quieter Source Control chrome, and no container focus rings | Accepted; supersedes 0102 and 0104 mono faces, 0123 pane action row, 0129 rails and chip borders; revises 0122 |

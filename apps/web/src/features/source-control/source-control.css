@@ -45,21 +45,47 @@
   border-top: 1px solid var(--color-border-strong);
 }
 
-/* The heading's toggle spans the header: a click anywhere on it opens or
-   closes the pane. */
-.scm-pane-heading {
+/* The heading's toggle spans the header up to its actions: a click anywhere
+   else on it opens or closes the pane. Hover marks the whole band. */
+.scm-pane-header {
   display: flex;
   flex: none;
+  align-items: center;
+}
+
+.scm-pane-header:hover {
+  background: var(--color-hover);
+}
+
+.scm-pane-header .scm-pane-toggle:hover {
+  background: transparent;
+}
+
+.scm-pane-heading {
+  display: flex;
+  min-width: 0;
+  flex: 1;
   margin: 0;
   font: inherit;
+}
+
+/* An open pane's actions end its header band (decision 0130). */
+.scm-pane-header-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: calc(var(--space-1) / 2);
+  padding-right: var(--space-2);
 }
 
 .scm-pane-toggle {
   height: var(--control-md);
   gap: var(--space-2);
   padding-right: var(--space-3);
+  color: var(--color-text-secondary);
   font-family: var(--font-chrome);
   font-size: var(--text-chrome);
+  font-weight: 500;
 }
 
 .scm-pane-title {
@@ -77,8 +103,7 @@
   white-space: nowrap;
 }
 
-/* An open pane's actions sit in their own row above its body, set off by a
-   hairline. */
+/* Commits' filter row sits above its body, set off by a hairline. */
 .scm-pane-actions {
   display: flex;
   min-height: var(--control-lg);
@@ -168,6 +193,8 @@
   flex: 0 1 auto;
   overflow: hidden;
   color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-file);
   text-overflow: ellipsis;
 }
 
@@ -445,14 +472,13 @@
   color: var(--color-text-primary);
 }
 
-/* Branch names at a commit: bordered code chips in their layer's lane. */
+/* Branch names at a commit: mono text in their layer's lane, unboxed
+   (decision 0130). */
 .ref-chip {
   min-width: 0;
   max-width: 45%;
   flex: 0 1 auto;
   overflow: hidden;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--color-border);
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -461,8 +487,14 @@
 }
 
 .ref-chip[data-lane] {
-  border-color: var(--lane);
   color: var(--lane);
+}
+
+/* The merge-base hash stays a bordered chip: it sits in the base row's
+   button as a value, not a label. */
+.ref-chip-hash {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
 }
 
 .ref-chip-hash,
@@ -470,9 +502,8 @@
   color: var(--color-commit-hash);
 }
 
-/* Lanes (decision 0129): each stack layer's hue, on its Branches row and on
-   its commits, as a 2px rail down the leading edge that runs through their
-   details. HEAD's layer is lane 0. */
+/* Lanes (decisions 0129, 0130): each stack layer's hue, on its Branches row's
+   icon and its commits' branch names. HEAD's layer is lane 0. */
 [data-lane="0"] {
   --lane: var(--color-lane-0);
 }
@@ -489,19 +520,6 @@
   --lane: var(--color-lane-3);
 }
 
-:is(.compare-row, .commit-details)[data-lane] {
-  position: relative;
-}
-
-:is(.compare-row, .commit-details)[data-lane]::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: var(--lane);
-  content: "";
-  pointer-events: none;
-}
-
 .branch-rows {
   padding-top: var(--space-1);
 }
@@ -514,12 +532,11 @@
   font-weight: 600;
 }
 
-/* HEAD's tag: an accent chip, as HEAD's branch chip reads in Commits. */
+/* HEAD's tag: muted mono text; the bold name and lane icon already mark the
+   current branch (decision 0130). */
 .branch-row-head {
   flex: none;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   line-height: 1rem;
@@ -779,7 +796,7 @@
   color: var(--color-text-secondary);
   font-family: var(--font-chrome);
   font-size: var(--text-chrome);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 /* The rail's header matches a file header: as tall, on its band, with its rule. */
@@ -842,6 +859,7 @@
   }
 
   .scm-pane-actions,
+  .scm-pane-header-actions,
   .row-actions,
   .compare-row-commit {
     --icon-button-min: var(--control-md);

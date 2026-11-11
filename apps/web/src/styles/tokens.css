@@ -7,7 +7,7 @@
 
 @theme {
   --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --color-bg: light-dark(#fafafa, #272b32);
   --color-canvas: light-dark(#e4e5e8, #1d2026);
@@ -120,6 +120,9 @@
   --text-list: var(--text-sm);
   --text-supporting: var(--text-sm);
   --text-code: 0.8125rem;
+  /* File names in lists (Explorer, Source Control, review rail, search
+     results, palette) set in mono at the source size (decision 0130). */
+  --text-file: var(--text-code);
   /* Tabs, view and pane headers, and the review rail's header (decision 0102). */
   --font-chrome: var(--font-mono);
   --text-chrome: var(--text-xs);

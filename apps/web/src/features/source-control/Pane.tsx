@@ -12,26 +12,29 @@ interface PaneProps {
   onOpenChange(open: boolean): void
   // note follows the title: a count badge or a muted summary.
   note?: ReactNode
-  // actions sit in a row at the top of the open pane's body.
+  // actions sit at the end of the open pane's header (decision 0130).
   actions?: ReactNode
   children: ReactNode
 }
 
-// Pane is one collapsible Source Control section (decisions 0040, 0123): a
-// header that opens and closes it across its whole width, then, when open,
-// its actions row and body.
+// Pane is one collapsible Source Control section (decisions 0040, 0123,
+// 0130): a header that opens and closes it, with the open pane's actions at
+// its end, then, when open, its body.
 export function Pane({ actions, children, mobile, note, open, title, weight, onOpenChange }: PaneProps) {
   return (
     <section className="scm-pane" aria-label={title} data-open={open || undefined}
       style={open && !mobile ? { flexGrow: weight } : undefined}>
-      {/* An accordion header: the heading holds the toggle, which spans it. */}
-      <h3 className="scm-pane-heading">
-        <SectionToggle className="scm-pane-toggle" expanded={open} onExpandedChange={onOpenChange}>
-          <span className="scm-pane-title">{title}</span>
-          {note}
-        </SectionToggle>
-      </h3>
-      {open && actions && <div className="scm-pane-actions">{actions}</div>}
+      {/* An accordion header: the heading holds the toggle, which spans it up
+          to the actions; buttons cannot nest, so the actions are its sibling. */}
+      <div className="scm-pane-header">
+        <h3 className="scm-pane-heading">
+          <SectionToggle className="scm-pane-toggle" expanded={open} onExpandedChange={onOpenChange}>
+            <span className="scm-pane-title">{title}</span>
+            {note}
+          </SectionToggle>
+        </h3>
+        {open && actions && <div className="scm-pane-header-actions">{actions}</div>}
+      </div>
       {open && <div className="scm-pane-body">{children}</div>}
     </section>
   )

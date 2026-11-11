@@ -44,6 +44,14 @@ a {
   outline-offset: 2px;
 }
 
+/* Only controls ring. Containers that take focus (the inline sidebar dialog,
+   main, sections, scroll areas) do not (decision 0130). Roving rows keep
+   theirs: they carry a tabindex. */
+:is(dialog, main, section):focus-visible,
+:focus-visible:not(a[href], button, input, select, textarea, summary, [tabindex], [contenteditable]) {
+  outline: 0;
+}
+
 ::selection {
   color: var(--color-text-primary);
   background: var(--color-accent-subtle);
