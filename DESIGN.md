@@ -100,10 +100,10 @@ typography:
     fontSize: "0.75rem"
     lineHeight: "1rem"
   code:
-    fontFamily: "ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
     fontSize: "0.8125rem"
   source:
-    fontFamily: "ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
     fontSize: "0.8125rem"
     lineHeight: "1.25rem"
   site-display:
@@ -129,23 +129,23 @@ typography:
     fontWeight: 400
     lineHeight: 1.5
   site-chrome:
-    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.75rem"
   site-status:
-    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.6875rem"
   site-label:
-    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.65625rem"
     fontWeight: 600
     letterSpacing: "0.1em"
   site-docs-section:
-    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.6875rem"
     fontWeight: 600
     letterSpacing: "0.1em"
   site-docs-nav:
-    fontFamily: "ui-monospace, \"SF Mono\", \"JetBrains Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.8125rem"
     fontWeight: 400
 rounded:
@@ -331,7 +331,7 @@ Choices: Auto, Zero Light, Zero Dark, Dracula, Solarized Light, and Omarchy's 23
 
 ## Typography
 
-Inter Variable is bundled locally for UI and prose; code/source and chrome labels (tabs, view and pane headers, the rail header; `--font-chrome`, decision 0102) use the system monospace stack. No runtime font service.
+Inter Variable is bundled locally for UI and prose; IBM Plex Mono (400 to 700; 700 for bold syntax tokens) is bundled for code/source, chrome labels (tabs, view and pane headers, the rail header; `--font-chrome`), and file names in lists (decision 0130). It is the one mono face of the app, the site, and the brand. No runtime font service.
 
 One base size drives the whole scale: the Font Size setting (default 13px, 10–20px) sets `--font-size-base`, and `html` sets `1rem = base × 16 / 13`. Every size, spacing, and control height is in rem, so the interface scales together; Pierre's px row height is scaled in JS. Sizes below are at the 13px default.
 
@@ -339,16 +339,17 @@ One base size drives the whole scale: the Font Size setting (default 13px, 10–
 | --- | --- | --- |
 | Preview H1 / H2 / H3 / H4 | 26 / 21 / 17 / 15px; 1.25 | 600 weight, -0.02em tracking |
 | Labels, fields, buttons, controls (`--text-label`) | 13px (= base) | Buttons 500 weight; segmented items, small buttons, notices, and status messages too |
-| View and dialog titles, pane headers (`--text-chrome`) | 12px | Monospace, 600 weight |
+| View and dialog titles, pane headers (`--text-chrome`) | 12px | Monospace, 500 weight, `text-secondary` |
 | Tabs (`--text-chrome`) | 12px | Monospace |
 | Preview prose | 14px / 1.6 desktop; 15px / 1.6 mobile | 400 weight, 75ch maximum |
 | Sidebar rows: Explorer, Search, Source Control, Walkthroughs, Feedback (`--text-list`) | 14px | `text-primary` names |
+| File names in lists: Explorer, Source Control changes and trees, review rail, Search files (`--text-file`) | 13px | Monospace, `text-primary` |
 | Supporting UI / search input / tables | 14px / 20px | Shared small text role |
 | Footer / metadata | 12px | Sans; footer line-height 1; counts, ages, folders beside names, stats, git status letters (600), kbd, toggle glyphs |
 | Source | 13px / 22px (= base) | Monospace, fixed line rows |
 | Preview code | 13px | Monospace; block line-height 1.6 |
 
-The UI uses three steps, 12, 13, and 14px, and carries further hierarchy in weight and color; the activity badge's 10px is the one smaller size (decision 0122). Sidebar rows sit at 14px Inter, which matches the optical size of 13px monospace source and of 14px prose, so the sidebar never reads a step smaller than the document beside it. Monospace content inside the UI (review file paths, navigation snippets, branch names, walkthrough targets) uses `--text-code`. Project name uses 12px and 600 weight. UI uses the `--text-*` roles; preview uses `--preview-*` roles.
+The UI uses three steps, 12, 13, and 14px, and carries further hierarchy in weight and color; the activity badge's 10px is the one smaller size (decision 0122). Sidebar rows sit at 14px Inter, which matches the optical size of 13px monospace source and of 14px prose, so the sidebar never reads a step smaller than the document beside it; file names in those rows are 13px mono, the source size (decision 0130). Monospace content inside the UI (review file paths, navigation snippets, branch names, walkthrough targets) uses `--text-code`. Project name uses 12px and 600 weight. UI uses the `--text-*` roles; preview uses `--preview-*` roles.
 
 ## Layout
 
@@ -382,9 +383,9 @@ Motion is functional: state changes use `--duration-fast`, progress fades in aft
 
 Icons: 16px in header and panel actions, 14px in bars, fields, and toggles, 12px in rows, tabs, and segmented items; rest ink `text-secondary`, `text-primary` on hover. Tabs show the explorer's Pierre colored file icon, mapped to theme tokens by hue family.
 
-**Logo (decisions 0104, 0108).** A Z inside a zero, the Z 24 units wide on the 32 grid: the Z in ink, the zero's side rails in coral (`--color-brand-mark`, `#ff6b4a` on dark, `#f2502e` on light), parted by a gap. `BrandMark` draws it: the 16 grid at 24px and under, the 32 grid above. The footer uses one color so the chrome stays quiet, with the rails at 55%; Welcome and the site use two. The docs logo and social card set it beside "Zero" in outlined JetBrains Mono Bold; the landing wordmark is live text in its system mono stack. The desktop icon is graphite `#2b2d33` with a white Z: a square tile on Linux (`icon.png`), and on macOS a continuous-corner squircle (`icon.icns`), so Tahoe adds no grey plate. Masters live in `docs/brand/`.
+**Logo (decisions 0104, 0108).** A Z inside a zero, the Z 24 units wide on the 32 grid: the Z in ink, the zero's side rails in coral (`--color-brand-mark`, `#ff6b4a` on dark, `#f2502e` on light), parted by a gap. `BrandMark` draws it: the 16 grid at 24px and under, the 32 grid above. The footer uses one color so the chrome stays quiet, with the rails at 55%; Welcome and the site use two. The docs logo and social card set it beside "Zero" in outlined IBM Plex Mono Bold (the card's tagline in Regular); the landing wordmark is live text in bundled IBM Plex Mono (decision 0130). The desktop icon is graphite `#2b2d33` with a white Z: a square tile on Linux (`icon.png`), and on macOS a continuous-corner squircle (`icon.icns`), so Tahoe adds no grey plate. Masters live in `docs/brand/`.
 
-**Focus.** Rows, icon buttons, toggles, segmented items, and copy controls draw a 1px `--color-focus` outline inset 1px. Standalone buttons draw 2px, offset 1px. Fields replace their border with `--color-focus` and add a 1px ring. Invalid fields use `destructive` for the full border and ring.
+**Focus.** Rows, icon buttons, toggles, segmented items, and copy controls draw a 1px `--color-focus` outline inset 1px. Standalone buttons draw 2px, offset 1px. Fields replace their border with `--color-focus` and add a 1px ring. Invalid fields use `destructive` for the full border and ring. Only controls ring: containers that take focus (the inline sidebar dialog, `main`, sections, scroll areas, the source and image documents) draw none (decision 0130).
 
 ## Components
 
@@ -400,7 +401,7 @@ Every view composes these from `apps/web/src/components/ui/`; a missing capabili
 - **TextField** and **Select**: 28px fields with icon, leading, and trailing slots; the palette variant is borderless, 40px (44px mobile), with an accent underline. **TextArea** shares the field's border, focus, and selection, grows with its content to 16rem, and resizes vertically.
 - **ListRow** / **ListButton**: `text-primary` ink; list density 24px, pick 32px, menu, and drawer. Hover adds the state layer; active and selected rows use the selection fill and ink; disabled (`aria-disabled`) rows take no hover.
 - **SectionToggle** and **Chevron**: 24px disclosure rows; the chevron rotates inside any `aria-expanded="true"` row.
-- **ViewHeader**: the 32px band naming a view or dialog: 12px 600 monospace title, actions at the end.
+- **ViewHeader**: the 32px band naming a view or dialog: 12px 500 monospace title in `text-secondary`, actions at the end.
 - **ChangeMark**: a line gutter's change marker filling the gutter's end inset: a 3px bar (`success` added, `accent` modified) or a `destructive` wedge between rows (deleted). It needs a label (title and accessible name), is no Tab stop, and keeps its presses out of the gutter.
 - **Badge** (neutral counts, accent activity), **Kbd**, **Notice** (info, warning, error; bar or block; errors are alerts), **StatusMessage**, **ProgressBar** (2px sweep, edge or page), **CopyButton** (plain, raised, chip, gutter; check or X feedback for 1.6s, announced), **DialogShell** (palette, panel, viewer, drawer), and the Menu class names for Base UI menus.
 
@@ -412,7 +413,7 @@ A 2.5rem column on `workspace-chrome` with a 1px right border and 40px-square ro
 
 ### Explorer
 
-Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons, square rows, semantic token overrides, 14px `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
+Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons, square rows, semantic token overrides, 13px mono `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
 
 Below the header, a shelf on the same `workspace-chrome` band holds the explorer's
 query fields (4px top, 8px bottom, 12px sides, 4px between fields) and ends in a
@@ -566,7 +567,8 @@ Outside a repository the view reads “This folder isn't a git repository.”
 
 Each Uncommitted file's Source marks its changes in the gutter, and a mark opens this review at the change (see Line selection; decision 0115).
 
-Uncommitted carries the Search count badge (named “4 files”) and actions View
+Uncommitted carries the Search count badge (named “4 files”) and, at the end
+of its header band while open (decision 0130), actions View
 as Tree / View as List (persisted; list by default), Collapse/Expand All
 Folders in tree mode, and Open Changes. The list is a `role="listbox"` named
 “Uncommitted changes” of 24px rows (32px narrow) indented to the pane title:
@@ -602,17 +604,16 @@ when selected. Branch chips for stack layer tips end the subject line.
 
 Stack lanes (decision 0129): HEAD's layer is lane 0 (`accent`); the other
 layers cycle lanes 1 to 3 top to bottom (`syntax-function`,
-`syntax-keyword`, `success`; `--color-lane-0` to `-3`). A layer's commits,
-from its tip for its own commit count up to the merge-base, draw a 2px rail
-in its hue on their leading edge, through their expanded details; filtered
-lists draw none. Branch chips take their lane's hue for border and text.
+`syntax-keyword`, `success`; `--color-lane-0` to `-3`). Lanes are hue only
+(decision 0130): no rail; branch names at a commit are unboxed 12px mono
+text in their lane's hue.
 
 The chevron, or Right and Left on the focused row, shows and hides a
 commit's details under it, on the subject's indent (decision 0042): the
 message body (secondary, line breaks kept), `author <email>`, the absolute
 date, the short hash chip with a 20px Copy action for the full hash, and,
-for stack layer tips, a 12px git-branch icon and branch-name chips (12px
-monospace, 1px border, both in the layer's lane hue). Details are
+for stack layer tips, a 12px git-branch icon and branch names (12px
+monospace, unboxed, both in the layer's lane hue). Details are
 12px muted lines; items wrap whole and truncate when wider than the pane.
 Last come the commit's files (decision 0112), read on expand: Uncommitted's
 flat rows (Pierre icon, name in `text-primary` at body size, muted 12px
@@ -664,9 +665,9 @@ drawer.
 
 Branches' header adds a muted “base main”; Branches has no action row. A
 `role="listbox"` named “Branches” lists the stack top to bottom: layers above
-HEAD, HEAD's layer (the name in 600, then a “HEAD” chip: 12px monospace,
-1px `accent` border and text), the layers below, each with its lane's 2px
-rail, a 14px git-branch icon in its lane hue, the name, and `+N` of its own
+HEAD, HEAD's layer (the name in 600, then “HEAD” in 12px monospace
+`text-muted`, unboxed), the layers below, each with a 14px git-branch icon
+in its lane hue, the name, and `+N` of its own
 commits in `success`; then the base row, which opens the base picker. Rows are named
 “feat-b, checked out, 2 commits on feat-a (also feat-b2)”. Hover and focus
 replace `+N` with 20px actions: Diff layer (layers icon, “Open changes on
@@ -937,7 +938,7 @@ Pane replicas carry their own diff and syntax tones (`--l-add*`, `--l-del*`, `--
 
 ### Typography
 
-**Display and body:** the system sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI"`). **Chrome:** the system mono stack (`ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas`). The landing bundles no fonts and never loads Inter; docs prose keeps Vocs' self-hosted Geist, and `_root.css` sets only the navigation in mono.
+**Display and body:** the system sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI"`). **Chrome:** IBM Plex Mono, bundled (400 to 700, `@fontsource/ibm-plex-mono` imported by `_root.css`), then the system mono stack (decision 0130). The landing never loads Inter; docs prose keeps Vocs' self-hosted Geist, and `_root.css` sets the navigation and Vocs' code (`--vocs-font-family-mono`) in Plex Mono.
 
 - **Display** (650, `clamp(2rem, 3.2vw, 2.75rem)`, 1.05, -0.035em, balanced): the one h1, in the hero row.
 - **Heading** (650, `clamp(1.625rem, 2.4vw, 2rem)`, 1.1, -0.03em, balanced): each feature row's h2.

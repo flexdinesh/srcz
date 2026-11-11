@@ -20,10 +20,6 @@
   line-height: var(--source-line-height);
 }
 
-.source-document:focus-visible {
-  outline-offset: -2px;
-}
-
 .source-document-line {
   display: flex;
   height: var(--source-line-height);

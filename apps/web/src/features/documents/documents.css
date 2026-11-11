@@ -31,10 +31,6 @@ article,
   padding: var(--space-4);
 }
 
-.image-document:focus-visible {
-  outline-offset: -2px;
-}
-
 .image-document-frame {
   position: relative;
   flex: none;

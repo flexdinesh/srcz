@@ -8,6 +8,13 @@
  * gray12 borders and text.
  */
 
+/* IBM Plex Mono, bundled: the one mono face of the app, site, and brand
+   (decision 0130). */
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/ibm-plex-mono/700.css";
+
 :root {
   --vocs-color-gray1: #1d2026;
   --vocs-color-gray2: #272b32;
@@ -47,7 +54,8 @@
   --sz-wash-coral: light-dark(#fcf1ee, #3d302d);
   --sz-mark: light-dark(#f2502e, #ff6b4a);
   --sz-mark-ink: light-dark(#2b2d33, #ffffff);
-  --sz-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --sz-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --vocs-font-family-mono: var(--sz-mono);
 }
 
 /* Vocs rounds through utility classes in many components, so one rule covers them. */
