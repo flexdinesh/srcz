@@ -148,10 +148,13 @@ test("Source Control lists every pending change and reviews them in one tab", as
   await expect(rail(page)).toHaveCount(0)
   await expect(filesToggle(page)).toHaveCount(0)
 
-  // Open File opens the document beside the review.
+  // Open File opens the document beside the review and shows the Explorer at it.
   await reviewFile(page, "README.md").getByRole("button", { name: "Open File" }).click()
   await expect(page.getByRole("tab", { name: "README.md", exact: true })).toHaveAttribute("aria-selected", "true")
   await expect(tab).toBeVisible()
+  await expect(page.getByRole("button", { name: "Explorer" })).toHaveAttribute("aria-pressed", "true")
+  await expect(activity).toHaveAttribute("aria-pressed", "false")
+  await expect(explorer.locator('[data-item-path="README.md"]')).toBeVisible()
 
   // Review tabs survive reloads.
   await tab.click()

@@ -358,6 +358,13 @@ export function App({ project }: AppProps) {
   const { main, prepareDocumentNavigation, navigateToDocument, navigateToHref,
     forgetDocumentScroll, resetDocumentScroll, reread } = useDocumentNavigation(project, page, isLoading, loadError,
     reviewCompare ? compareKey(reviewCompare) : "")
+  // A review's Open File shows the Explorer beside the file on desktop; the
+  // mobile drawer stays closed and a hidden sidebar stays hidden (decision 0132).
+  const { hidden: sidebarHidden, mobile: mobileSidebar } = sidebar
+  const openReviewFile = useCallback((path: string) => {
+    navigateToDocument(path)
+    if (!mobileSidebar && !sidebarHidden) revealSidebar("explorer")
+  }, [mobileSidebar, navigateToDocument, revealSidebar, sidebarHidden])
 
   // Walkthrough steps open ordinary routes with wt and step added.
   const goStep = useCallback((route: StepRoute, focusDocument: boolean) => {
@@ -440,7 +447,6 @@ export function App({ project }: AppProps) {
   // Opening a walkthrough's link shows its steps beside the code on desktop;
   // phones keep the drawer closed.
   const revealedWalkthrough = useRef("")
-  const mobileSidebar = sidebar.mobile
   useEffect(() => {
     if (!searchWalkthrough || searchWalkthrough === revealedWalkthrough.current) return
     revealedWalkthrough.current = searchWalkthrough
@@ -908,7 +914,7 @@ export function App({ project }: AppProps) {
               name={nameTab(reviewTab(shownReview))} data={reviewData} options={diffOptions.options} narrow={diffNarrow}
               scrollRoot={main} selection={fragment} expandRequest={expandRequest} treeFiles={treeFiles}
               viewedState={viewed.state} onViewedChange={viewed.mark} onSelectLines={selectReviewLines}
-              onCurrentFile={setCurrentFile} onStatus={setReviewStatus} onOpenFile={navigateToDocument}
+              onCurrentFile={setCurrentFile} onStatus={setReviewStatus} onOpenFile={openReviewFile}
               onAllExpandedChange={setAnyFileExpanded} onRegisterHunkStep={registerHunkStep} annotation={reviewAnnotation}
               comments={reviewFeedback.comments}
               scope={scope} marked={markedPaths} /> : undefined}
