@@ -1,5 +1,6 @@
 import type { HighlightRange } from "../features/search/search-engine.ts"
 import { availableSettings, settingDefinitions, type SettingId } from "../settings/settings.ts"
+import { shortcutLabel } from "./history-controls.ts"
 
 const mac = typeof navigator !== "undefined" && navigator.platform.includes("Mac")
 
@@ -9,6 +10,9 @@ export type CommandAction =
   | { kind: "open-setting"; setting: SettingId }
   | { kind: "go-to-definition" }
   | { kind: "find-references" }
+  | { kind: "go-back" }
+  | { kind: "go-forward" }
+  | { kind: "recent-locations" }
   | { kind: "walkthrough-step"; direction: 1 | -1 }
   | { kind: "walkthrough-exit" }
   | { kind: "walkthrough-present" }
@@ -32,7 +36,8 @@ export interface CommandMatch {
 
 // Open Settings and the Color Theme pick come first; then each setting is a
 // command that opens Settings at that setting; then code navigation, which
-// acts on the name last clicked in Source; then walkthrough stepping, which
+// acts on the name last clicked in Source, and history (decision 0131); then
+// walkthrough stepping, which
 // acts on the walkthrough last opened; then Source Control's file history,
 // which acts on the working-tree file in view; then Help.
 export const commands: readonly Command[] = [
@@ -46,6 +51,9 @@ export const commands: readonly Command[] = [
   })),
   { id: "navigation.goToDefinition", category: "Navigation", title: "Go to Definition", action: { kind: "go-to-definition" }, shortcut: "F12" },
   { id: "navigation.findReferences", category: "Navigation", title: "Find All References", action: { kind: "find-references" }, shortcut: "Shift+F12" },
+  { id: "navigation.goBack", category: "Navigation", title: "Go Back", action: { kind: "go-back" }, shortcut: shortcutLabel(-1, mac) },
+  { id: "navigation.goForward", category: "Navigation", title: "Go Forward", action: { kind: "go-forward" }, shortcut: shortcutLabel(1, mac) },
+  { id: "navigation.recentLocations", category: "Navigation", title: "Recent Locations", action: { kind: "recent-locations" } },
   { id: "walkthrough.next", category: "Walkthrough", title: "Next Step", action: { kind: "walkthrough-step", direction: 1 }, shortcut: mac ? "⌘→" : "Ctrl+Right" },
   { id: "walkthrough.previous", category: "Walkthrough", title: "Previous Step", action: { kind: "walkthrough-step", direction: -1 }, shortcut: mac ? "⌘←" : "Ctrl+Left" },
   { id: "walkthrough.present", category: "Walkthrough", title: "Present", action: { kind: "walkthrough-present" } },

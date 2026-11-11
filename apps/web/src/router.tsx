@@ -18,6 +18,7 @@ import { isCommitHash } from "./lib/commit-hash.ts"
 import { routeAt } from "./workspace/workspace-tabs.ts"
 import { routeStep, routeWalkthrough } from "./features/walkthrough/walkthrough-steps.ts"
 import { routeFeedback } from "./features/feedback/feedback-model.ts"
+import { navigationHistoryFor } from "./workspace/navigation-history-store.ts"
 
 interface PageSearch {
   [key: string]: unknown
@@ -175,6 +176,9 @@ export const router = createRouter({
   scrollRestoration: false,
   defaultHashScrollIntoView: false,
 })
+
+// Follow history from the first route on, before the workspace mounts.
+navigationHistoryFor(router.history)
 
 declare module "@tanstack/react-router" {
   interface Register {

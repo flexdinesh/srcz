@@ -80,3 +80,18 @@
     opacity: 0;
   }
 }
+
+/* Back and Forward lead the strip as Zed's pane does (decision 0131): bar
+   squares on workspace chrome, closed by a tab's divider. Phones keep the
+   room for tabs; the OS and browser have their own back. */
+.history-buttons {
+  display: flex;
+  flex: none;
+  border-right: 1px solid var(--color-border);
+}
+
+@media (max-width: 48rem) {
+  .history-buttons {
+    display: none;
+  }
+}

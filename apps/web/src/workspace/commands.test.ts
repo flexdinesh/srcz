@@ -52,3 +52,12 @@ test("Show File History is a Source Control command", () => {
   assert.equal(match?.command.id, "sourceControl.showFileHistory")
   assert.deepEqual(match?.command.action, { kind: "show-file-history" })
 })
+
+test("Go Back, Go Forward, and Recent Locations are Navigation commands", () => {
+  assert.deepEqual(matchCommands(commands, "go back").map((match) => match.command.action), [{ kind: "go-back" }])
+  assert.deepEqual(matchCommands(commands, "go forward").map((match) => match.command.action), [{ kind: "go-forward" }])
+  const [recent] = matchCommands(commands, "recent")
+  assert.equal(recent?.command.category, "Navigation")
+  assert.deepEqual(recent?.command.action, { kind: "recent-locations" })
+  assert.equal(recent?.command.shortcut, undefined)
+})
