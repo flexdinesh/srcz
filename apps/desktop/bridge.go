@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
@@ -217,8 +218,40 @@ func (h *host) menu() *mygo.Menu {
 		}},
 		{Role: mygo.RoleEditMenu},
 		{Role: mygo.RoleViewMenu},
+		h.goMenu(runtime.GOOS),
 		h.windowMenu(runtime.GOOS),
 	})
+}
+
+// goMenu moves through the window's history with VS Code's keys (decision
+// 0131): Ctrl+Alt+- and Ctrl+Shift+- outside macOS, Ctrl+- and Ctrl+Shift+-
+// on macOS. The page owns history; the menu names the move.
+func (h *host) goMenu(goos string) *mygo.MenuItem {
+	back := "Ctrl+Alt+-"
+	if goos == "darwin" {
+		back = "Ctrl+-"
+	}
+	item := func(label, accelerator, move string) *mygo.MenuItem {
+		return &mygo.MenuItem{Label: label, Accelerator: accelerator, Click: func(_ *mygo.MenuItem, window *mygo.Window) {
+			if window != nil {
+				go h.navigate(window, move)
+			}
+		}}
+	}
+	return &mygo.MenuItem{Label: "Go", Submenu: []*mygo.MenuItem{
+		item("Back", back, "back"),
+		item("Forward", "Ctrl+Shift+-", "forward"),
+		mygo.Separator(),
+		item("Recent Locations…", "", "recent"),
+	}}
+}
+
+// navigate asks the page to make a history move; pages without a
+// workspace ignore it.
+func (h *host) navigate(window *mygo.Window, move string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, _ = window.Page().EvalContext(ctx, `return window.dispatchEvent(new CustomEvent("zero:navigate", { detail: `+strconv.Quote(move)+`, cancelable: true }))`)
 }
 
 // windowMenu replaces the native Close action with the workspace's Close Tab.

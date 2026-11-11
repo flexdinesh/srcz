@@ -629,6 +629,56 @@ func TestWebViewApp(t *testing.T) {
 		waitForExit(app)
 	})
 
+	t.Run("Go menu keys and page keys move through history", func(t *testing.T) {
+		w.t = t
+		isolate("history")
+		app := w.launch(w.project)
+		defer app.stop()
+		app.waitEval("Welcome", `return document.querySelector('[role=tab][aria-selected=true]')?.textContent === "Welcome"`)
+		for index, path := range []string{"README.md", "main.go"} {
+			app.eval(`location.href = "/view?project=" + encodeURIComponent(` + strconv.Quote(w.project) + `) + "&path=" + ` + strconv.Quote(path) + `; return true`)
+			app.waitEval("the open document tabs", fmt.Sprintf(`return document.querySelectorAll('[role=tab]').length >= %d && document.querySelector('[role=tab][aria-selected=true]')?.textContent === %q`, index+1, path))
+		}
+		// Selecting tabs adds history entries within the page: main.go,
+		// README.md, main.go.
+		pick := func(path string) {
+			t.Helper()
+			app.eval(`[...document.querySelectorAll('[role=tab]')].find((tab) => tab.textContent === ` + strconv.Quote(path) + `).click(); return true`)
+		}
+		// selected waits for the tab, then checks that it stays: a move the
+		// menu and the page both made would go on to the next entry.
+		selected := func(what, path string) {
+			t.Helper()
+			script := fmt.Sprintf(`return document.querySelector('[role=tab][aria-selected=true]')?.textContent === %q`, path)
+			app.waitEval(what, script)
+			time.Sleep(500 * time.Millisecond)
+			if still, err := app.evalErr(script); err != nil || still != true {
+				t.Fatalf("%s: moved past %s (%v)", what, path, err)
+			}
+		}
+		pick("README.md")
+		selected("README.md selected", "README.md")
+		pick("main.go")
+		selected("main.go selected", "main.go")
+		press := func(args ...string) {
+			t.Helper()
+			if output, err := exec.Command("xdotool", args...).CombinedOutput(); err != nil {
+				t.Fatalf("xdotool: %v\n%s", err, output)
+			}
+		}
+		press("key", "--clearmodifiers", "ctrl+alt+minus")
+		selected("Back by the Go menu", "README.md")
+		press("key", "--clearmodifiers", "alt+Left")
+		selected("Back by Alt+Left", "main.go")
+		app.waitEval("Back disabled at the first entry", `return document.querySelector('[aria-label="Go Back"]')?.getAttribute("aria-disabled") === "true"`)
+		press("key", "--clearmodifiers", "ctrl+shift+minus")
+		selected("Forward by the Go menu", "README.md")
+		press("key", "--clearmodifiers", "alt+Right")
+		selected("Forward by Alt+Right", "main.go")
+		// WebKitGTK reports a mouse's side buttons as the primary button, so
+		// the page cannot follow them on Linux (decision 0131).
+	})
+
 	t.Run("notices for a project on this computer", func(t *testing.T) {
 		w.t = t
 		useHandler(t, "notices")

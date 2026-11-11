@@ -87,6 +87,10 @@ import { StatusBar, type DiffStatus } from "./workspace/StatusBar.tsx"
 import { TitleBar } from "./workspace/TitleBar.tsx"
 import type { CompareData } from "./features/source-control/use-compare-data.ts"
 import { TabBar } from "./workspace/TabBar.tsx"
+import { NavigationButtons } from "./workspace/NavigationButtons.tsx"
+import { RecentLocations } from "./workspace/RecentLocations.tsx"
+import { entryKey, useNavigationHistory } from "./workspace/navigation-history-store.ts"
+import { useNavigationKeys } from "./workspace/use-navigation-keys.ts"
 import { useDocumentFormats } from "./features/documents/use-document-format.ts"
 import { useDelayedFlag } from "./lib/use-delayed-flag.ts"
 import { useDocumentNavigation } from "./features/documents/use-document-navigation.ts"
@@ -165,6 +169,8 @@ interface AppProps {
 export function App({ project }: AppProps) {
   const navigate = useNavigate()
   const router = useRouter()
+  // Back and Forward follow the window's history across projects (decision 0131).
+  const { log: historyLog, store: historyStore } = useNavigationHistory()
   const routed = useRouterState({ select: (state) => activePageResult(state.matches) })
   const result = routed?.kind === "page" && routed.page.project !== project ? null : routed
   const isLoading = useRouterState({ select: (state) => state.isLoading })
@@ -204,6 +210,7 @@ export function App({ project }: AppProps) {
   const openSettings = useRef<OpenSettings>(() => {})
   const openCommands = useRef<() => void>(() => {})
   const openColorTheme = useRef<() => void>(() => {})
+  const openRecent = useRef<() => void>(() => {})
   const stepHunk = useRef<HunkStep>(() => {})
   const [lastPage, setLastPage] = useState<PageData | null>(() => result ? initialPage(result) : null)
   useEffect(() => {
@@ -231,6 +238,11 @@ export function App({ project }: AppProps) {
   const registerColorTheme = useCallback((open: (() => void) | null) => {
     openColorTheme.current = open ?? (() => {})
   }, [])
+  const registerRecent = useCallback((open: (() => void) | null) => {
+    openRecent.current = open ?? (() => {})
+  }, [])
+  const showRecent = useCallback(() => openRecent.current(), [])
+  useNavigationKeys(historyStore, showRecent)
   const runNavigation = useRef<(kind: NavigationKind) => void>(() => {})
   const walkthroughCommands = useRef({ move: (_direction: 1 | -1) => {}, close: () => {}, present: () => {} })
   const openWelcomeCommand = useRef(() => {})
@@ -243,9 +255,12 @@ export function App({ project }: AppProps) {
     else if (action.kind === "walkthrough-present") walkthroughCommands.current.present()
     else if (action.kind === "go-to-definition") runNavigation.current("definition")
     else if (action.kind === "find-references") runNavigation.current("references")
+    else if (action.kind === "go-back") historyStore.go(-1)
+    else if (action.kind === "go-forward") historyStore.go(1)
+    else if (action.kind === "recent-locations") openRecent.current()
     else if (action.kind === "select-color-theme") openColorTheme.current()
     else openSettings.current(action.kind === "open-setting" ? action.setting : undefined)
-  }, [])
+  }, [historyStore])
   const sidebar = useSidebar()
   const { reveal: revealSidebar } = sidebar
   // feedbackVersion rereads feedback: an announcement, a change on disk
@@ -552,6 +567,13 @@ export function App({ project }: AppProps) {
   const listedWalkthroughs = walkthroughs.list.result
   const nameTab = useCallback((tab: WorkspaceTab) => tabName(tab, compareContext,
     (id) => listedWalkthroughs?.find((entry) => entry.id === id)?.title ?? ""), [compareContext, listedWalkthroughs])
+  // The history entry on screen takes the name its tab shows.
+  const historyKey = useRouterState({ select: (state) => entryKey(state.location) })
+  useEffect(() => {
+    if (isLoading || !routedTab) return
+    const { label, title } = nameTab(routedTab)
+    historyStore.name(historyKey, label, title)
+  }, [historyKey, historyStore, isLoading, nameTab, routedTab])
   const gitStatus = useMemo(() => (changes.result?.files ?? []).map((file) => ({ path: file.path, status: file.status })), [changes.result])
   const { open: openWalkthrough } = walkthroughs
   const openWelcome = useCallback(() => {
@@ -849,6 +871,7 @@ export function App({ project }: AppProps) {
             <IconButton className="workspace-toggle project-toggle" size="bar" aria-haspopup="dialog"
               label={`Switch project (${page.repository || page.rootName || page.project || "none"})`}
               icon={<FolderGit2Icon aria-hidden="true" />} onClick={chooseProject} />
+            <NavigationButtons log={historyLog} store={historyStore} project={project} />
             <TabBar
               active={activeTab}
               tabs={workspace.tabs}
@@ -966,6 +989,7 @@ export function App({ project }: AppProps) {
       <SettingsDialog registerOpen={registerSettings} notificationStatus={notificationStatus} />
       <CommandPalette registerOpen={registerCommands} onRun={runCommand} />
       <ColorThemePicker registerOpen={registerColorTheme} />
+      <RecentLocations log={historyLog} project={project} registerOpen={registerRecent} onOpen={navigateToHref} />
       <NavigationDialog panel={codeNavigation.panel} onClose={closeNavigation} onOpen={openNavigationResult} />
     </>
   )

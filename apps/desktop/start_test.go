@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -154,6 +155,29 @@ func TestWindowMenuClosesTabsInsteadOfTheWindow(t *testing.T) {
 			}
 			if !found {
 				t.Fatal("no Cmd/Ctrl+W tab action")
+			}
+		})
+	}
+}
+
+func TestGoMenuMovesThroughHistoryWithVSCodeKeys(t *testing.T) {
+	for goos, keys := range map[string][]string{"darwin": {"Ctrl+-", "Ctrl+Shift+-"}, "linux": {"Ctrl+Alt+-", "Ctrl+Shift+-"}} {
+		t.Run(goos, func(t *testing.T) {
+			item := (&host{}).goMenu(goos)
+			if item.Label != "Go" {
+				t.Fatalf("label %q", item.Label)
+			}
+			var accelerators []string
+			for _, entry := range item.Submenu {
+				if entry.Label != "" && entry.Click == nil {
+					t.Fatalf("%s does nothing", entry.Label)
+				}
+				if entry.Accelerator != "" {
+					accelerators = append(accelerators, entry.Accelerator)
+				}
+			}
+			if !slices.Equal(accelerators, keys) {
+				t.Fatalf("accelerators %v, want %v", accelerators, keys)
 			}
 		})
 	}
