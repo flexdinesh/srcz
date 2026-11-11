@@ -81,6 +81,14 @@
   --color-field-bg: var(--color-surface);
   /* Field edges hold 3:1 against the field and its surroundings (WCAG 1.4.11). */
   --color-field-border: color-mix(in srgb, var(--color-text-muted) 90%, var(--color-surface));
+  /* Source Control hues (decision 0129), mapped onto roles every theme sets:
+     the commit hash in git log's amber, and the stack's lanes. HEAD's layer
+     takes the accent; the other layers cycle hues that stay off it. */
+  --color-commit-hash: var(--color-warning);
+  --color-lane-0: var(--color-accent);
+  --color-lane-1: var(--color-syntax-function);
+  --color-lane-2: var(--color-syntax-keyword);
+  --color-lane-3: var(--color-success);
   /* Scrollbar thumbs are translucent ink too (decision 0055). */
   --color-scrollbar-thumb: color-mix(in srgb, var(--color-text-primary) 22%, transparent);
   --color-scrollbar-thumb-hover: color-mix(in srgb, var(--color-text-primary) 35%, transparent);

@@ -4,18 +4,18 @@ import test from "node:test"
 import type { StackLayer, StackResponse } from "@zero/contracts"
 import type { Compare } from "./compare.ts"
 import type { CompareFile } from "./compare-files.ts"
-import { detailsFiles, diffGlyph, fileParts, moreFilesLabel, onBaseBranch, refChips, stackRows } from "./source-control-panes.ts"
+import { commitLanes, detailsFiles, diffGlyph, fileParts, layerLanes, moreFilesLabel, onBaseBranch, refChips, stackRows } from "./source-control-panes.ts"
 
 const a = "a".repeat(40)
 const b = "b".repeat(40)
 const c = "c".repeat(40)
 
-function layer(name: string, head: string, parent: string, current = false, aliases: string[] = []): StackLayer {
-  return { name, aliases, head, parent, ahead: 1, current }
+function layer(name: string, head: string, parent: string, current = false, aliases: string[] = [], ahead = 1): StackLayer {
+  return { name, aliases, head, parent, ahead, current }
 }
 
-function stack(layers: StackLayer[]): StackResponse {
-  return { repository: true, branch: "feat-b", base: "main", mergeBase: "", head: b, layers, truncated: false }
+function stack(layers: StackLayer[], mergeBase = ""): StackResponse {
+  return { repository: true, branch: "feat-b", base: "main", mergeBase, head: b, layers, truncated: false }
 }
 
 test("HEAD on the base branch, or tracking origin's copy, lists all history", () => {
@@ -56,10 +56,28 @@ test("the row after capped details names how many files remain", () => {
 
 test("stack layers name their commits, current first", () => {
   const chips = refChips(stack([layer("feat-c", c, "feat-b"), layer("feat-b", b, "feat-a", true, ["feat-b2"]), layer("", a, "main", false)]))
-  assert.deepEqual(chips.get(b), [{ name: "feat-b", current: true }, { name: "feat-b2", current: false }])
-  assert.deepEqual(chips.get(c), [{ name: "feat-c", current: false }])
+  assert.deepEqual(chips.get(b), [{ name: "feat-b", current: true, lane: 0 }, { name: "feat-b2", current: false, lane: 0 }])
+  assert.deepEqual(chips.get(c), [{ name: "feat-c", current: false, lane: 1 }])
   assert.equal(chips.has(a), false)
   assert.equal(refChips(null).size, 0)
+})
+
+test("HEAD's layer takes lane 0; the others cycle the remaining hues top to bottom", () => {
+  const layers = [layer("e", a, "d"), layer("d", a, "c"), layer("c", a, "b", true), layer("b", a, "a"), layer("a", a, "main")]
+  assert.deepEqual(layerLanes(layers), [1, 2, 0, 3, 1])
+  assert.deepEqual(layerLanes([]), [])
+})
+
+test("commits take their layer's lane from its tip for its ahead commits, up to the merge-base", () => {
+  const [h1, h2, h3, h4, h5, h6] = ["1", "2", "3", "4", "5", "6"].map((digit) => digit.repeat(40))
+  const commits = [h1, h2, h3, h4, h5, h6].map((hash) => ({ hash: hash ?? "" }))
+  const layers = stack([layer("feat-b", h1 ?? "", "feat-a", true, [], 2), layer("feat-a", h3 ?? "", "main", false, [], 2)], h6)
+  assert.deepEqual([...commitLanes(commits, layers, false)], [[h1, 0], [h2, 0], [h3, 1], [h4, 1]])
+  // Commits from the merge-base on take none, whatever a layer counts.
+  const short = stack([layer("feat-b", h1 ?? "", "main", true, [], 10)], h3)
+  assert.deepEqual([...commitLanes(commits, short, false)], [[h1, 0], [h2, 0]])
+  assert.equal(commitLanes(commits, layers, true).size, 0)
+  assert.equal(commitLanes(commits, null, false).size, 0)
 })
 
 test("stack rows diff each layer against the one below, and everything against the base", () => {
@@ -74,6 +92,7 @@ test("stack rows diff each layer against the one below, and everything against t
     { kind: "branch", base: "", head: "", uncommitted: false },
     { kind: "branch", base: "", head: "feat-a", uncommitted: false },
   ])
+  assert.deepEqual(rows.map((row) => row.lane), [1, 0, 2])
   assert.deepEqual(stackRows(null, ""), [])
 })
 

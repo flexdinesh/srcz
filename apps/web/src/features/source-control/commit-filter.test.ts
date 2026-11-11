@@ -3,7 +3,7 @@ import test from "node:test"
 
 import type { CommitsResponse } from "@zero/contracts"
 import {
-  appliedFilter, closedFilter, emptyHistoryMessage, fileHistory, filterAnnouncement, isFiltered, moreLabel, sameHistoryFilter,
+  appliedFilter, emptyFilter, emptyHistoryMessage, fileHistory, filterAnnouncement, isFiltered, moreLabel, sameHistoryFilter,
 } from "./commit-filter.ts"
 
 function page(change: Partial<CommitsResponse> = {}): CommitsResponse {
@@ -13,15 +13,14 @@ function page(change: Partial<CommitsResponse> = {}): CommitsResponse {
   }
 }
 
-test("a closed row filters nothing; an open one sends the trimmed query and path", () => {
-  assert.deepEqual(appliedFilter({ open: false, query: "fix", path: "a.ts" }), { query: "", path: "" })
-  assert.deepEqual(appliedFilter({ open: true, query: "  fix  ", path: "a.ts" }), { query: "fix", path: "a.ts" })
-  assert.equal(isFiltered(appliedFilter(closedFilter)), false)
-  assert.equal(isFiltered(appliedFilter({ open: true, query: "   ", path: "" })), false)
+test("reads send the trimmed query and path; blank filters nothing", () => {
+  assert.deepEqual(appliedFilter({ query: "  fix  ", path: "a.ts" }), { query: "fix", path: "a.ts" })
+  assert.equal(isFiltered(appliedFilter(emptyFilter)), false)
+  assert.equal(isFiltered(appliedFilter({ query: "   ", path: "" })), false)
 })
 
-test("file history opens the row on the path alone", () => {
-  assert.deepEqual(fileHistory("src/app.ts"), { open: true, query: "", path: "src/app.ts" })
+test("file history filters to the path alone", () => {
+  assert.deepEqual(fileHistory("src/app.ts"), { query: "", path: "src/app.ts" })
   assert.deepEqual(appliedFilter(fileHistory("src/app.ts")), { query: "", path: "src/app.ts" })
 })
 

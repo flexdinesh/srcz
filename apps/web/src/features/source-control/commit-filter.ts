@@ -1,12 +1,10 @@
 import type { CommitsResponse } from "@zero/contracts"
 
-// Pure state for the Commits filter row (decision 0114): a query matched
+// Pure state for the Commits filter (decisions 0114, 0129): a query matched
 // against message, author, and hash prefix, and a path whose history the
-// list shows. The row is transient: never persisted.
+// list shows. The filter is transient: never persisted.
 
 export interface CommitFilter {
-  // open shows the row; a closed row filters nothing.
-  open: boolean
   query: string
   // path is repository-relative; "" for none.
   path: string
@@ -18,17 +16,16 @@ export interface HistoryFilter {
   path: string
 }
 
-export const closedFilter: CommitFilter = { open: false, query: "", path: "" }
+export const emptyFilter: CommitFilter = { query: "", path: "" }
 export const noHistoryFilter: HistoryFilter = { query: "", path: "" }
 
-// fileHistory opens the row on a file's history, dropping any query.
+// fileHistory filters to a file's history, dropping any query.
 export function fileHistory(path: string): CommitFilter {
-  return { open: true, query: "", path }
+  return { query: "", path }
 }
 
-// appliedFilter is the filter a read sends: nothing while the row is closed.
+// appliedFilter is the filter a read sends: the trimmed query and the path.
 export function appliedFilter(filter: CommitFilter): HistoryFilter {
-  if (!filter.open) return noHistoryFilter
   return { query: filter.query.trim(), path: filter.path }
 }
 

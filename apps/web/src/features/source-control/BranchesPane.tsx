@@ -6,14 +6,18 @@ import { IconButton } from "../../components/ui/icon-button.tsx"
 import { ListRow } from "../../components/ui/list-row.tsx"
 import { StatusMessage } from "../../components/ui/notice.tsx"
 import { shortHash } from "../../lib/commit-hash.ts"
+import { BasePicker } from "./BasePicker.tsx"
 import type { Compare } from "./compare.ts"
 import { stackRows, type StackRow } from "./source-control-panes.ts"
 import type { BranchStack } from "./use-branch-stack.ts"
+import type { Refs } from "./use-refs.ts"
 
 interface BranchesPaneProps {
   stack: BranchStack
   // base is the chosen base branch, "" for the default.
   base: string
+  refs: Refs
+  onBaseChange(base: string): void
   // onOpen opens a compare's review; focusDocument moves focus to it.
   onOpen(compare: Compare, focusDocument: boolean): void
 }
@@ -25,8 +29,9 @@ function plural(count: number, noun: string): string {
 // BranchesPane shows the branch stack (decision 0040): the layers above
 // HEAD, HEAD's layer, the layers below, then the base at the merge-base.
 // A layer diffs its own commits against the layer below, or everything since
-// the base; Enter opens the base diff.
-export function BranchesPane({ base, stack, onOpen }: BranchesPaneProps) {
+// the base; Enter opens the base diff. The base row opens the base picker
+// (decision 0129).
+export function BranchesPane({ base, refs, stack, onBaseChange, onOpen }: BranchesPaneProps) {
   const { error, refresh, result } = stack
   const rows = useMemo(() => stackRows(result, base), [base, result])
   const container = useRef<HTMLDivElement>(null)
@@ -56,6 +61,8 @@ export function BranchesPane({ base, stack, onOpen }: BranchesPaneProps) {
     event.preventDefault()
   }
 
+  const baseRow = result && <BasePicker base={base} name={baseName} mergeBase={result.mergeBase} refs={refs} onChange={onBaseChange} />
+
   return (
     <div className="branches-pane">
       {error && <div className="source-control-message">
@@ -68,6 +75,7 @@ export function BranchesPane({ base, stack, onOpen }: BranchesPaneProps) {
             : result.branch && result.branch === result.base ? `On ${result.base}.` : `Nothing ahead of ${result.base}.`}</StatusMessage>
         </div>
       )}
+      {result && rows.length === 0 && baseRow}
       {rows.length > 0 && (
         <div className="branches-scroll">
           <div ref={container} className="branch-rows" role="listbox" aria-label="Branches" onKeyDown={onKeyDown}>
@@ -76,12 +84,7 @@ export function BranchesPane({ base, stack, onOpen }: BranchesPaneProps) {
                 onFocus={() => setFocused(index)} onOpen={(compare) => onOpen(compare, true)} />
             ))}
           </div>
-          <div className="branch-row branch-row-base" title={result?.mergeBase ? `${baseName} at the merge-base ${result.mergeBase}` : baseName}>
-            <GitBranchIcon className="compare-row-icon" aria-hidden="true" />
-            <span className="compare-row-label">{baseName}</span>
-            {result?.mergeBase && <code className="ref-chip ref-chip-hash">{shortHash(result.mergeBase)}</code>}
-            <span className="compare-row-age">merge-base</span>
-          </div>
+          {baseRow}
           {result?.truncated && <StatusMessage className="compare-list-hint">Some local branches weren't checked.</StatusMessage>}
         </div>
       )}
@@ -110,14 +113,14 @@ function BranchRow({ baseName, focusable, row, onFocus, onOpen }: BranchRowProps
   )
   return (
     <ListRow role="option" tabIndex={focusable ? 0 : -1} aria-selected={false} className="compare-row branch-row"
-      data-current={layer.current || undefined}
+      data-current={layer.current || undefined} data-lane={row.lane}
       aria-label={`${name}${layer.current ? ", checked out" : ""}, ${plural(layer.ahead, "commit")} on ${layer.parent}${aliases}`}
       title={`${name}${aliases}\n${plural(layer.ahead, "commit")} on ${layer.parent}`}
       onFocus={onFocus}
       onDoubleClick={() => onOpen(baseDiff)}>
       <GitBranchIcon className="compare-row-icon branch-row-icon" aria-hidden="true" />
       <span className="compare-row-label">{name}</span>
-      {layer.current && layer.name && <span className="compare-row-age">HEAD</span>}
+      {layer.current && layer.name && <span className="branch-row-head">HEAD</span>}
       <span className="branch-row-ahead" aria-hidden="true">+{layer.ahead.toLocaleString()}</span>
       <span className="row-actions">
         {layerDiff && action(`Open changes on ${name} since ${layer.parent}`, <LayersIcon aria-hidden="true" />, layerDiff)}

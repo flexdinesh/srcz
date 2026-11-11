@@ -1,17 +1,21 @@
 import { Popover } from "@base-ui/react/popover"
-import { CheckIcon, ChevronDownIcon, SearchIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, GitBranchIcon, SearchIcon } from "lucide-react"
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
-import { IconButton } from "../../components/ui/icon-button.tsx"
-import { ListRow } from "../../components/ui/list-row.tsx"
+import { ListButton, ListRow } from "../../components/ui/list-row.tsx"
 import { menuPositionerClass } from "../../components/ui/menu.ts"
 import { StatusMessage } from "../../components/ui/notice.tsx"
 import { TextField } from "../../components/ui/text-field.tsx"
+import { shortHash } from "../../lib/commit-hash.ts"
 import type { Refs } from "./use-refs.ts"
 
 interface BasePickerProps {
   // base is the chosen base, "" for the default.
   base: string
+  // name is the base the stack compares with, "" when none was found.
+  name: string
+  // mergeBase is HEAD's merge-base with it, "" when unknown.
+  mergeBase: string
   refs: Refs
   onChange(base: string): void
 }
@@ -25,8 +29,9 @@ interface Choice {
 
 // BasePicker chooses the branch the branch compare starts from (decision
 // 0035): local and remote-tracking branches, filtered as you type, or the
-// default the server finds.
-export function BasePicker({ base, refs, onChange }: BasePickerProps) {
+// default the server finds. Its trigger is the stack's base row (decision
+// 0129): the base, the merge-base, and a chevron.
+export function BasePicker({ base, mergeBase, name, refs, onChange }: BasePickerProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [cursor, setCursor] = useState(0)
@@ -70,8 +75,15 @@ export function BasePicker({ base, refs, onChange }: BasePickerProps) {
         refs.load()
       }
     }}>
-      <Popover.Trigger render={<IconButton className="compare-base-trigger" label="Change base branch"
-        icon={<ChevronDownIcon aria-hidden="true" />} />} />
+      <Popover.Trigger render={<ListButton density="list" className="compare-row branch-row-base"
+        aria-label={name ? `Change base branch, ${name}` : "Choose base branch"}
+        title={name && mergeBase ? `${name} at the merge-base ${mergeBase}` : name || undefined} />}>
+        <GitBranchIcon className="compare-row-icon" aria-hidden="true" />
+        <span className="compare-row-label">{name || "Choose base branch"}</span>
+        <ChevronDownIcon className="branch-row-base-chevron" aria-hidden="true" />
+        {mergeBase && <code className="ref-chip ref-chip-hash">{shortHash(mergeBase)}</code>}
+        {mergeBase && <span className="compare-row-age">merge-base</span>}
+      </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner className={menuPositionerClass} sideOffset={4} align="start">
           <Popover.Popup className="ui-menu base-picker" initialFocus={input} aria-label="Base branch">

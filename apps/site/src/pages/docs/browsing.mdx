@@ -93,22 +93,25 @@ Source Control stacks three panes, always in this order:
 - **Commits** lists your branch's commits since it left its base, or the whole
   history with All, 50 at a time. On the base branch itself it always shows
   the whole history. Click a commit's chevron, or press Right, to show its
-  message, author, date, hash, and the stacked branches it tips. The search
-  icon in its header filters commits by message, author, or hash prefix.
+  message, author, date, hash, and the stacked branches it tips. The field
+  at its top filters commits by message, author, or hash prefix; Escape
+  clears it.
 - **Branches** shows your branch stack: the branches between the base and
-  your checkout, any built on top of it, and the base at the merge-base.
+  your checkout, any built on top of it, and the base at the merge-base. Each
+  branch has its own color, and its commits in Commits carry it as a stripe
+  along their edge.
 
 Empty panes start closed; open or close any pane and Zero remembers it.
 Drag between open panes to resize them. The base defaults to `origin/HEAD`,
-`main`, or `master`; pick another from the Branches header, and Zero
-remembers it per project. Zero reads git data directly; `git` need not be
+`main`, or `master`; click the base at the foot of Branches to pick another,
+and Zero remembers it per project. Zero reads git data directly; `git` need not be
 installed.
 
 ### File history and commit search
 
 **Show File History**, in a file's Explorer or tab menu or the command palette
 (**Source Control › Show File History**, for the file in view), filters Commits
-to the commits that changed that file and shows it as a chip under the search
+to the commits that changed that file and shows it as a chip under the filter
 field; remove the chip with its ×. Type in the field to also match a commit's
 message, author name or email, or the start of its hash (4 or more digits).
 Branch and All still apply, so switch to All for a file's whole history.
