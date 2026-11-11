@@ -79,6 +79,7 @@ export default function UiGallery() {
           <IconButton label="Refresh" disabledReason="Nothing to refresh" icon={<RefreshCwIcon />} />
           <IconButton label="Disabled" disabled icon={<RefreshCwIcon />} />
           <IconButton label="Comment on lines" size="xs" variant="gutter" icon={<MessageSquarePlusIcon />} />
+          <IconButton label="Show details" size="xs" variant="bare" icon={<Chevron />} />
         </Row>
       </Section>
 

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 
-import { expect, type Page } from "@playwright/test"
+import { expect, type Locator, type Page } from "@playwright/test"
 import { test } from "./live-test.ts"
 
 import {
@@ -344,6 +344,50 @@ test("a review's scrollbar runs only its pane's height, in a lane on the review'
   expect(mainBox.y).toBe(toolbarBox.y + toolbarBox.height)
   expect(railBox.y).toBe(mainBox.y)
   expect(railBox.y + railBox.height).toBe(mainBox.y + mainBox.height)
+})
+
+test("every Source Control pane scrolls in one lane at the sidebar's edge", async ({ page }) => {
+  await openSourceControl(page)
+  await expect(changeRow(page, "README.md")).toBeVisible()
+  await expect(commitRow(page, featureSubject)).toBeVisible()
+  await expect(branchesList(page).getByRole("option").first()).toBeVisible()
+  const right = async (locator: Locator) => {
+    const box = await locator.boundingBox()
+    if (!box) throw new Error("not laid out")
+    return box.x + box.width
+  }
+  // Rows in every pane end on one edge: no pane reserves a second gutter.
+  const edge = await right(changeRow(page, "README.md"))
+  expect(await right(commitRow(page, featureSubject))).toBe(edge)
+  expect(await right(branchesList(page).getByRole("option").first())).toBe(edge)
+  // The tree owns its scroller, so it spans its pane's full width.
+  await pane(page, "Uncommitted").getByRole("button", { name: "View as Tree" }).click()
+  await expect(pane(page, "Uncommitted").getByRole("treeitem", { name: "README.md", exact: true })).toBeVisible()
+  expect(await right(pane(page, "Uncommitted").locator(".file-tree-host"))).toBe(await right(pane(page, "Uncommitted")))
+})
+
+test("a commit's details chevron adds no fill over its hovered row", async ({ page }) => {
+  await openSourceControl(page)
+  const toggle = commitRow(page, featureSubject).getByRole("button", { name: "Show commit details" })
+  await toggle.hover()
+  expect(await toggle.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgba(0, 0, 0, 0)")
+})
+
+test("sidebar query fields rest on the panes' strong border; focus keeps the accent ring", async ({ page }) => {
+  await openSourceControl(page)
+  const field = commitFilter(page).locator(".ui-field")
+  const divider = await pane(page, "Commits").evaluate((element) => getComputedStyle(element).borderTopColor)
+  expect(await field.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe(divider)
+  await commitQuery(page).focus()
+  const focus = await page.evaluate(() => {
+    const probe = document.createElement("div")
+    probe.style.color = "var(--color-focus)"
+    document.body.append(probe)
+    const color = getComputedStyle(probe).color
+    probe.remove()
+    return color
+  })
+  expect(await field.evaluate((element) => getComputedStyle(element).borderTopColor)).toBe(focus)
 })
 
 test("every corner is square, inside Pierre's trees and diffs and on overlays", async ({ page }) => {

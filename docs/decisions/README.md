@@ -134,3 +134,4 @@ rewriting history; update `Status` on the old record.
 | [0129](0129-base-row-picker-inline-commit-filter-and-lanes.md) | Base row picker, inline commit filter, and stack lanes | Accepted; supersedes 0035 and 0123 base picker trigger, 0114 filter toggle; extends 0040, 0042, 0123; rails and chip borders superseded by 0130 |
 | [0130](0130-ibm-plex-mono-quiet-scm-chrome-and-container-focus.md) | IBM Plex Mono, quieter Source Control chrome, and no container focus rings | Accepted; supersedes 0102 and 0104 mono faces, 0123 pane action row, 0129 rails and chip borders; revises 0122 |
 | [0131](0131-back-forward-navigation.md) | Back and forward navigation | Accepted; amends 0056, 0097 |
+| [0133](0133-sidebar-field-edges.md) | Sidebar field edges | Accepted; amends 0045 |
