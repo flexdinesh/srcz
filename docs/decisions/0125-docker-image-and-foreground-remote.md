@@ -1,6 +1,6 @@
 # 0125: Docker image and foreground remote
 
-- Status: Accepted
+- Status: Accepted; `edge` image removed by [0134](0134-dev-installs-build-from-source.md)
 - Date: 2026-11-11
 - Extends: [0061](0061-daemon-roots-and-leases.md) daemon lifetime, [0079](0079-releases-edge-prerelease-and-install-scripts.md) release assets, [0098](0098-remote-connections.md) remote connections
 

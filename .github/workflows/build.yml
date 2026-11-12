@@ -1,8 +1,8 @@
 name: Build
 
 # Builds every distribution asset for one commit (decision 0079); release.yml
-# (stable tags) and ci.yml (the edge prerelease) call it and publish the
-# result. cli (Go archives, archive smoke) -> desktop-linux and desktop-macos
+# (stable tags) calls it and publishes the result. Development installs build
+# from source on the user's machine instead (decision 0134). cli (Go archives, archive smoke) -> desktop-linux and desktop-macos
 # (packages bundling those binaries, smoke checks) -> assets (the expected set,
 # checksums.txt). Every job uploads an assets-* artifact; callers download them
 # all with pattern assets-*. image (decision 0125) builds the container image
@@ -17,7 +17,7 @@ on:
         required: true
         type: string
       version:
-        description: Version stamped into the binaries and packages and used in asset names (X.Y.Z, or 0.0.0-edge)
+        description: Version stamped into the binaries and packages and used in asset names (X.Y.Z)
         required: true
         type: string
       retention-days:
@@ -25,11 +25,6 @@ on:
         required: false
         type: number
         default: 30
-      macos-arches:
-        description: Space-separated macOS architectures to build; arm64 must be one (the smoke tests run it)
-        required: false
-        type: string
-        default: amd64 arm64
 
 permissions:
   contents: read
@@ -71,7 +66,6 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ inputs.version }}
-          MACOS_ARCHES: ${{ inputs.macos-arches }}
         run: |
           set -euo pipefail
 
@@ -82,10 +76,7 @@ jobs:
           rm -rf release-dist
           mkdir -p release-dist
 
-          targets=(linux/amd64 linux/arm64)
-          for arch in $MACOS_ARCHES; do
-            targets+=("darwin/${arch}")
-          done
+          targets=(linux/amd64 linux/arm64 darwin/amd64 darwin/arm64)
           for target in "${targets[@]}"; do
             goos="${target%/*}"
             goarch="${target#*/}"
@@ -290,9 +281,8 @@ jobs:
       - name: Package desktop app
         env:
           VERSION: ${{ inputs.version }}
-          MACOS_ARCHES: ${{ inputs.macos-arches }}
           GOTOOLCHAIN: go1.27.3
-        run: apps/desktop/scripts/package.sh darwin "$VERSION" release-dist desktop-dist "$MACOS_ARCHES"
+        run: apps/desktop/scripts/package.sh darwin "$VERSION" release-dist desktop-dist
 
       # arm64 only: macos-latest runs on Apple silicon.
       - name: Smoke test desktop packages
@@ -340,7 +330,6 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ inputs.version }}
-          MACOS_ARCHES: ${{ inputs.macos-arches }}
         run: |
           set -euo pipefail
 
@@ -349,10 +338,6 @@ jobs:
             expected+=(
               "zero_${VERSION}_linux_${arch}.tar.gz"
               "zero-desktop_${VERSION}_linux_${arch}.tar.gz"
-            )
-          done
-          for arch in $MACOS_ARCHES; do
-            expected+=(
               "zero_${VERSION}_darwin_${arch}.tar.gz"
               "zero-desktop_${VERSION}_darwin_${arch}.zip"
             )

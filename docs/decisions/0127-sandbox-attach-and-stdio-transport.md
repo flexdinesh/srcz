@@ -1,6 +1,6 @@
 # 0127: `zero attach` to sandboxes, over a stdio transport
 
-- Status: Accepted
+- Status: Accepted; development builds' image revised by [0134](0134-dev-installs-build-from-source.md) (`zero-dev:<version>`)
 - Date: 2026-11-11
 - Extends: [0098](0098-remote-connections.md) (a third `Endpoint`, `Exec`),
   [0080](0080-application-layer-contracts-and-transports.md) (another

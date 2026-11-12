@@ -112,7 +112,7 @@ docker run --rm -p 127.0.0.1:7971:7971 -v "$PWD:$PWD" -w "$PWD" \
   --user "$(id -u):$(id -g)" ghcr.io/flexdinesh/zero
 ```
 
-Open http://localhost:7971. The image (`latest`, `<version>`, or `edge`) runs
+Open http://localhost:7971. The image (`latest` or `<version>`) runs
 `zero browser`: plain http with no authentication. `127.0.0.1:` keeps the port
 on this machine; `-p 7971:7971` would serve your files to every network the
 host is on. The directory mounts at its own path because linked worktrees store

@@ -1,16 +1,19 @@
 #!/bin/sh
-# Installs the zero CLI and desktop app from the edge prerelease: latest main,
-# rebuilt by CI after every green push. Stable installs use scripts/install.sh.
-# Decisions 0073, 0079, and 0101.
+# Installs the zero CLI and desktop app built from source: any branch of
+# github.com/flexdinesh/zero, or a commit on one, main by default. For
+# developers and contributors; stable installs use scripts/install.sh.
+# Decision 0134.
 #
-#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh
-#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-edge.sh | sh -s -- --cli-only
+#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-dev.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-dev.sh | sh -s -- --ref feat/x
+#   curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install-dev.sh | sh -s -- --ref 1a2b3c4d
 #
-# Installs in the same places as scripts/install.sh and replaces either
-# install. --cli-only writes only the zero binary. Remove with
-# scripts/uninstall.sh.
-
-
+# Needs git, mise, and jq; never installs them. The ref's own `mise run dist`
+# builds it (mise.lock's toolchain; mise, Go, and pnpm keep their caches), and
+# `mise run dist:image` builds the zero-dev image zero attach uses when Docker
+# runs. Builds report 0.0.0-dev.<branch> (0.0.0-dev.g<commit> for a commit),
+# the commit, and its date. Installs in the same places as scripts/install.sh
+# and replaces either install. Remove with scripts/uninstall.sh.
 
 # shared:base:begin
 set -eu
@@ -282,6 +285,7 @@ name_available() {
 rerun() {
   printf 'Rerun: curl -fsSL https://raw.githubusercontent.com/%s/main/scripts/%s | sh -s --' "$REPO" "$INSTALL_SCRIPT" >&2
   if [ "$CLI_ONLY" = 1 ]; then printf ' --cli-only' >&2; fi
+  if [ -n "${REQUESTED_REF:-}" ]; then printf ' --ref %s' "$REQUESTED_REF" >&2; fi
   printf ' --name %s\n' "$1" >&2
 }
 select_name() {
@@ -363,26 +367,6 @@ finish_records() {
 }
 
 # shared:cli:end
-
-# shared:args:begin
-CLI_ONLY=0
-REQUESTED_NAME=""
-parse_args() {
-  while [ "$#" -gt 0 ]; do
-    case "$1" in
-      --cli-only) CLI_ONLY=1 ;;
-      --name)
-        [ "$#" -ge 2 ] || fail "--name requires a simple executable basename"
-        shift
-        valid_name "$1" || fail "invalid --name: use a simple executable basename"
-        REQUESTED_NAME="$1"
-        ;;
-      *) fail "unknown option $1; use --cli-only or --name NAME" ;;
-    esac
-    shift
-  done
-}
-# shared:args:end
 
 # shared:desktop-install:begin
 # check_webkit warns on Linux without WebKitGTK 4.1, which the app's window
@@ -521,45 +505,7 @@ install_desktop_macos() {
   link_desktop "$apps/zero-desktop.app/Contents/MacOS/zero-desktop"
 }
 
-# download_desktop unpacks the desktop app of release TAG into TMP/desktop.
-download_desktop() {
-  if [ "$OS" = linux ]; then
-    package="zero-desktop_${VERSION}_linux_${ARCH}.tar.gz"
-  else
-    package="zero-desktop_${VERSION}_darwin_${ARCH}.zip"
-  fi
-
-  step "downloading the zero desktop app $TAG ($OS/$ARCH)"
-  fetch "$(release_url "$package")" "$TMP/$package" ||
-    fail "zero $TAG has no $package; install the CLI alone with --cli-only"
-
-  mkdir -p "$TMP/desktop"
-  if [ "$OS" = linux ]; then
-    validate_tar "$TMP/$package"
-    tar -xzf "$TMP/$package" -C "$TMP/desktop"
-  else
-    unzip -tq "$TMP/$package" >/dev/null || fail "invalid archive $package"
-    unzip -Z -l "$TMP/$package" >"$TMP/archive-types" || fail "invalid archive $package"
-    if LC_ALL=C grep -q '^[lbcps]' "$TMP/archive-types"; then fail "unsafe archive entry in $package"; fi
-    unzip -Z1 "$TMP/$package" >"$TMP/archive-list" || fail "invalid archive $package"
-    validate_members "$TMP/archive-list"
-    if has ditto; then
-      ditto -x -k "$TMP/$package" "$TMP/desktop"
-    else
-      unzip -q "$TMP/$package" -d "$TMP/desktop"
-    fi
-  fi
-  if [ "$OS" = linux ]; then
-    { [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
-      [ -f "$TMP/desktop/bin/zero" ] && [ -x "$TMP/desktop/bin/zero" ] &&
-      [ -f "$TMP/desktop/zero-desktop.png" ]; } || fail "$package has no valid zero-desktop app"
-  else
-    { [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
-      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ]; } || fail "$package has no valid zero-desktop.app"
-  fi
-}
-
-# install_desktop installs the app download_desktop unpacked.
+# install_desktop installs the app unpack_desktop unpacked.
 install_desktop() {
   if [ "$OS" = linux ]; then
     install_desktop_linux "$TMP/desktop"
@@ -570,11 +516,7 @@ install_desktop() {
 }
 # shared:desktop-install:end
 
-# shared:release:begin
-release_url() {
-  printf 'https://github.com/%s/releases/download/%s/%s' "$REPO" "$TAG" "$1"
-}
-
+# shared:unpack:begin
 validate_members() {
   [ -s "$1" ] || fail "empty archive"
   while IFS= read -r member; do
@@ -589,44 +531,194 @@ validate_tar() {
   if LC_ALL=C grep -q '^[^d-]' "$TMP/archive-types"; then fail "unsafe archive entry in $1"; fi
 }
 
-download_cli() {
+# unpack_cli ARCHIVE extracts zero_<VERSION>_<OS>_<ARCH>.tar.gz and sets CLI.
+unpack_cli() {
   name="zero_${VERSION}_${OS}_${ARCH}"
-  step "downloading zero $TAG ($OS/$ARCH)"
-  fetch "$(release_url "$name.tar.gz")" "$TMP/$name.tar.gz" || fail "could not download $name.tar.gz from zero $TAG"
-  validate_tar "$TMP/$name.tar.gz"
+  validate_tar "$1"
   mkdir -p "$TMP/cli"
-  tar -xzf "$TMP/$name.tar.gz" -C "$TMP/cli"
+  tar -xzf "$1" -C "$TMP/cli"
   CLI="$TMP/cli/$name/zero"
   { [ -f "$CLI" ] && [ -x "$CLI" ] && [ ! -L "$CLI" ]; } || fail "$name.tar.gz has no executable zero binary"
 }
-# shared:release:end
 
-edge_release() {
-  if [ "$OS" = darwin ] && [ "$ARCH" = amd64 ]; then
-    fail "edge has no macOS Intel builds; use the stable install script (the name without -edge)"
+# desktop_package sets package, the desktop app's asset name for VERSION.
+desktop_package() {
+  if [ "$OS" = linux ]; then
+    package="zero-desktop_${VERSION}_linux_${ARCH}.tar.gz"
+  else
+    package="zero-desktop_${VERSION}_darwin_${ARCH}.zip"
   fi
-  TAG=edge
-  VERSION=0.0.0-edge
 }
 
-INSTALL_SCRIPT=install-edge.sh
+# unpack_desktop ARCHIVE unpacks the desktop app package into TMP/desktop.
+unpack_desktop() {
+  mkdir -p "$TMP/desktop"
+  if [ "$OS" = linux ]; then
+    validate_tar "$1"
+    tar -xzf "$1" -C "$TMP/desktop"
+  else
+    unzip -tq "$1" >/dev/null || fail "invalid archive $package"
+    unzip -Z -l "$1" >"$TMP/archive-types" || fail "invalid archive $package"
+    if LC_ALL=C grep -q '^[lbcps]' "$TMP/archive-types"; then fail "unsafe archive entry in $package"; fi
+    unzip -Z1 "$1" >"$TMP/archive-list" || fail "invalid archive $package"
+    validate_members "$TMP/archive-list"
+    if has ditto; then
+      ditto -x -k "$1" "$TMP/desktop"
+    else
+      unzip -q "$1" -d "$TMP/desktop"
+    fi
+  fi
+  if [ "$OS" = linux ]; then
+    { [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
+      [ -f "$TMP/desktop/bin/zero" ] && [ -x "$TMP/desktop/bin/zero" ] &&
+      [ -f "$TMP/desktop/zero-desktop.png" ]; } || fail "$package has no valid zero-desktop app"
+  else
+    { [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
+      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ]; } || fail "$package has no valid zero-desktop.app"
+  fi
+}
+# shared:unpack:end
+
+
+# Options: --ref and --name. The desktop app always installs: --cli-only is
+# for scripts/install.sh only.
+CLI_ONLY=0
+REQUESTED_NAME=""
+REQUESTED_REF=""
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --ref)
+        [ "$#" -ge 2 ] || fail "--ref requires a branch or commit SHA"
+        shift
+        case "$1" in '' | -* | HEAD) fail "invalid --ref: name a branch on origin or a commit SHA" ;; esac
+        REQUESTED_REF="$1"
+        ;;
+      --name)
+        [ "$#" -ge 2 ] || fail "--name requires a simple executable basename"
+        shift
+        valid_name "$1" || fail "invalid --name: use a simple executable basename"
+        REQUESTED_NAME="$1"
+        ;;
+      *) fail "unknown option $1; use --ref REF or --name NAME" ;;
+    esac
+    shift
+  done
+  REF="${REQUESTED_REF:-main}"
+}
+
+check_tools() {
+  has git || fail "git is required; install it, then run this again"
+  has mise || fail "mise is required: https://mise.jdx.dev/getting-started.html"
+  has jq || fail "jq is required: https://jqlang.org/download/"
+}
+
+# slug TEXT prints TEXT as one semver prerelease identifier, also valid in a
+# Docker tag: runs of other characters become -, at most 64 characters, and an
+# all-digit result gets b- (a numeric identifier may not lead with 0).
+slug() {
+  value="$(printf '%s' "$1" | LC_ALL=C tr -c 'A-Za-z0-9-' '-' | sed 's/--*/-/g; s/^-//' | cut -c 1-64 | sed 's/-*$//')"
+  case "$value" in
+    '') value=branch ;;
+    *[!0-9]*) ;;
+    *) value="b-$value" ;;
+  esac
+  printf '%s' "$value"
+}
+
+# resolve_ref clones origin without file contents and checks out REF: a branch
+# on origin, or a commit SHA (7 to 40 hex digits) on one of its branches. GitHub
+# serves fork commits through this repository too; they are on no origin
+# branch. Sets SRC, COMMIT, and VERSION.
+resolve_ref() {
+  SRC="$TMP/src"
+  step "fetching github.com/$REPO"
+  git clone --quiet --filter=blob:none --no-checkout "https://github.com/$REPO.git" "$SRC" ||
+    fail "could not clone https://github.com/$REPO.git"
+  if git -C "$SRC" show-ref --verify --quiet "refs/remotes/origin/$REF"; then
+    COMMIT="$(git -C "$SRC" rev-parse --verify --quiet "refs/remotes/origin/$REF^{commit}")" ||
+      fail "branch $REF has no commit"
+    label="$(slug "$REF")"
+  else
+    sha="$(printf '%s' "$REF" | tr 'A-F' 'a-f')"
+    case "$sha" in
+      *[!0-9a-f]*) fail "$REF is neither a branch on origin nor a commit SHA" ;;
+    esac
+    if [ "${#sha}" -lt 7 ] || [ "${#sha}" -gt 40 ]; then
+      fail "$REF is neither a branch on origin nor a commit SHA (7 to 40 hex digits)"
+    fi
+    COMMIT="$(git -C "$SRC" rev-parse --verify --quiet "$sha^{commit}")" ||
+      fail "no commit $REF on origin, or more than one starts with it"
+    [ -n "$(git -C "$SRC" for-each-ref --contains "$COMMIT" refs/remotes/origin)" ] ||
+      fail "commit $REF is on no origin branch; forks are not supported"
+    label="g$(printf '%.12s' "$COMMIT")"
+  fi
+  git -C "$SRC" -c advice.detachedHead=false checkout --quiet --detach "$COMMIT" ||
+    fail "could not check out $COMMIT"
+  VERSION="0.0.0-dev.$label"
+}
+
+# dev_mise ARGS... runs mise in the clone with the dist contract's variables,
+# trusting the clone's config for that command only (no trust record).
+dev_mise() {
+  (cd "$SRC" && env MISE_TRUSTED_CONFIG_PATHS="$SRC" MISE_YES=1 \
+    ZERO_DIST_VERSION="$VERSION" ZERO_DIST_OUT="$TMP/dist" mise "$@")
+}
+
+# build_dist builds COMMIT with its own `mise run dist` into TMP/dist, and the
+# zero-dev:VERSION image with `mise run dist:image` when Docker runs. Sets
+# IMAGE when the image built.
+build_dist() {
+  grep -q '^\[tasks\.dist\]' "$SRC/mise.toml" 2>/dev/null ||
+    fail "$REF predates install-dev (its mise.toml has no dist task); pick a newer ref"
+  step "building zero $VERSION ($(printf '%.12s' "$COMMIT")); a first build downloads toolchains and takes minutes"
+  { dev_mise install && dev_mise run dist; } || fail "the build of $REF failed; nothing was installed"
+  IMAGE=""
+  if has docker && docker info >/dev/null 2>&1; then
+    step "building the zero-dev:$VERSION image for zero attach"
+    if dev_mise run dist:image; then
+      IMAGE="zero-dev:$VERSION"
+    else
+      warn "the zero-dev:$VERSION image did not build; zero attach needs it"
+    fi
+  else
+    warn "Docker is not running, so no zero-dev:$VERSION image; zero attach needs it"
+  fi
+}
+
+# unpack_dist unpacks the archive and desktop package build_dist made.
+unpack_dist() {
+  name="zero_${VERSION}_${OS}_${ARCH}"
+  [ -f "$TMP/dist/$name.tar.gz" ] || fail "the build made no $name.tar.gz"
+  unpack_cli "$TMP/dist/$name.tar.gz"
+  desktop_package
+  [ -f "$TMP/dist/$package" ] || fail "the build made no $package"
+  unpack_desktop "$TMP/dist/$package"
+}
+
+INSTALL_SCRIPT=install-dev.sh
 
 parse_args "$@"
 detect_platform
-edge_release
+if [ "$OS" = darwin ] && [ "$ARCH" = amd64 ]; then
+  fail "install-dev cannot build on macOS Intel (pnpm ships no binary for it); use scripts/install.sh"
+fi
+check_tools
 make_tmp
 init_records
 select_name
 writable_dir "$ZERO_CONFIG" || fail "cannot write $ZERO_CONFIG"
-if [ "$CLI_ONLY" = 0 ]; then check_desktop_conflicts; fi
-download_cli
-if [ "$CLI_ONLY" = 0 ]; then download_desktop; fi
-# All preflight checks and downloads finish before either destination changes.
+check_desktop_conflicts
+resolve_ref
+build_dist
+unpack_dist
+# All preflight checks and the build finish before either destination changes.
 NEW_RECORD="$TMP/new-record"
 : >"$NEW_RECORD"
-if [ "$CLI_ONLY" = 0 ]; then install_desktop; fi
+install_desktop
 install_cli
 finish_records
-if [ "$CLI_ONLY" = 0 ]; then check_webkit; fi
+check_webkit
+if [ -n "$IMAGE" ]; then ok "built $IMAGE for zero attach"; fi
 ok "done; open the current directory with:"
 note "$NAME ."

@@ -1,6 +1,6 @@
 # 0093: No macOS Intel on edge
 
-- Status: Accepted
+- Status: Superseded by [0134](0134-dev-installs-build-from-source.md) (no edge)
 - Date: 2026-11-05
 - Revises: [0079](0079-releases-edge-prerelease-and-install-scripts.md) ("the
   same asset set" on edge)

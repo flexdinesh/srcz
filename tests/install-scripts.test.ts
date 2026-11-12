@@ -5,10 +5,10 @@ import { dirname, join } from 'node:path'
 import test from 'node:test'
 import { crc32 } from 'node:zlib'
 
-// The install scripts (decisions 0073, 0079) run under /bin/sh with a fake
-// HOME and stub uname, curl, wget, go, ditto, xdg-mime,
-// update-desktop-database, and pgrep first on PATH. Stubs log their arguments
-// to STUB_LOG.
+// The install scripts (decisions 0073, 0079, 0134) run under /bin/sh with a
+// fake HOME and stub uname, curl, wget, go, ditto, xdg-mime,
+// update-desktop-database, pgrep, git, mise, jq, and docker first on PATH.
+// Stubs log their arguments to STUB_LOG.
 
 const repositoryRoot = process.cwd()
 const scriptsDir = join(repositoryRoot, 'scripts')
@@ -99,7 +99,54 @@ const STUBS: Record<string, string[]> = {
     '[ -f "$file" ] || exit 8',
     'if [ "$out" = - ]; then cat "$file"; else cp "$file" "$out"; fi',
   ],
+  // origin has the branches in STUB_BRANCHES at STUB_SHA; STUB_FORK_SHA is a
+  // commit GitHub serves that is on none of them. clone writes a mise.toml
+  // with a dist task unless STUB_NO_DIST.
+  git: [
+    'echo "git $*" >> "$STUB_LOG"',
+    'if [ "$1" = -C ]; then shift 2; fi',
+    'if [ "$1" = -c ]; then shift 2; fi',
+    'for last; do :; done',
+    'case "$1" in',
+    '  clone)',
+    '    mkdir -p "$last"',
+    '    if [ -z "${STUB_NO_DIST:-}" ]; then printf "[tasks.dist]\\n" > "$last/mise.toml"; else : > "$last/mise.toml"; fi ;;',
+    '  show-ref)',
+    '    case " ${STUB_BRANCHES:-main} " in *" ${last#refs/remotes/origin/} "*) exit 0 ;; esac',
+    '    exit 1 ;;',
+    '  rev-parse)',
+    '    ref="$(printf "%s" "$last" | sed "s/\\^{commit}\\$//")"',
+    '    case "$ref" in refs/remotes/origin/*) echo "$STUB_SHA"; exit 0 ;; esac',
+    '    case "$STUB_SHA" in "$ref"*) echo "$STUB_SHA"; exit 0 ;; esac',
+    '    case "$STUB_FORK_SHA" in "$ref"*) echo "$STUB_FORK_SHA"; exit 0 ;; esac',
+    '    exit 1 ;;',
+    '  for-each-ref)',
+    '    if [ "$3" = "$STUB_SHA" ]; then echo "$STUB_SHA commit refs/remotes/origin/main"; fi ;;',
+    'esac',
+  ],
+  // run dist copies STUB_RELEASE_DIR assets for ZERO_DIST_VERSION into
+  // ZERO_DIST_OUT, as the ref's real task builds them.
+  mise: [
+    'echo "mise $* version=${ZERO_DIST_VERSION:-} trusted=${MISE_TRUSTED_CONFIG_PATHS:-} pwd=$(pwd)" >> "$STUB_LOG"',
+    'if [ "$1 $2" = "run dist" ]; then',
+    '  [ -z "${STUB_DIST_FAIL:-}" ] || exit 1',
+    '  mkdir -p "$ZERO_DIST_OUT"',
+    '  for file in "$STUB_RELEASE_DIR/zero_${ZERO_DIST_VERSION}_"* "$STUB_RELEASE_DIR/zero-desktop_${ZERO_DIST_VERSION}_"*; do',
+    '    if [ -f "$file" ]; then cp "$file" "$ZERO_DIST_OUT/"; fi',
+    '  done',
+    'fi',
+  ],
+  jq: ['exit 0'],
+  // Not running unless STUB_DOCKER=0; image ls prints STUB_DOCKER_IMAGES.
+  docker: [
+    'echo "docker $*" >> "$STUB_LOG"',
+    'if [ "$1 $2" = "image ls" ]; then printf "%s" "${STUB_DOCKER_IMAGES:-}"; exit 0; fi',
+    'exit "${STUB_DOCKER:-1}"',
+  ],
 }
+
+const SHA = '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'
+const FORK_SHA = 'f0e1d2c3b4a5968778695a4b3c2d1e0f0e1d2c3b'
 
 function fakeZero(version: string): string {
   return [
@@ -151,13 +198,15 @@ async function createSandbox(
       STUB_UNAME_M: 'x86_64',
       STUB_RELEASE_DIR: join(root, 'release'),
       STUB_LATEST: 'https://github.com/flexdinesh/zero/releases/tag/v0.1.7',
+      STUB_SHA: SHA,
+      STUB_FORK_SHA: FORK_SHA,
     },
   }
 }
 
 // createRelease writes a release's assets for <os>/<arch> (linux/amd64 by
-// default), named for version (0.1.7 by default; the edge prerelease uses
-// 0.0.0-edge): the CLI archive.
+// default), named for version (0.1.7 by default; install-dev.sh builds
+// 0.0.0-dev.<branch>): the CLI archive.
 async function createRelease(
   sandbox: Sandbox,
   options: { arch?: string; os?: string; version?: string } = {},
@@ -310,8 +359,8 @@ void test('shared blocks are identical in every script that carries them', async
 })
 
 const CHANNELS = [
-  { script: 'install.sh', version: '0.1.7' },
-  { script: 'install-edge.sh', version: '0.0.0-edge' },
+  { script: 'install.sh', version: '0.1.7', cliOnly: true },
+  { script: 'install-dev.sh', version: '0.0.0-dev.main', cliOnly: false },
 ]
 const CLI_ONLY = ['--cli-only']
 const cliPath = (sandbox: Sandbox, name = 'zero') => join(sandbox.home, '.local', 'bin', name)
@@ -351,7 +400,7 @@ async function runPipedPTY(sandbox: Sandbox, script: string, answer: string, arg
   })
 }
 
-for (const { script, version } of CHANNELS) {
+for (const { script, version, cliOnly } of CHANNELS) {
   void test(`${script}: installs both components, records ownership, keeps canonical identity`, async (t) => {
     const sandbox = await createSandbox(t.after.bind(t), { homeName: 'home 50%' })
     await createFullRelease(sandbox, { version })
@@ -371,7 +420,7 @@ for (const { script, version } of CHANNELS) {
     assert.match(record, /^zero-install-v1\nname\tmy-zero\n/)
     for (const role of ['cli', 'app', 'link', 'entry', 'icon']) assert.ok(record.includes(`\n${role}\t`), role)
     assert.equal((await stat(recordPath(sandbox))).mode & 0o777, 0o600)
-    const output = await run(script, sandbox, {}, ['--cli-only'])
+    const output = await run(script, sandbox, {}, cliOnly ? CLI_ONLY : [])
     assertOk(output)
     assert.match(output.stdout, /updated .*my-zero/)
     assert.match(output.stdout, /my-zero \./)
@@ -462,7 +511,9 @@ for (const { script, version } of CHANNELS) {
 
   void test(`${script}: validates custom basenames and options before downloads`, async (t) => {
     const sandbox = await createSandbox(t.after.bind(t))
-    for (const args of [['--name'], ['--name', '../zero'], ['--name', '/tmp/zero'], ['--name', '-zero'], ['--name', 'white space'], ['--name', ''], ['--name', 'zero-desktop'], ['--wrong']]) {
+    const invalid = [['--name'], ['--name', '../zero'], ['--name', '/tmp/zero'], ['--name', '-zero'], ['--name', 'white space'], ['--name', ''], ['--name', 'zero-desktop'], ['--wrong']]
+    if (!cliOnly) invalid.push(['--cli-only'], ['--ref'], ['--ref', ''], ['--ref', '-x'], ['--ref', 'HEAD'])
+    for (const args of invalid) {
       assert.notEqual((await run(script, sandbox, {}, args)).code, 0, JSON.stringify(args))
     }
     assert.equal(await readFile(sandbox.log, 'utf8'), '')
@@ -484,7 +535,7 @@ for (const { script, version } of CHANNELS) {
     }
   })
 
-  void test(`${script}: cli-only skips desktop checks and downloads; preserves its record`, async (t) => {
+  if (cliOnly) void test(`${script}: cli-only skips desktop checks and downloads; preserves its record`, async (t) => {
     const sandbox = await createSandbox(t.after.bind(t))
     await createFullRelease(sandbox, { version })
     assertOk(await run(script, sandbox))
@@ -527,10 +578,10 @@ for (const { script, version } of CHANNELS) {
 void test('updates, name switches, channel switches, and uninstall use recorded fingerprints', async (t) => {
   const sandbox = await createSandbox(t.after.bind(t))
   await createFullRelease(sandbox)
-  await createFullRelease(sandbox, { version: '0.0.0-edge' })
+  await createFullRelease(sandbox, { version: '0.0.0-dev.main' })
   assertOk(await run('install.sh', sandbox, {}, ['--name', 'zero-cli']))
-  assertOk(await run('install-edge.sh', sandbox))
-  assert.match(await readFile(cliPath(sandbox, 'zero-cli'), 'utf8'), /0.0.0-edge/)
+  assertOk(await run('install-dev.sh', sandbox))
+  assert.match(await readFile(cliPath(sandbox, 'zero-cli'), 'utf8'), /0.0.0-dev.main/)
   assertOk(await run('install.sh', sandbox, {}, ['--name', 'another-zero']))
   assert.equal(await entryExists(cliPath(sandbox, 'zero-cli')), false)
   assert.equal(await exists(cliPath(sandbox)), false)
@@ -645,7 +696,7 @@ void test('platform support and missing latest release fail without installing',
   const sandbox = await createSandbox(t.after.bind(t))
   const unsupported: Record<string, string>[] = [{ STUB_UNAME_S: 'Windows' }, { STUB_UNAME_M: 'i686' }, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'x86_64' }]
   for (const env of unsupported) {
-    assert.notEqual((await run('install-edge.sh', sandbox, env)).code, 0)
+    assert.notEqual((await run('install-dev.sh', sandbox, env)).code, 0)
   }
   const result = await run('install.sh', sandbox, { STUB_LATEST: '' })
   assert.notEqual(result.code, 0)
@@ -765,5 +816,113 @@ void test('unsafe tar and ZIP members fail before installing either component', 
     assert.equal(await exists(cliPath(sandbox)), false)
     assert.equal(await exists(recordPath(sandbox)), false)
     assert.equal(await exists(join(sandbox.home, '.local/share')), false)
+  }
+})
+
+// --- install-dev.sh (decision 0134) ---
+
+// pathWithout links every system executable except names into a directory, so
+// a tool on the host's /usr/bin still counts as missing.
+async function pathWithout(sandbox: Sandbox, names: string[]): Promise<string> {
+  const bin = join(sandbox.root, 'system')
+  await mkdir(bin, { recursive: true })
+  for (const dir of SYSTEM_PATH.split(':')) {
+    for (const name of await readdir(dir)) {
+      if (names.includes(name) || await entryExists(join(bin, name))) continue
+      await symlink(join(dir, name), join(bin, name))
+    }
+  }
+  return `${sandbox.stubs}:${bin}`
+}
+
+void test('install-dev.sh: builds main by default with the ref\'s own dist task, trusting only the clone', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createFullRelease(sandbox, { version: '0.0.0-dev.main' })
+  const result = await run('install-dev.sh', sandbox)
+  assertOk(result)
+  assert.match(await readFile(cliPath(sandbox), 'utf8'), /0.0.0-dev.main/)
+  const log = await readFile(sandbox.log, 'utf8')
+  assert.match(log, /^git clone --quiet --filter=blob:none --no-checkout https:\/\/github\.com\/flexdinesh\/zero\.git /m)
+  assert.ok(log.includes(`checkout --quiet --detach ${SHA}`), log)
+  assert.match(log, /^mise install version=0\.0\.0-dev\.main trusted=\S+\/src pwd=\S+\/src$/m)
+  assert.match(log, /^mise run dist version=0\.0\.0-dev\.main trusted=\S+\/src pwd=\S+\/src$/m)
+  assert.doesNotMatch(log, /dist:image|releases\/download/)
+  assert.match(result.stdout, /Docker is not running, so no zero-dev:0\.0\.0-dev\.main image/)
+})
+
+void test('install-dev.sh: branches become version slugs; commits on origin branches use g<sha12>', async (t) => {
+  const cases = [
+    { ref: 'feat/x-1', branch: true, version: '0.0.0-dev.feat-x-1' },
+    { ref: 'Fix__Weird//name-', branch: true, version: '0.0.0-dev.Fix-Weird-name' },
+    { ref: '0123', branch: true, version: '0.0.0-dev.b-0123' },
+    { ref: SHA.slice(0, 7).toUpperCase(), branch: false, version: `0.0.0-dev.g${SHA.slice(0, 12)}` },
+    { ref: SHA, branch: false, version: `0.0.0-dev.g${SHA.slice(0, 12)}` },
+  ]
+  for (const { ref, branch, version } of cases) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox, { version })
+    const result = await run('install-dev.sh', sandbox, { STUB_BRANCHES: branch ? `main ${ref}` : 'main' }, ['--ref', ref])
+    assertOk(result)
+    assert.match(await readFile(cliPath(sandbox), 'utf8'), new RegExp(version.replaceAll('.', '\\.')), ref)
+  }
+})
+
+void test('install-dev.sh: fork commits, tags, and unknown refs stop before building or installing', async (t) => {
+  for (const ref of [FORK_SHA, FORK_SHA.slice(0, 9), 'v0.2.0', 'deadbee', 'abc12']) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox, { version: '0.0.0-dev.main' })
+    const result = await run('install-dev.sh', sandbox, {}, ['--ref', ref])
+    assert.notEqual(result.code, 0, ref)
+    if (ref.startsWith(FORK_SHA.slice(0, 9))) assert.match(result.stderr, /on no origin branch; forks are not supported/)
+    assert.ok(result.stderr.includes(ref), result.stderr)
+    assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /mise/)
+    assert.equal(await exists(cliPath(sandbox)), false)
+    assert.equal(await exists(join(sandbox.home, '.local/share')), false)
+  }
+})
+
+void test('install-dev.sh: refs without a dist task and failed builds change nothing', async (t) => {
+  const failures: Record<string, string>[] = [{ STUB_NO_DIST: '1' }, { STUB_DIST_FAIL: '1' }]
+  for (const env of failures) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox, { version: '0.0.0-dev.main' })
+    const result = await run('install-dev.sh', sandbox, env)
+    assert.notEqual(result.code, 0)
+    assert.match(result.stderr, 'STUB_NO_DIST' in env ? /predates install-dev/ : /build of main failed; nothing was installed/)
+    assert.equal(await exists(cliPath(sandbox)), false)
+    assert.equal(await exists(recordPath(sandbox)), false)
+  }
+})
+
+void test('install-dev.sh: builds the zero-dev image when Docker runs; a failed image still installs', async (t) => {
+  const sandbox = await createSandbox(t.after.bind(t))
+  await createFullRelease(sandbox, { version: '0.0.0-dev.main' })
+  const result = await run('install-dev.sh', sandbox, { STUB_DOCKER: '0' })
+  assertOk(result)
+  assert.match(await readFile(sandbox.log, 'utf8'), /^mise run dist:image version=0\.0\.0-dev\.main trusted=\S+\/src pwd=\S+\/src$/m)
+  assert.match(result.stdout, /built zero-dev:0\.0\.0-dev\.main for zero attach/)
+  const uninstall = await run('uninstall.sh', sandbox, { STUB_DOCKER_IMAGES: 'zero-dev:0.0.0-dev.main\nzero-dev:0.0.0-dev.old\n' })
+  assertOk(uninstall)
+  assert.match(uninstall.stdout, /docker image rm zero-dev:0\.0\.0-dev\.main zero-dev:0\.0\.0-dev\.old/)
+})
+
+void test('install-dev.sh: missing git, mise, or jq stops with a hint before changing anything', async (t) => {
+  for (const tool of ['git', 'mise', 'jq']) {
+    const sandbox = await createSandbox(t.after.bind(t), { without: [tool] })
+    const result = await run('install-dev.sh', sandbox, { PATH: await pathWithout(sandbox, [tool]) })
+    assert.notEqual(result.code, 0, tool)
+    assert.match(result.stderr, new RegExp(`${tool} is required`))
+    assert.deepEqual(await readdir(sandbox.home), [])
+  }
+})
+
+void test('install-dev.sh: a running app or macOS Intel stops before cloning', async (t) => {
+  const stops: Record<string, string>[] = [{ STUB_PGREP: '0' }, { STUB_UNAME_S: 'Darwin', STUB_UNAME_M: 'x86_64' }]
+  for (const env of stops) {
+    const sandbox = await createSandbox(t.after.bind(t))
+    const result = await run('install-dev.sh', sandbox, env)
+    assert.notEqual(result.code, 0)
+    assert.match(result.stderr, 'STUB_PGREP' in env ? /desktop app is running/ : /macOS Intel/)
+    assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /git clone/)
   }
 })

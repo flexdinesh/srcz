@@ -224,14 +224,26 @@ func TestInstallExplainsFailures(t *testing.T) {
 	}
 }
 
+func TestInstallNamesInstallDevForAMissingDevImage(t *testing.T) {
+	installFake(t)
+	t.Setenv("FAKE_DOCKER_PULL_ERROR", "Error response from daemon: pull access denied for zero-dev")
+	_, err := web.Install(t.Context(), "0.0.0-dev.main")
+	want := "get zero-dev:0.0.0-dev.main for linux/arm64: Error response from daemon: pull access denied for zero-dev; scripts/install-dev.sh builds it"
+	if err == nil || !strings.Contains(err.Error(), want) {
+		t.Fatalf("Install = %v, want %q", err, want)
+	}
+}
+
 func TestImageRef(t *testing.T) {
 	tests := map[string]string{
 		"0.2.0":                         "ghcr.io/flexdinesh/zero:0.2.0",
 		"12.0.31":                       "ghcr.io/flexdinesh/zero:12.0.31",
-		"0.0.0-edge":                    "ghcr.io/flexdinesh/zero:edge",
-		"dev":                           "ghcr.io/flexdinesh/zero:edge",
-		"0.2.1-0.20261111000000-abcdef": "ghcr.io/flexdinesh/zero:edge",
-		"v0.2.0":                        "ghcr.io/flexdinesh/zero:edge",
+		"0.0.0-dev.feat-x":              "zero-dev:0.0.0-dev.feat-x",
+		"0.0.0-dev.g1a2b3c4d5e6f":       "zero-dev:0.0.0-dev.g1a2b3c4d5e6f",
+		"dev":                           "zero-dev:dev",
+		"0.2.1-0.20261111000000-abcdef": "zero-dev:0.2.1-0.20261111000000-abcdef",
+		"v0.2.0":                        "zero-dev:v0.2.0",
+		"0.0.0+build":                   "zero-dev:dev",
 	}
 	for version, want := range tests {
 		if got := ImageRef(version); got != want {

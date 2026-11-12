@@ -64,7 +64,7 @@ func TestSmokeAttachToAShellLessContainer(t *testing.T) {
 	}
 
 	container := docker.Container{Name: name, Dir: sandbox.InstallDir, Image: tag}
-	endpoint, err := attach.Attach(t.Context(), container, "/etc", "0.0.0-edge")
+	endpoint, err := attach.Attach(t.Context(), container, "/etc", "0.0.0-dev.main")
 	if err != nil {
 		t.Fatal(err)
 	}

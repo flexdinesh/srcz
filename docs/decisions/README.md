@@ -83,7 +83,7 @@ rewriting history; update `Status` on the old record.
 | [0076](0076-remote-servers-over-http.md) | Remote servers over http; ssh driven from the app | Superseded by 0095 (ssh, server windows) and 0098 (no-UI serving, links) |
 | [0077](0077-desktop-shell-stays-on-electron.md) | Desktop shell stays on Electron | Superseded by 0095 |
 | [0078](0078-apps-and-packages-layout.md) | `apps/` and `packages/` layout | Accepted; revised by 0080 |
-| [0079](0079-releases-edge-prerelease-and-install-scripts.md) | Releases, the edge prerelease, and install scripts only | Accepted; revised by 0092 and 0095 (names, assets), 0093 (edge assets), 0101 (one script per channel) |
+| [0079](0079-releases-edge-prerelease-and-install-scripts.md) | Releases, the edge prerelease, and install scripts only | Accepted; revised by 0092 and 0095 (names, assets), 0093 (edge assets), 0101 (one script per channel); edge superseded by 0134 |
 | [0080](0080-application-layer-contracts-and-transports.md) | Application layer, generated contracts, and transports | Accepted; source control stages by 0083; in-process package by 0084; navigation, metrics, image reads by 0085; walkthroughs by 0087 |
 | [0081](0081-desktop-bridge-v2-native-features.md) | Desktop bridge v2: reveal, native context menus, recent folders, folder drop | Accepted; folder drop and recent folders superseded by 0095 |
 | [0082](0082-native-mygo-experiment.md) | Experimental native app on mygo | Superseded for the native UI by 0094 |
@@ -97,14 +97,14 @@ rewriting history; update `Status` on the old record.
 | [0090](0090-native-trees-and-pierre-icons.md) | Native trees widget and Pierre icons | Superseded by 0094 |
 | [0091](0091-native-workspace-shell-and-memory.md) | Native workspace shell and memory | Superseded by 0094 |
 | [0092](0092-electron-app-name.md) | The Electron app is named srcz-electron | Superseded by 0095 |
-| [0093](0093-no-macos-intel-on-edge.md) | No macOS Intel on edge | Accepted; revises 0079 |
+| [0093](0093-no-macos-intel-on-edge.md) | No macOS Intel on edge | Superseded by 0134 |
 | [0094](0094-mygo-app-uses-web-views.md) | mygo app uses web views | Accepted; names and ssh superseded by 0095 |
 | [0095](0095-desktop-app-is-mygo-electron-removed.md) | Desktop app is mygo in web views; Electron removed | Accepted; resource checks moved to extended by 0096; server connections return in 0098; notifications return in 0099; Electron and mygo cleanup dropped by 0100; desktop scripts removed by 0101 |
 | [0096](0096-correctness-and-extended-validation.md) | Correctness checks and optional extended validation | Accepted; Dagger execution replaced by 0110 |
 | [0098](0098-remote-connections.md) | Remote connections: `srcz --remote` and `srcz connect` | Accepted; bridge revised by 0099 |
 | [0099](0099-desktop-notifications.md) | Desktop notifications | Accepted |
 | [0100](0100-rename-to-srcz.md) | Rename to srcz (Source Zero) | Accepted |
-| [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted |
+| [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted; edge script replaced by `install-dev.sh` in 0134 |
 | [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130 |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130 |
@@ -127,11 +127,12 @@ rewriting history; update `Status` on the old record.
 | [0122](0122-type-roles-and-list-size.md) | Type roles and the list size | Accepted; revises 0033; file rows revised by 0130 |
 | [0123](0123-pane-headers-and-two-line-commit-rows.md) | Pane headers toggle across their width; two-line commit rows | Accepted; supersedes 0040 pane header, extends 0042, 0112; Commits and Branches action rows superseded by 0129; Uncommitted action row by 0130 |
 | [0124](0124-change-steps.md) | Change steps land on changes, answer anywhere in the review, and show their place | Accepted; supersedes 0034 step unit and F7 scope, extends 0117 |
-| [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098 |
+| [0125](0125-docker-image-and-foreground-remote.md) | Docker image and foreground remote | Accepted; extends 0061, 0079, 0098; `edge` image removed by 0134 |
 | [0126](0126-tailscale-exposure.md) | Tailscale exposure | Accepted; extends 0098, 0125 |
-| [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098 |
+| [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098; development image revised by 0134 |
 | [0128](0128-sandbox-connections-in-the-desktop-app.md) | Sandbox connections in the desktop app | Accepted; extends 0098, 0127 |
 | [0129](0129-base-row-picker-inline-commit-filter-and-lanes.md) | Base row picker, inline commit filter, and stack lanes | Accepted; supersedes 0035 and 0123 base picker trigger, 0114 filter toggle; extends 0040, 0042, 0123; rails and chip borders superseded by 0130 |
 | [0130](0130-ibm-plex-mono-quiet-scm-chrome-and-container-focus.md) | IBM Plex Mono, quieter Source Control chrome, and no container focus rings | Accepted; supersedes 0102 and 0104 mono faces, 0123 pane action row, 0129 rails and chip borders; revises 0122 |
 | [0131](0131-back-forward-navigation.md) | Back and forward navigation | Accepted; amends 0056, 0097 |
 | [0133](0133-sidebar-field-edges.md) | Sidebar field edges | Accepted; amends 0045 |
+| [0134](0134-dev-installs-build-from-source.md) | Development installs build any branch or commit from source | Accepted; supersedes 0079 edge, 0093; revises 0101, 0125, 0127 |

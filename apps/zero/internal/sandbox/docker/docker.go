@@ -18,8 +18,12 @@ import (
 	"time"
 )
 
-// Image is zero's image; its tags are release versions and edge.
+// Image is zero's published image; its tags are release versions.
 const Image = "ghcr.io/flexdinesh/zero"
+
+// DevImage is the local image scripts/install-dev.sh builds for a development
+// build, tagged with its version (decision 0134). It is never pushed.
+const DevImage = "zero-dev"
 
 // imageBinary is zero's path in Image.
 const imageBinary = "/zero"
@@ -32,6 +36,8 @@ var (
 	nameRule = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]*$`)
 	// A release version; anything else is a development build.
 	releaseRule = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
+	// Docker's image tags.
+	tagRule = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`)
 )
 
 // Container is a running container, by name or ID.
@@ -55,13 +61,17 @@ func New(name, dir string) (Container, error) {
 	return Container{Name: name, Dir: dir}, nil
 }
 
-// ImageRef is zero's image for version: its own tag for a release, edge for
-// any other build.
+// ImageRef is zero's image for version: the published one for a release,
+// else the local DevImage tagged with the version (dev when the version is no
+// valid tag).
 func ImageRef(version string) string {
 	if releaseRule.MatchString(version) {
 		return Image + ":" + version
 	}
-	return Image + ":edge"
+	if tagRule.MatchString(version) {
+		return DevImage + ":" + version
+	}
+	return DevImage + ":dev"
 }
 
 // Platform implements sandbox.Environment: the platform of the container's
@@ -130,6 +140,9 @@ func (c Container) Install(ctx context.Context, version string) (string, error) 
 	// Creating a container pulls the image when needed, and runs nothing.
 	created, err := run(ctx, "create", "--platform", platform, image)
 	if err != nil {
+		if c.Image == "" && !releaseRule.MatchString(version) {
+			return "", fmt.Errorf("get %s for %s: %w; scripts/install-dev.sh builds it for Docker's own architecture when Docker runs", image, platform, err)
+		}
 		return "", fmt.Errorf("get %s for %s: %w", image, platform, err)
 	}
 	defer func() {

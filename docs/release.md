@@ -5,25 +5,24 @@ Zero ships only as GitHub release assets, installed with the scripts in
 point at plain `main` commits. Homebrew and `go install` are not supported.
 
 `.github/workflows/build.yml` builds every asset for one commit and version.
-Two workflows call it:
-
-- `release.yml`: pushing a `vX.Y.Z` tag publishes that stable release.
-- `ci.yml` (**Edge**): every push to `main` replaces the `edge` prerelease.
+`release.yml` calls it: pushing a `vX.Y.Z` tag publishes that stable release.
+CI publishes nothing else; development installs build any branch or commit
+from source with `scripts/install-dev.sh` (decision 0134).
 
 ## First Zero release: v0.2.0
 
 Keep the `0.2` series in `.release-version`; the first Zero stable release is
 **v0.2.0** (decision [0118](decisions/0118-zero-name-and-collision-safe-installs.md)).
 The operator coordinates the repository rename to `flexdinesh/zero`, the stable
-release, an edge build with Zero assets, and the site announcement. The website
+release, and the site announcement. The website
 domain and `sourcezero-docs` Cloudflare Worker stay unchanged. Implementation
 and PR merge do not tag or publish a release or rename the repository.
 
 Previously published releases remain immutable. Old releases carry `srcz`
 asset names; the new installers require `zero_*` and `zero-desktop_*` assets.
-Between cutover and their publication, stable or edge installation fails
-clearly before changing either component. Publish v0.2.0 and complete the
-Zero edge build before announcing those install commands as available.
+Between cutover and their publication, stable installation fails
+clearly before changing either component. Publish v0.2.0 before announcing
+the install command as available.
 Existing srcz installs and data remain untouched; Zero starts fresh.
 
 ## Stable releases
@@ -72,46 +71,41 @@ skip an existing release, so re-running failed jobs is safe. To redo a
 release whose publish failed before the release existed, re-run the
 workflow; to replace a published one, publish a new patch version.
 
-## Edge prerelease
+## Development installs
 
-After every push to `main`, the **Edge** workflow runs `build.yml` with
-version `0.0.0-edge` and `macos-arches: arm64` (no macOS Intel, decision 0093).
-When every build job passes, `publish` moves the `edge`
-tag to the pushed commit, creates or edits the `edge` release (prerelease,
-never latest, notes name the commit), uploads the assets with `--clobber`
-(same names every time, so each is replaced in place), and deletes assets
-no longer built. A newer push cancels an older build; publishing is never
-cancelled, and an older run skips publishing when `edge` already has a newer
-commit. The first green push creates the prerelease. Each publish then pushes
-the image to `ghcr.io/flexdinesh/zero:edge`.
+`scripts/install-dev.sh` clones any branch or commit on an origin branch and
+runs that ref's `mise run dist` (`apps/zero/scripts/dist.sh`), which builds
+this machine's archive and desktop package under the release asset names, then
+`mise run dist:image` for the local `zero-dev:<version>` image when Docker
+runs. Its builds report `zero 0.0.0-dev.<branch> <commit> <date>` (or
+`0.0.0-dev.g<commit>`); `zero attach` from them uses `zero-dev:<version>`. See
+the [development guide](development.md#install-a-branch-or-commit).
 
-Edge binaries report `zero 0.0.0-edge <commit> <date>`; the desktop app
-reports `zero-desktop 0.0.0-edge <commit>`.
+The `edge` prerelease, its tag, and `ghcr.io/flexdinesh/zero:edge` are no
+longer built (decision 0134). Delete them by hand once:
+`gh release delete edge --cleanup-tag --yes`, and the `edge` tag of the
+`zero` package in the GitHub package settings.
 
 ## Assets
 
-Each release and `edge` publishes `checksums.txt`, four archives, and four
-desktop packages, where `<version>` is the tag without its leading `v`, or
-`0.0.0-edge`:
+Each release publishes `checksums.txt`, four archives, and four desktop
+packages, where `<version>` is the tag without its leading `v`:
 
 - `zero_<version>_<darwin|linux>_<amd64|arm64>.tar.gz`
 - `zero-desktop_<version>_linux_<amd64|arm64>.tar.gz`
 - `zero-desktop_<version>_darwin_<amd64|arm64>.zip`
 
-`edge` omits every `darwin_amd64` asset (decision 0093); the edge install
-scripts stop on macOS Intel and point at the stable ones.
-
-The install scripts download these names:
+The install scripts use these names:
 
 | Script | Installs | From |
 | --- | --- | --- |
 | `install.sh` | CLI and desktop app; CLI alone with `--cli-only` | the release `releases/latest` redirects to |
-| `install-edge.sh` | CLI and desktop app; CLI alone with `--cli-only` | `releases/download/edge/` |
+| `install-dev.sh` | CLI and desktop app, built from `--ref` (default `main`) | the ref's `mise run dist` |
 
 These names are part of the installer contract. v0.1.6 and earlier have no
 `zero_*` or `zero-desktop_*` assets. The new stable installer stops until
-v0.2.0 publishes them; the new edge installer likewise requires a completed
-Zero build. Missing assets never authorize falling back to old srcz binaries.
+v0.2.0 publishes them. Missing assets never authorize falling back to old
+srcz binaries.
 
 Each archive contains the native `zero` binary, README, and license. The
 frontend is built into `apps/zero/internal/web/dist/` before Go
@@ -127,13 +121,10 @@ no auto-update; upgrade by running the install script again. To package locally,
 run `apps/desktop/scripts/package.sh` from the repository root with archives
 from the `cli` job.
 
-Stable and edge installers remember the exposed CLI name (`zero`, `zero-cli`,
+Stable and dev installers remember the exposed CLI name (`zero`, `zero-cli`,
 or an explicit `--name NAME`) and verify managed paths before updates and
 uninstall. Archives and the desktop's bundled binary always keep `zero`.
 See [installation details](../apps/site/src/pages/docs/getting-started.mdx#command-name-collisions).
-
-For development installs from `edge`, see the
-[development guide](development.md#install-from-main).
 
 The install scripts share code between `# shared:<name>:begin/end` markers;
 edit every copy. `mise run test:release` runs shellcheck and

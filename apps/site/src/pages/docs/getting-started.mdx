@@ -33,10 +33,10 @@ overwrite unmanaged copies.
 
 ### Command name collisions
 
-The canonical command is `zero`. Before changing either component, the stable
-and edge installers check for unrelated executables on `PATH` and occupied
-installation paths, including files, directories, and dangling symlinks. They
-also check the desktop app and launcher destinations.
+The canonical command is `zero`. Before changing either component, the
+installer checks for unrelated executables on `PATH` and occupied
+installation paths, including files, directories, and dangling symlinks. It
+also checks the desktop app and launcher destinations.
 
 If `zero` collides and `zero-cli` is available, the installer asks through your
 terminal whether to use `zero-cli`. The default is No. Declining, reaching EOF,
@@ -63,9 +63,8 @@ names.
 ### Updates and existing installs
 
 Quit the desktop app, then run the script again to update; it stops while the
-app runs. The installer remembers the chosen CLI name across updates and
-switches between stable and edge, so no collision prompt is needed for an
-installer-owned command. A successful install with a different `--name`
+app runs. The installer remembers the chosen CLI name across updates, so no
+collision prompt is needed for an installer-owned command. A successful install with a different `--name`
 retires the previous owned command. Managed paths and content fingerprints
 are recorded in Zero's configuration directory; modified or unrelated paths
 are left alone and reported.
@@ -76,8 +75,7 @@ walkthroughs are not migrated. Old connection strings do not carry across.
 
 The first Zero stable release is v0.2.0. Until its `zero_*` and
 `zero-desktop_*` assets are published, the new stable installer fails clearly
-without changing your installation. Edge likewise needs a completed build
-carrying Zero assets.
+without changing your installation.
 
 ### Uninstall
 
