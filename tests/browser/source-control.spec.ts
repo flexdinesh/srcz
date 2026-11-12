@@ -551,8 +551,6 @@ test("clicking a commit opens the commit's review with a Files rail, keeping foc
   await expect(filesToggle(page)).toHaveAttribute("aria-pressed", "true")
   await expect(railFile(page, "clean.md")).toContainText("+2 −0")
   await expect(railFile(page, "history.md")).toContainText("+3 −0")
-  // The first file is in view, so it is selected.
-  await expect(railFile(page, "history.md")).toHaveAttribute("aria-selected", "true")
   // Folders collapse one at a time too.
   await railFile(page, "docs").click()
   await expect(railFile(page, "history.md")).toHaveCount(0)
@@ -667,9 +665,9 @@ test("scrolling down a review never scrolls the pane back up", async ({ page }) 
 })
 
 // WebKit sends no wheel, pointer, or key event for a scrollbar drag or a
-// kinetic scroll, so a revealed file's pin ends once the reveal settles. The
-// file in view follows the scroll and never pulls the pane back; choosing a
-// file again reveals it again (decision 0135).
+// kinetic scroll, so a revealed file's pin ends once the reveal settles and
+// never pulls the pane back; choosing a file again reveals it again (decision
+// 0135). Scrolling never moves the selection (decision 0137).
 test("a settled reveal never pulls the pane back, and choosing the file again reveals it again", async ({ page }) => {
   await openSourceControl(page)
   // untracked.txt is last, below large.txt's long diff.
@@ -689,35 +687,16 @@ test("a settled reveal never pulls the pane back, and choosing the file again re
   await expect(fileToggle(page, "assets/logo.bin")).toHaveAttribute("aria-expanded", "false")
   await page.waitForTimeout(300)
   expect(await main.evaluate((pane) => pane.scrollTop)).toBe(0)
-  await expect(page.locator(".status-path")).toHaveText("assets/logo.bin")
-  await expect(changeRow(page, "assets/logo.bin")).toHaveAttribute("aria-selected", "true")
-  // Following the scroll never navigates.
+  // The chosen file stays selected and named; scrolling never navigates.
+  await expect(changeRow(page, "untracked.txt")).toHaveAttribute("aria-selected", "true")
+  await expect(changeRow(page, "assets/logo.bin")).not.toHaveAttribute("aria-selected", "true")
+  await expect(page.locator(".status-path")).toHaveText("untracked.txt")
   await expect(page).toHaveURL(/#f=untracked\.txt$/)
   expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
 
   await changeRow(page, "untracked.txt").click()
   await expect(fileToggle(page, "untracked.txt")).toBeInViewport()
   await expect(page.locator(".status-path")).toHaveText("untracked.txt")
-})
-
-test("a pinned review file stays the file in view behind a document tab", async ({ page }) => {
-  await openSourceControl(page)
-  const current = branchRow(page, "feature")
-  await current.hover()
-  await current.getByRole("button", { name: "Open changes on feature since main" }).click()
-  const tab = page.getByRole("tab", { name: "vs main", exact: true })
-  // clean.md is last, too near the end to reach the top.
-  await railFile(page, "clean.md").click()
-  await expect(page).toHaveURL(/#f=clean\.md$/)
-  await expect(railFile(page, "clean.md")).toHaveAttribute("aria-selected", "true")
-  await reviewFile(page, "clean.md").getByRole("button", { name: "Open File" }).click()
-  await expect(page.getByRole("tab", { name: "clean.md" })).toHaveAttribute("aria-selected", "true")
-
-  await page.goBack()
-  await expect(tab).toHaveAttribute("aria-selected", "true")
-  await expect(page).toHaveURL(/#f=clean\.md$/)
-  await expect(railFile(page, "clean.md")).toHaveAttribute("aria-selected", "true")
-  await expect(page.locator(".status-path")).toHaveText("clean.md")
 })
 
 test("a layer opens its own commits or everything since the base", async ({ page }) => {
@@ -1119,7 +1098,7 @@ test("marking a file Viewed closes it and moves to the next file not yet viewed"
   await expect(page).toHaveURL(/#f=assets\/logo\.bin$/)
 })
 
-test("] and [ move between a review's files and v toggles Viewed on the file in view", async ({ page }) => {
+test("] and [ move between a review's files and v toggles Viewed on the current file", async ({ page }) => {
   await openReview(page, "review=working#f=README.md")
   await expect(page.getByRole("main").locator(".review")).toHaveAttribute("aria-keyshortcuts", "n F7 p Shift+F7 ] [ v c")
   await expect(reviewFile(page, "README.md").getByRole("button", { name: "Viewed" })).toBeEnabled()

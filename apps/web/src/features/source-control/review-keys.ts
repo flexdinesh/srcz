@@ -1,5 +1,5 @@
 // Review keys (decision 0117): outside text fields, ] and [ go to the next
-// and previous file, and v toggles Viewed on the file in view; c comments
+// and previous file, and v toggles Viewed on the current file; c comments
 // on the selected lines (decision 0120); n and p, or F7 and Shift+F7 even in
 // text fields, step to the next and previous change (decision 0124). Pure.
 

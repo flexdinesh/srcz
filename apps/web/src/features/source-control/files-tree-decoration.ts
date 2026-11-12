@@ -83,7 +83,7 @@ ${counts}::before { content: ""; flex: none; width: var(--icon-xs); height: var(
 }
 
 // viewedCSS checks the tree rows of viewed files, before their stats in the
-// lane's muted ink, and dims them, except the selected file in view, which
+// lane's muted ink, and dims them, except the selected current file, which
 // keeps full ink. The status letter keeps its hue.
 export function viewedCSS(paths: readonly string[]): string {
   if (paths.length === 0) return ""

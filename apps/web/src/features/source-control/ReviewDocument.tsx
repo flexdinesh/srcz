@@ -127,7 +127,8 @@ function sideLines(fileDiff: FileDiffMetadata | null, side: SelectionSide): (lin
   return (line) => lines[line - 1]
 }
 
-// ReviewStatus is what the status bar shows for the file in view.
+// ReviewStatus is what the status bar shows for the file holding selected
+// lines.
 export interface ReviewStatus {
   path: string
   target: DiffLineTarget | null
@@ -160,7 +161,6 @@ interface ReviewDocumentProps {
   // click): it reveals that file again once selected, even after the user
   // scrolled away from it.
   revealRequest: RevealRequest
-  onCurrentFile(path: string): void
   onStatus(status: ReviewStatus | null): void
   onOpenFile(path: string): void
   // onAllExpandedChange reports whether any file's diff is open.
@@ -252,7 +252,7 @@ export function ReviewDocument(props: ReviewDocumentProps) {
 
 function ReviewBody({
   annotation, comments, compare, data, expandRequest, marked, name, narrow, options, project, revealRequest, scope, scrollRoot, selection, treeFiles,
-  onAllExpandedChange, onCurrentFile, onOpenFile, onRegisterHunkStep, onSelectLines, onStatus, onViewedChange, viewedState,
+  onAllExpandedChange, onOpenFile, onRegisterHunkStep, onSelectLines, onStatus, onViewedChange, viewedState,
 }: ReviewDocumentProps) {
   const pool = useWorkerPool()
   const [virtualizer] = useState(() => new Virtualizer())
@@ -378,15 +378,15 @@ function ReviewBody({
   // The fragment's file scrolls into view when it changes, and stays pinned
   // there while diffs above it load and grow, until the user scrolls. Its
   // lines, once their diff shows, land near the top third with their
-  // collapsed gaps open (decision 0034), unless already in view. While
-  // pinned it is the file in view, even when too near the end to reach the
-  // top. A gutter selection is where the pointer is, so it never scrolls.
-  // Showing a hidden review again at the fragment it last revealed, or the
-  // file list reloading, pins it again only if the user had not scrolled
-  // away (decision 0048); a reveal request (a Files click) always does. The
-  // pin also ends once the reveal settles: WebKit sends no input for a
-  // scrollbar drag or a kinetic scroll, and after that nothing pulls the pane
-  // back; the file in view stays an output (decision 0135).
+  // collapsed gaps open (decision 0034), unless already in view. A gutter
+  // selection is where the pointer is, so it never scrolls. Showing a hidden
+  // review again at the fragment it last revealed, or the file list
+  // reloading, pins it again only if the user had not scrolled away
+  // (decision 0048); a reveal request (a Files click) always does. The pin
+  // also ends once the reveal settles: WebKit sends no input for a scrollbar
+  // drag or a kinetic scroll, and after that nothing pulls the pane back
+  // (decision 0135). The fragment's file is the review's current file;
+  // scrolling never changes it (decision 0137).
   const target = selection?.path ?? ""
   const anchor = selection?.lines ? diffLineAnchor(selection.lines) : ""
   const latestLines = useRef(selection?.lines ?? null)
@@ -397,10 +397,6 @@ function ReviewBody({
   // its pin ended, by user input or by settling.
   const revealed = useRef({ key: "", released: false })
   const ready = files.length > 0
-  const pinned = useRef("")
-  // settled is the file whose pin settled and where the pane was then; it is
-  // the file in view while the pane is there.
-  const settled = useRef<{ path: string; top: number } | null>(null)
   // handledRequest is the id of the last reveal request acted on; a request
   // waits until the fragment selects its file.
   const handledRequest = useRef(revealRequest.id)
@@ -457,7 +453,6 @@ function ReviewBody({
         return
       }
       end()
-      settled.current = { path: target, top: root.scrollTop }
     }
     const pin = () => {
       clock.changedAt = performance.now()
@@ -465,13 +460,10 @@ function ReviewBody({
       if (top !== undefined && Math.abs(root.scrollTop - top) > 1) scrollPane(root, top)
       settle()
     }
-    pinned.current = target
-    settled.current = null
     repin.current = { path: target, pin }
     const observer = new ResizeObserver(pin)
     const events: ReadonlyArray<keyof HTMLElementEventMap> = ["wheel", "pointerdown", "keydown", "touchstart"]
     const release = () => {
-      pinned.current = ""
       repin.current = null
       window.clearTimeout(timer)
       observer.disconnect()
@@ -492,41 +484,9 @@ function ReviewBody({
     return release
   }, [anchor, ready, request, scrollPane, scrollRoot, target])
 
-  // The pinned file, else the settled one while the pane is where it
-  // settled, else the one whose section holds the pane's top edge, is the
-  // one in view.
-  const currentFile = useRef("")
-  useEffect(() => {
-    const root = scrollRoot.current
-    if (!root || !ready) return
-    let frame = 0
-    const update = () => {
-      frame = 0
-      const top = root.getBoundingClientRect().top + 1
-      const held = settled.current
-      let path = pinned.current || (held && Math.abs(root.scrollTop - held.top) <= 1 ? held.path : "")
-      for (const section of path ? [] : container.current?.querySelectorAll<HTMLElement>("[data-review-path]") ?? []) {
-        if (section.getBoundingClientRect().top > top) break
-        path = section.dataset.reviewPath ?? ""
-      }
-      path ||= files[0]?.path ?? ""
-      if (path !== currentFile.current) {
-        currentFile.current = path
-        onCurrentFile(path)
-      }
-    }
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update) }
-    update()
-    root.addEventListener("scroll", schedule, { passive: true })
-    return () => {
-      root.removeEventListener("scroll", schedule)
-      if (frame) cancelAnimationFrame(frame)
-    }
-  }, [files, onCurrentFile, ready, scrollRoot, target])
-
   // Steps walk the open files' changes in order: the next change in the
-  // file holding the selection (else the file in view), then the first of
-  // the next file with any, wrapping past the ends. A step selects the
+  // fragment's file (decision 0137), then the first of the next file with
+  // any, wrapping past the ends. A step selects the
   // change's rows without context (decision 0124). A file not yet shown is
   // read first.
   const style = effectiveDiffStyle(options, narrow)
@@ -570,7 +530,7 @@ function ReviewBody({
       return { kind: "before", index: below >= 0 ? below : direction === 1 && !view ? 0 : count }
     }
     const step = async () => {
-      const fromPath = selected?.lines ? selected.path : currentFile.current
+      const fromPath = selected?.path ?? ""
       const from = candidates.findIndex((file) => file.path === fromPath)
       const start = candidates[from]
       const startDiff = start ? await load(start) : null
@@ -632,18 +592,17 @@ function ReviewBody({
   }, [onStatus])
 
   // ] and [ go to the next and previous file, and v toggles Viewed on the
-  // file in view, outside text fields (decision 0117); c comments on the
-  // selected lines (decision 0120); n and p, or F7 and Shift+F7, step
+  // fragment's file, outside text fields (decisions 0117, 0137); c comments
+  // on the selected lines (decision 0120); n and p, or F7 and Shift+F7, step
   // through changes (decision 0124). They answer wherever the review keys
   // do, so the toolbar's own buttons keep them working.
-  const latestKeys = useRef({ files, markViewed, goToFile, viewed, comments, stepHunk })
-  useLayoutEffect(() => { latestKeys.current = { files, markViewed, goToFile, viewed, comments, stepHunk } })
+  const latestKeys = useRef({ files, target, markViewed, goToFile, viewed, comments, stepHunk })
+  useLayoutEffect(() => { latestKeys.current = { files, target, markViewed, goToFile, viewed, comments, stepHunk } })
   useEffect(() => {
     const root = scrollRoot.current
     if (!root) return
     const run = (command: ReviewKeyCommand) => {
-      const { files: all, markViewed: mark, goToFile: go, viewed: isViewed, comments: commenting, stepHunk: stepChange } = latestKeys.current
-      const path = currentFile.current
+      const { files: all, target: path, markViewed: mark, goToFile: go, viewed: isViewed, comments: commenting, stepHunk: stepChange } = latestKeys.current
       if (command === "nextChange" || command === "previousChange") {
         stepChange(command === "nextChange" ? 1 : -1)
         return
@@ -738,7 +697,7 @@ function ReviewBody({
 }
 
 // reviewKeysHint names the review keys where the review counts its progress.
-const reviewKeysHint = "N and P go to the next and previous change; ] and [ to the next and previous file; V toggles Viewed on the file in view"
+const reviewKeysHint = "N and P go to the next and previous change; ] and [ to the next and previous file; V toggles Viewed on the current file"
 
 // reviewHeading is the compare's tab label, as every review titles itself;
 // a commit reads its subject.

@@ -219,7 +219,7 @@ export function parseStoredCompare(value: unknown): Compare | null {
   return null
 }
 
-// ReviewFragment is a review tab's URL fragment: the file in view and its
+// ReviewFragment is a review tab's URL fragment: the current file and its
 // selected lines, as #f=<path>&R12-R20.
 export interface ReviewFragment {
   path: string

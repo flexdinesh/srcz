@@ -17,7 +17,7 @@ interface UncommittedPaneProps {
   stats: CompareStats | null
   warnings: readonly string[]
   view: ChangesView
-  // activePath is the file in view in the Uncommitted review.
+  // activePath is the Uncommitted review's current file (decision 0137).
   activePath: string
   itemHeight: number
   collapseRequest: CollapseRequest | null

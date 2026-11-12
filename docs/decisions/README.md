@@ -136,5 +136,6 @@ rewriting history; update `Status` on the old record.
 | [0131](0131-back-forward-navigation.md) | Back and forward navigation | Accepted; amends 0056, 0097 |
 | [0133](0133-sidebar-field-edges.md) | Sidebar field edges | Accepted; amends 0045 |
 | [0134](0134-dev-installs-build-from-source.md) | Development installs build any branch or commit from source | Accepted; supersedes 0079 edge, 0093; revises 0101, 0125, 0127 |
-| [0135](0135-walkthrough-narration-panel-and-one-way-review-scroll.md) | Walkthrough narration panel and one-way review scroll | Accepted; supersedes 0047's narration zone and 0113's step bar; extends 0034, 0048, 0111 |
+| [0135](0135-walkthrough-narration-panel-and-one-way-review-scroll.md) | Walkthrough narration panel and one-way review scroll | Accepted; supersedes 0047's narration zone and 0113's step bar; extends 0034, 0048, 0111; file in view superseded by 0137 |
 | [0136](0136-installs-stop-the-running-daemon.md) | Installs stop the running daemon | Accepted; extends 0061, 0101, 0134 |
+| [0137](0137-review-selection-is-the-chosen-file.md) | Review selection is the chosen file | Accepted; supersedes 0135's file in view and the scroll-following selection of 0035 and 0040; amends 0051, 0117 |

@@ -1,6 +1,6 @@
 # 0135: Walkthrough narration panel and one-way review scroll
 
-- Status: Accepted
+- Status: Accepted; file in view superseded by [0137](0137-review-selection-is-the-chosen-file.md)
 - Date: 2026-11-10
 - Supersedes: the inline narration zone of [0047](0047-walkthroughs.md) and the step bar of [0113](0113-walkthrough-reading-flow.md)
 - Extends: [0034](0034-diff-anchor-reveal-and-hunk-navigation.md), [0048](0048-kept-review-tab.md), [0111](0111-review-pane-single-scroll-anchor.md)

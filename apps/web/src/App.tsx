@@ -134,8 +134,8 @@ function routeTab(review: WorkspaceTab | null, documentPath: string, at: string,
   return welcome ? welcomeTab() : null
 }
 
-// reviewStatusBar describes the review's file in view, or the one holding
-// selected lines.
+// reviewStatusBar describes the file holding selected lines, else the
+// review's current file.
 function reviewStatusBar(status: ReviewStatus | null, currentFile: string, data: CompareData | null): DiffStatus | undefined {
   const path = status?.path ?? currentFile
   if (!path) return undefined
@@ -180,7 +180,7 @@ export function App({ project }: AppProps) {
   // A review tab routes without a path as /view?review=working,
   // ?review=branch (&base=, &head=), ?commit=<hash>, or
   // ?from=<hash>&to=<hash>; its page carries only the tree, and #f=<path>
-  // names the file in view.
+  // names the current file.
   const searchPath = useSearch({ strict: false, select: (search) => typeof search.path === "string" ? search.path : "" })
   const searchReview = useSearch({ strict: false, select: (search) => search.review === "working" || search.review === "branch" ? search.review : "" })
   const searchBase = useSearch({ strict: false, select: (search) => typeof search.base === "string" ? search.base : "" })
@@ -498,7 +498,9 @@ export function App({ project }: AppProps) {
   const keptShown = kept !== null && shownReview !== null && sameCompare(kept.compare, shownReview)
   const reviewHash = keptShown && (!reviewCompare || isLoading) ? kept.hash : hash
   const fragment = shownReview ? parseReviewFragment(reviewHash) : null
-  const [currentFile, setCurrentFile] = useState("")
+  // The fragment's file is the review's current file: the last one asked for
+  // by a click, key, step, or link. Scrolling never changes it (decision 0137).
+  const currentFile = fragment?.path ?? ""
   const [reviewStatus, setReviewStatus] = useState<ReviewStatus | null>(null)
   const [expandRequest, setExpandRequest] = useState<CollapseRequest | null>(null)
   const [anyFileExpanded, setAnyFileExpanded] = useState(true)
@@ -523,8 +525,8 @@ export function App({ project }: AppProps) {
     if (focusDocument && reviewCompare && sameCompare(compare, reviewCompare)) main.current?.focus({ preventScroll: true })
   }, [kept, main, navigate, prepareDocumentNavigation, project, reviewCompare])
   // HEAD's branch review switches between committed changes and committed
-  // plus uncommitted ones in place: the tab keeps its slot and the file in
-  // view (decision 0051).
+  // plus uncommitted ones in place: the tab keeps its slot and current file
+  // (decision 0051).
   const { replaceTab } = workspace
   const changeReviewScope = useCallback((uncommitted: boolean) => {
     if (!reviewCompare || reviewScope(reviewCompare) === null || reviewCompare.kind !== "branch") return
@@ -944,7 +946,7 @@ export function App({ project }: AppProps) {
               name={nameTab(reviewTab(shownReview))} data={reviewData} options={shownDiffOptions} narrow={diffNarrow}
               scrollRoot={main} selection={fragment} expandRequest={expandRequest} treeFiles={treeFiles}
               viewedState={viewed.state} onViewedChange={viewed.mark} onSelectLines={selectReviewLines}
-              onCurrentFile={setCurrentFile} onStatus={setReviewStatus} onOpenFile={openReviewFile}
+              onStatus={setReviewStatus} onOpenFile={openReviewFile}
               onAllExpandedChange={setAnyFileExpanded} onRegisterHunkStep={registerHunkStep} annotation={reviewAnnotation}
               comments={reviewFeedback.comments}
               scope={scope} marked={markedPaths} revealRequest={revealRequest} /> : undefined}

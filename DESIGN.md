@@ -581,7 +581,8 @@ name; decision 0117). Rows are named “path, Modified, +2 −1” (a pure renam
 “path, Renamed”); the title adds “Renamed from <old path>”. Tree mode renders the Files
 tree described below. Click or Space opens the file in the Uncommitted review
 and keeps focus; Enter and double-click move focus to it; arrows and Home/End
-move. The file in view is selected. States: “Reading changes…”, “No changes
+move. The review's current file (the last one chosen) is selected; scrolling
+never changes it (decision 0137). States: “Reading changes…”, “No changes
 since last commit.”, “Showing the first 5,000 changes.”, the read error with
 Retry, and unreadable paths under a “Some paths could not be read”
 disclosure.
@@ -700,8 +701,9 @@ in the middle instead; renamed files without stats show a
 muted “from <old path>”, renames without line changes a muted “renamed”, and
 the title says “Renamed from <old path>”. Click
 or Space opens the file in the review and keeps focus; Enter and double-click
-move focus to it. The file in view is selected; that selection follows the
-scroll and never scrolls the review back (decision 0135). Clicking a file
+move focus to it. The review's current file is selected: the last one chosen
+by a click, `]` or `[`, Viewed, a step, or a link, none until then. Scrolling
+never changes it (decision 0137). Clicking a file
 reveals it every time, even after scrolling away from it; input lets go of
 the reveal, and it ends once the diffs around it settle. States: “Loading
 files…”, “No file changes.”, and the read error with Retry.
@@ -783,7 +785,7 @@ opens and does not count as viewed until marked again (decision 0117).
 Marking a file Viewed collapses it and reveals the next file not yet viewed
 at the top, wrapping past the end; unmarking opens it in place. Outside text
 fields, with focus in the review, its toolbar, its rail, or nowhere, `]` and `[` reveal the
-next and previous file (no wrap) and `v` toggles Viewed on the file in view;
+next and previous file (no wrap) and `v` toggles Viewed on the current file;
 the review's root lists them in `aria-keyshortcuts`.
 Diffs load as files near the viewport and keep their height while away.
 

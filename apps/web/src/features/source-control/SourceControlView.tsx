@@ -37,7 +37,7 @@ interface SourceControlViewProps {
   refs: Refs
   // working is the uncommitted changes' list and stats.
   working: CompareData | null
-  // workingPath is the file in view when the open review is Uncommitted.
+  // workingPath is the current file when the open review is Uncommitted.
   workingPath: string
   // commitSelection is the selected commit or range.
   commitSelection: Compare | null
