@@ -107,7 +107,7 @@ rewriting history; update `Status` on the old record.
 | [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted; edge script replaced by `install-dev.sh` in 0134 |
 | [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130 |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
-| [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130 |
+| [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130, restored by 0138 |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
 | [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105 |
 | [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |
@@ -132,10 +132,11 @@ rewriting history; update `Status` on the old record.
 | [0127](0127-sandbox-attach-and-stdio-transport.md) | `zero attach` to sandboxes, over a stdio transport | Accepted; extends 0080, 0098; development image revised by 0134 |
 | [0128](0128-sandbox-connections-in-the-desktop-app.md) | Sandbox connections in the desktop app | Accepted; extends 0098, 0127 |
 | [0129](0129-base-row-picker-inline-commit-filter-and-lanes.md) | Base row picker, inline commit filter, and stack lanes | Accepted; supersedes 0035 and 0123 base picker trigger, 0114 filter toggle; extends 0040, 0042, 0123; rails and chip borders superseded by 0130 |
-| [0130](0130-ibm-plex-mono-quiet-scm-chrome-and-container-focus.md) | IBM Plex Mono, quieter Source Control chrome, and no container focus rings | Accepted; supersedes 0102 and 0104 mono faces, 0123 pane action row, 0129 rails and chip borders; revises 0122 |
+| [0130](0130-ibm-plex-mono-quiet-scm-chrome-and-container-focus.md) | IBM Plex Mono, quieter Source Control chrome, and no container focus rings | Accepted; supersedes 0102 and 0104 mono faces, 0123 pane action row, 0129 rails and chip borders; revises 0122; Plex Mono face superseded by 0138 |
 | [0131](0131-back-forward-navigation.md) | Back and forward navigation | Accepted; amends 0056, 0097 |
 | [0133](0133-sidebar-field-edges.md) | Sidebar field edges | Accepted; amends 0045 |
 | [0134](0134-dev-installs-build-from-source.md) | Development installs build any branch or commit from source | Accepted; supersedes 0079 edge, 0093; revises 0101, 0125, 0127 |
 | [0135](0135-walkthrough-narration-panel-and-one-way-review-scroll.md) | Walkthrough narration panel and one-way review scroll | Accepted; supersedes 0047's narration zone and 0113's step bar; extends 0034, 0048, 0111; file in view superseded by 0137 |
 | [0136](0136-installs-stop-the-running-daemon.md) | Installs stop the running daemon | Accepted; extends 0061, 0101, 0134 |
 | [0137](0137-review-selection-is-the-chosen-file.md) | Review selection is the chosen file | Accepted; supersedes 0135's file in view and the scroll-following selection of 0035 and 0040; amends 0051, 0117 |
+| [0138](0138-jetbrains-mono-and-tree-folder-icons.md) | JetBrains Mono, no ligatures, and folder icons in trees | Accepted; supersedes 0130's Plex Mono face; restores 0104's wordmark; amends 0102's tree |

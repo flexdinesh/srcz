@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, type KeyboardEvent } fro
 
 import type { FileStats } from "@zero/contracts"
 import { treeCSS } from "../../lib/tree-css.ts"
+import { treeIcons } from "../../lib/tree-icons.ts"
 import { ancestorDirectories, type CompareFile } from "./compare-files.ts"
 import { fileDecoration, threadsCSS, viewedCSS } from "./files-tree-decoration.ts"
 
@@ -71,7 +72,7 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
     density: "compact",
     search: false,
     unsafeCSS: changesTreeCSS,
-    icons: { set: "complete", colored: true },
+    icons: treeIcons,
     gitStatus,
     renderRowDecoration({ item }) {
       if (item.kind !== "file") return null

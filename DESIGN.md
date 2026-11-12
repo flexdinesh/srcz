@@ -100,10 +100,10 @@ typography:
     fontSize: "0.75rem"
     lineHeight: "1rem"
   code:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
     fontSize: "0.8125rem"
   source:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace"
     fontSize: "0.8125rem"
     lineHeight: "1.25rem"
   site-display:
@@ -129,23 +129,23 @@ typography:
     fontWeight: 400
     lineHeight: 1.5
   site-chrome:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.75rem"
   site-status:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.6875rem"
   site-label:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.65625rem"
     fontWeight: 600
     letterSpacing: "0.1em"
   site-docs-section:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.6875rem"
     fontWeight: 600
     letterSpacing: "0.1em"
   site-docs-nav:
-    fontFamily: "\"IBM Plex Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+    fontFamily: "\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
     fontSize: "0.8125rem"
     fontWeight: 400
 rounded:
@@ -331,7 +331,7 @@ Choices: Auto, Zero Light, Zero Dark, Dracula, Solarized Light, and Omarchy's 23
 
 ## Typography
 
-Inter Variable is bundled locally for UI and prose; IBM Plex Mono (400 to 700; 700 for bold syntax tokens) is bundled for code/source, chrome labels (tabs, view and pane headers, the rail header; `--font-chrome`), and file names in lists (decision 0130). It is the one mono face of the app, the site, and the brand. No runtime font service.
+Inter Variable is bundled locally for UI and prose; JetBrains Mono Variable (100 to 800; 700 for bold syntax tokens) is bundled for code/source, chrome labels (tabs, view and pane headers, the rail header; `--font-chrome`), and file names in lists (decisions 0130, 0138). It is the one mono face of the app, the site, and the brand. Ligatures are off at the root (`font-variant-ligatures: none`), so text shows the characters typed. No runtime font service.
 
 One base size drives the whole scale: the Font Size setting (default 13px, 10–20px) sets `--font-size-base`, and `html` sets `1rem = base × 16 / 13`. Every size, spacing, and control height is in rem, so the interface scales together; Pierre's px row height is scaled in JS. Sizes below are at the 13px default.
 
@@ -383,7 +383,7 @@ Motion is functional: state changes use `--duration-fast`, progress fades in aft
 
 Icons: 16px in header and panel actions, 14px in bars, fields, and toggles, 12px in rows, tabs, and segmented items; rest ink `text-secondary`, `text-primary` on hover. Tabs show the explorer's Pierre colored file icon, mapped to theme tokens by hue family.
 
-**Logo (decisions 0104, 0108).** A Z inside a zero, the Z 24 units wide on the 32 grid: the Z in ink, the zero's side rails in coral (`--color-brand-mark`, `#ff6b4a` on dark, `#f2502e` on light), parted by a gap. `BrandMark` draws it: the 16 grid at 24px and under, the 32 grid above. The footer uses one color so the chrome stays quiet, with the rails at 55%; Welcome and the site use two. The docs logo and social card set it beside "Zero" in outlined IBM Plex Mono Bold (the card's tagline in Regular); the landing wordmark is live text in bundled IBM Plex Mono (decision 0130). The desktop icon is graphite `#2b2d33` with a white Z: a square tile on Linux (`icon.png`), and on macOS a continuous-corner squircle (`icon.icns`), so Tahoe adds no grey plate. Masters live in `docs/brand/`.
+**Logo (decisions 0104, 0108).** A Z inside a zero, the Z 24 units wide on the 32 grid: the Z in ink, the zero's side rails in coral (`--color-brand-mark`, `#ff6b4a` on dark, `#f2502e` on light), parted by a gap. `BrandMark` draws it: the 16 grid at 24px and under, the 32 grid above. The footer uses one color so the chrome stays quiet, with the rails at 55%; Welcome and the site use two. The docs logo and social card set it beside "Zero" in outlined JetBrains Mono Bold (the card's tagline in Regular); the landing wordmark is live text in bundled JetBrains Mono (decision 0138). The desktop icon is graphite `#2b2d33` with a white Z: a square tile on Linux (`icon.png`), and on macOS a continuous-corner squircle (`icon.icns`), so Tahoe adds no grey plate. Masters live in `docs/brand/`.
 
 **Focus.** Rows, icon buttons, toggles, segmented items, and copy controls draw a 1px `--color-focus` outline inset 1px. Standalone buttons draw 2px, offset 1px. Fields replace their border with `--color-focus` and add a 1px ring. Invalid fields use `destructive` for the full border and ring. Only controls ring: containers that take focus (the inline sidebar dialog, `main`, sections, scroll areas, the source and image documents) draw none (decision 0130).
 
@@ -413,7 +413,7 @@ A 2.5rem column on `workspace-chrome` with a 1px right border and 40px-square ro
 
 ### Explorer
 
-Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons, square rows, semantic token overrides, 13px mono `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
+Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons each followed by a two-tone folder icon (open or closed with the row, `text-muted` in every state, over its children's icons; `lib/tree-icons.ts`, decision 0138; Source Control's trees share it), square rows, semantic token overrides, 13px mono `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
 
 Below the header, a shelf on the same `workspace-chrome` band holds the explorer's
 query fields (4px top, 8px bottom, 12px sides, 4px between fields) and ends in a
@@ -943,7 +943,7 @@ Pane replicas carry their own diff and syntax tones (`--l-add*`, `--l-del*`, `--
 
 ### Typography
 
-**Display and body:** the system sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI"`). **Chrome:** IBM Plex Mono, bundled (400 to 700, `@fontsource/ibm-plex-mono` imported by `_root.css`), then the system mono stack (decision 0130). The landing never loads Inter; docs prose keeps Vocs' self-hosted Geist, and `_root.css` sets the navigation and Vocs' code (`--vocs-font-family-mono`) in Plex Mono.
+**Display and body:** the system sans stack (`ui-sans-serif, system-ui, -apple-system, "Segoe UI"`). **Chrome:** JetBrains Mono, bundled (variable, `@fontsource-variable/jetbrains-mono` imported by `_root.css`), then the system mono stack, ligatures off (decision 0138). The landing never loads Inter; docs prose keeps Vocs' self-hosted Geist, and `_root.css` sets the navigation and Vocs' code (`--vocs-font-family-mono`) in JetBrains Mono.
 
 - **Display** (650, `clamp(2rem, 3.2vw, 2.75rem)`, 1.05, -0.035em, balanced): the one h1, in the hero row.
 - **Heading** (650, `clamp(1.625rem, 2.4vw, 2rem)`, 1.1, -0.03em, balanced): each feature row's h2.

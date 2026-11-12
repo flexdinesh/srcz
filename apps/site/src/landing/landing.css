@@ -54,7 +54,7 @@ article:has(> .landing) {
   --l-number: light-dark(#a3500b, #e5a96b);
   --l-mark: light-dark(#f2502e, #ff6b4a);
   --l-mark-ink: light-dark(#2b2d33, #ffffff);
-  --l-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --l-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --l-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --l-max: 75rem;
   --l-nav: 2.75rem;

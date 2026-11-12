@@ -26,3 +26,42 @@ index 305714319d9d988bfc025ecaaca662562a3a0ff7..ddec640d81b695b09d136ad0cfd95415
  	hydrate({ fileTreeContainer }) {
  		const host = this.#prepareHost(fileTreeContainer);
  		const wrapper = this.#getOrCreateWrapper(host);
+diff --git a/dist/render/FileTreeView.js b/dist/render/FileTreeView.js
+index 7d3b818c43a7621ab9170da32b180232ed3c9472..caf041321e48b0ce81a169f0ed6e4a5ae9facc08 100644
+--- a/dist/render/FileTreeView.js
++++ b/dist/render/FileTreeView.js
+@@ -360,6 +360,15 @@ function focusFirstMenuElement(menuElement) {
+ 		"[tabindex]:not([tabindex=\"-1\"])"
+ 	].join(", ")) ?? menuElement);
+ }
++function renderFolderIcon(row, resolveIcon) {
++	if (row.kind !== "directory") return null;
++	const icon = resolveIcon(row.isExpanded ? "file-tree-icon-folder-open" : "file-tree-icon-folder");
++	if (icon.remappedFrom == null) return null;
++	return /* @__PURE__ */ jsx("div", {
++		"data-item-section": "folder-icon",
++		children: /* @__PURE__ */ jsx(Icon, { ...icon })
++	});
++}
+ function renderFileTreeRowContent(row, resolveIcon, { actionLaneEnabled = false, customDecoration = null, decorationLaneEnabled = false, dragTargetFlattenedSegmentPath = null, gitDecoration = null, gitLaneActive = false, renameInput = null, showDecorativeActionAffordance = false } = {}) {
+ 	const targetPath = getFileTreeRowPath(row);
+ 	return /* @__PURE__ */ jsxs(Fragment, { children: [
+@@ -374,6 +383,7 @@ function renderFileTreeRowContent(row, resolveIcon, { actionLaneEnabled = false,
+ 			"data-item-section": "icon",
+ 			children: row.kind === "directory" ? /* @__PURE__ */ jsx(Icon, { ...resolveIcon("file-tree-icon-chevron") }) : /* @__PURE__ */ jsx(Icon, { ...resolveIcon("file-tree-icon-file", targetPath) })
+ 		}),
++		renderFolderIcon(row, resolveIcon),
+ 		/* @__PURE__ */ jsx("div", {
+ 			"data-item-section": "content",
+ 			children: row.isFlattened ? formatFlattenedSegments(row, renameInput, dragTargetFlattenedSegmentPath) : renameInput ?? /* @__PURE__ */ jsx(MiddleTruncate, {
+diff --git a/dist/sprite.d.ts b/dist/sprite.d.ts
+index f6b3e35e37c01d5447af34937e0f4a765e60db54..d0d516c9b44c4d2d350a463f9354b3963df29af4 100644
+--- a/dist/sprite.d.ts
++++ b/dist/sprite.d.ts
+@@ -1,5 +1,5 @@
+ //#region src/sprite.d.ts
+-type SVGSpriteNames = 'file-tree-icon-chevron' | 'file-tree-icon-file' | 'file-tree-icon-dot' | 'file-tree-icon-lock' | 'file-tree-icon-ellipsis';
++type SVGSpriteNames = 'file-tree-icon-chevron' | 'file-tree-icon-file' | 'file-tree-icon-dot' | 'file-tree-icon-lock' | 'file-tree-icon-ellipsis' | 'file-tree-icon-folder' | 'file-tree-icon-folder-open';
+ //#endregion
+ export { SVGSpriteNames };
+ //# sourceMappingURL=sprite.d.ts.map

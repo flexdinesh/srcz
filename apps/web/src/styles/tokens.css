@@ -7,7 +7,7 @@
 
 @theme {
   --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --color-bg: light-dark(#fafafa, #272b32);
   --color-canvas: light-dark(#e4e5e8, #1d2026);

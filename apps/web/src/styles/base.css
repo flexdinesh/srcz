@@ -12,6 +12,10 @@ html {
   background: var(--color-bg);
   font-family: var(--font-sans);
   font-size: calc(var(--font-size-base) * 16 / 13);
+  /* Text shows the characters typed: no JetBrains Mono code ligatures (!= as
+     ≠) and no contextual forms, inherited into Pierre's shadow roots
+     (decision 0138). */
+  font-variant-ligatures: none;
   text-rendering: optimizeLegibility;
 }
 

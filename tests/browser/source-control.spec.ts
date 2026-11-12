@@ -366,6 +366,15 @@ test("every Source Control pane scrolls in one lane at the sidebar's edge", asyn
   expect(await right(pane(page, "Uncommitted").locator(".file-tree-host"))).toBe(await right(pane(page, "Uncommitted")))
 })
 
+// Source Control's tree shares the Explorer's folder icons (decision 0138).
+test("the changes tree marks folders with folder icons", async ({ page }) => {
+  await openSourceControl(page)
+  await pane(page, "Uncommitted").getByRole("button", { name: "View as Tree" }).click()
+  const row = (name: string) => pane(page, "Uncommitted").getByRole("treeitem", { name, exact: true })
+  await expect(row("src").locator('[data-item-section="folder-icon"] svg')).toHaveAttribute("data-icon-name", "file-tree-icon-folder-open")
+  await expect(row("README.md").locator('[data-item-section="folder-icon"]')).toHaveCount(0)
+})
+
 test("a commit's details chevron adds no fill over its hovered row", async ({ page }) => {
   await openSourceControl(page)
   const toggle = commitRow(page, featureSubject).getByRole("button", { name: "Show commit details" })
