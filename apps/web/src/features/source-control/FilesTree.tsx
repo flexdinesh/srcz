@@ -23,7 +23,8 @@ export interface CollapseRequest {
 }
 
 interface FilesTreeProps {
-  // activePath is the file in view in the open review, selected here.
+  // activePath is the open review's current file (its #f= file), selected
+  // here; scrolling never changes it (decision 0137).
   activePath: string
   collapseRequest: CollapseRequest | null
   files: readonly CompareFile[]
@@ -55,8 +56,8 @@ export function FilesTree({ activePath, collapseRequest, files, itemHeight, labe
   const syncing = useRef(false)
   const threadPaths = useMemo(() => paths.filter((path) => (threads?.get(path) ?? 0) > 0), [paths, threads])
   // input is set while a click or key press is dispatched in the tree: only
-  // those open a file. Selection that follows the file in view never does,
-  // so the review's scroll never comes back to it (decision 0135).
+  // those open a file. Selection that follows the review's current file
+  // never does (decisions 0135, 0137).
   const input = useRef(false)
   const current = useRef({ activePath, byPath, marked, stats, threads, viewedPaths, onOpen })
   useLayoutEffect(() => { current.current = { activePath, byPath, marked, stats, threads, viewedPaths, onOpen } }, [activePath, byPath, marked, stats, threads, viewedPaths, onOpen])
