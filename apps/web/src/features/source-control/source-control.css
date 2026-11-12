@@ -123,9 +123,10 @@
   flex-direction: column;
 }
 
+/* Each pane owns one scroller (its list or the tree), so every pane's
+   scrollbar sits in the same 10px lane at the sidebar's edge. */
 .scm-panes:not([data-mobile]) .scm-pane-body {
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: hidden;
 }
 
 /* A sash overlaps the border above an open pane; hover and focus reveal it. */
@@ -167,8 +168,20 @@
 }
 
 .changes-pane .file-tree-host {
-  min-height: 8rem;
+  min-height: 0;
   flex: 1;
+}
+
+/* Phones stack panes at their natural height; the tree keeps a usable one. */
+.scm-panes[data-mobile] .changes-pane .file-tree-host {
+  min-height: 8rem;
+}
+
+.changes-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .changes-list {

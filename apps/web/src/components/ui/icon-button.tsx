@@ -4,7 +4,8 @@ import type { ButtonHTMLAttributes, MouseEvent, ReactNode, Ref } from "react"
 export type IconButtonSize = "xs" | "sm" | "md" | "bar"
 export type IconButtonTone = "default" | "success" | "destructive"
 // gutter floats over code in a line gutter, as CopyButton's gutter variant.
-export type IconButtonVariant = "plain" | "gutter"
+// bare takes no hover or press fill, for toggles inside a row that has its own.
+export type IconButtonVariant = "plain" | "gutter" | "bare"
 
 type NativeProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label" | "children" | "title">
 
@@ -25,7 +26,8 @@ export interface IconButtonProps extends NativeProps {
 // IconButton is an icon-only action. Sizes: xs 20px (12px glyph) in rows and
 // tabs, sm 24px (16px glyph) in headers, toolbars, and fields, md 28px (16px
 // glyph) in panels, and bar, a square that fills its band (--bar-size). The
-// gutter variant is raised and bordered, for line gutters.
+// gutter variant is raised and bordered, for line gutters; the bare variant
+// marks hover with ink only, so it adds no fill over a hovered row.
 export function IconButton({
   label, icon, title, size = "sm", tone = "default", variant = "plain", disabledReason, className, type = "button", onClick, ref, ...props
 }: IconButtonProps) {

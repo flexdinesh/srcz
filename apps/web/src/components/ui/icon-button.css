@@ -56,6 +56,11 @@
   background: var(--color-active);
 }
 
+/* Bare: ink only, for toggles inside rows that carry their own hover fill. */
+.ui-icon-button[data-variant="bare"]:is(:hover, :active):not(:disabled, [aria-disabled="true"]) {
+  background: transparent;
+}
+
 /* A pressed toggle (aria-pressed) takes the selection tint, as toggles do. */
 .ui-icon-button[aria-pressed="true"] {
   color: var(--color-selected-text);

@@ -51,7 +51,7 @@ export function UncommittedPane({
       {list.kind === "ready" && list.files.length > 0 && (view === "tree"
         ? <FilesTree key={itemHeight} files={list.files} stats={stats?.byPath ?? null} activePath={activePath} itemHeight={itemHeight}
           label="Uncommitted changes" collapseRequest={collapseRequest} onExpandedChange={onExpandedChange} onOpen={onOpen} />
-        : <FlatFiles files={list.files} stats={stats} activePath={activePath} onOpen={onOpen} />)}
+        : <div className="changes-scroll"><FlatFiles files={list.files} stats={stats} activePath={activePath} onOpen={onOpen} /></div>)}
       {warnings.length > 0 && (
         <details className="warnings">
           <summary>Some paths could not be read</summary>

@@ -30,7 +30,10 @@
   flex: 1;
 }
 
+/* Sidebar query fields rest on border-strong, not the 3:1 field edge
+   (decision 0133); focus keeps the accent ring. */
 .sidebar {
+  --field-border: var(--color-border-strong);
   flex: 1;
 }
 

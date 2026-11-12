@@ -332,7 +332,7 @@ function CommitRow({
       onFocus={onFocus} onPointerDown={onPointerDown} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} onPointerLeave={onPointerEnd}
       onClick={onClick}>
       {/* The row keeps its own keyboard; Right and Left toggle the same details. */}
-      <IconButton size="xs" className="commit-details-toggle" tabIndex={-1} aria-expanded={expanded}
+      <IconButton size="xs" variant="bare" className="commit-details-toggle" tabIndex={-1} aria-expanded={expanded}
         label={expanded ? "Hide commit details" : "Show commit details"} icon={<Chevron />}
         onClick={(event) => {
           event.stopPropagation()
