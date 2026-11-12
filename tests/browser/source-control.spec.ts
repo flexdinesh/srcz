@@ -666,6 +666,40 @@ test("scrolling down a review never scrolls the pane back up", async ({ page }) 
   expect(await main.evaluate((pane) => pane.scrollTop / pane.clientHeight)).toBeGreaterThan(2)
 })
 
+// WebKit sends no wheel, pointer, or key event for a scrollbar drag or a
+// kinetic scroll, so a revealed file's pin ends once the reveal settles. The
+// file in view follows the scroll and never pulls the pane back; choosing a
+// file again reveals it again (decision 0135).
+test("a settled reveal never pulls the pane back, and choosing the file again reveals it again", async ({ page }) => {
+  await openSourceControl(page)
+  // untracked.txt is last, below large.txt's long diff.
+  await changeRow(page, "untracked.txt").click()
+  await expect(page).toHaveURL(/review=working.*#f=untracked\.txt$/)
+  await expect(fileToggle(page, "untracked.txt")).toBeInViewport()
+  const main = page.locator("main")
+  const pinnedTop = await main.evaluate((pane) => pane.scrollTop)
+  expect(pinnedTop).toBeGreaterThan(await main.evaluate((pane) => pane.clientHeight))
+  const historyLength = await page.evaluate(() => window.history.length)
+
+  // Past the longest a pin holds (3 s), a scroll with no input event, then
+  // the content changes size.
+  await page.waitForTimeout(3_500)
+  await main.evaluate((pane) => { pane.scrollTop = 0 })
+  await fileToggle(page, "assets/logo.bin").click()
+  await expect(fileToggle(page, "assets/logo.bin")).toHaveAttribute("aria-expanded", "false")
+  await page.waitForTimeout(300)
+  expect(await main.evaluate((pane) => pane.scrollTop)).toBe(0)
+  await expect(page.locator(".status-path")).toHaveText("assets/logo.bin")
+  await expect(changeRow(page, "assets/logo.bin")).toHaveAttribute("aria-selected", "true")
+  // Following the scroll never navigates.
+  await expect(page).toHaveURL(/#f=untracked\.txt$/)
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+
+  await changeRow(page, "untracked.txt").click()
+  await expect(fileToggle(page, "untracked.txt")).toBeInViewport()
+  await expect(page.locator(".status-path")).toHaveText("untracked.txt")
+})
+
 test("a pinned review file stays the file in view behind a document tab", async ({ page }) => {
   await openSourceControl(page)
   const current = branchRow(page, "feature")

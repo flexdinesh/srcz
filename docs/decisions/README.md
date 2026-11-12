@@ -52,7 +52,7 @@ rewriting history; update `Status` on the old record.
 | [0044](0044-srcz-light-state-contrast.md) | Source Zero Light state and boundary contrast | Accepted; field border and tint-only states amended by 0045; Source Zero Light values amended by 0046, superseded by 0102 |
 | [0045](0045-selection-marks-and-field-edges.md) | Selection marks and 3:1 field edges | Accepted; activity rail bar removed by 0046 |
 | [0046](0046-slate-greys-and-flat-tabs.md) | Slate greys for Source Zero Light, flat tabs and toolbar | Accepted; Source Zero Light values and activity tile superseded by 0102 |
-| [0047](0047-walkthroughs.md) | Walkthroughs | Accepted; publishing without a server added by 0065; application layer by 0087 |
+| [0047](0047-walkthroughs.md) | Walkthroughs | Accepted; publishing without a server added by 0065; application layer by 0087; narration zone superseded by 0135 |
 | [0048](0048-kept-review-tab.md) | The last review tab stays mounted behind other tabs | Accepted |
 | [0049](0049-copyable-agent-instructions.md) | Copyable agent instructions for walkthroughs | Accepted; CLI publish added by 0065 |
 | [0050](0050-live-updates.md) | Live updates for the projects browsers show | Accepted; revised by 0066 |
@@ -136,3 +136,4 @@ rewriting history; update `Status` on the old record.
 | [0131](0131-back-forward-navigation.md) | Back and forward navigation | Accepted; amends 0056, 0097 |
 | [0133](0133-sidebar-field-edges.md) | Sidebar field edges | Accepted; amends 0045 |
 | [0134](0134-dev-installs-build-from-source.md) | Development installs build any branch or commit from source | Accepted; supersedes 0079 edge, 0093; revises 0101, 0125, 0127 |
+| [0135](0135-walkthrough-narration-panel-and-one-way-review-scroll.md) | Walkthrough narration panel and one-way review scroll | Accepted; supersedes 0047's narration zone and 0113's step bar; extends 0034, 0048, 0111 |

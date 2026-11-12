@@ -66,6 +66,16 @@ export function effectiveDiffStyle(options: DiffOptions, narrow: boolean): DiffS
   return narrow ? "unified" : options.style
 }
 
+// stepDiffOptions are the options a walkthrough's diff step shows with
+// (decision 0135): Unified, so the step's lines and marker span the pane,
+// unless the reader chose a style during this walkthrough (override). The
+// saved options are left as they are.
+export function stepDiffOptions(saved: DiffOptions, override: DiffStyle | null, active: boolean): DiffOptions {
+  if (!active) return saved
+  const style = override ?? "unified"
+  return style === saved.style ? saved : { ...saved, style }
+}
+
 export function readDiffOptions(): DiffOptions {
   try {
     const raw = window.localStorage.getItem(DIFF_OPTIONS_STORAGE_KEY)
