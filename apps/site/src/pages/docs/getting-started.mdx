@@ -63,7 +63,9 @@ names.
 ### Updates and existing installs
 
 Quit the desktop app, then run the script again to update; it stops while the
-app runs. The installer remembers the chosen CLI name across updates, so no
+app runs. A running Zero daemon keeps serving the version that started it, so
+the script stops it once the update is installed; the next `zero` starts the
+new one. The installer remembers the chosen CLI name across updates, so no
 collision prompt is needed for an installer-owned command. A successful install with a different `--name`
 retires the previous owned command. Managed paths and content fingerprints
 are recorded in Zero's configuration directory; modified or unrelated paths

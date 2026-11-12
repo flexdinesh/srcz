@@ -50,7 +50,8 @@ command for `zero` in the examples below.
 - Linux: the app goes to `~/.local/share/zero-desktop/app/`, with a desktop
   entry that opens `zero://` links and an icon.
 
-Run a script again to update; quit the app first. Packages are on
+Run a script again to update; quit the app first. The script then stops a
+running daemon, so the app's next window uses the new version. Packages are on
 [GitHub Releases](https://github.com/flexdinesh/zero/releases):
 `zero-desktop_<version>_linux_<arch>.tar.gz` and
 `zero-desktop_<version>_darwin_<arch>.zip`. Unpacking one by hand registers no
