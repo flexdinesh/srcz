@@ -101,12 +101,13 @@ No local convention provides remote enforcement.
 Vite writes hashed assets to `apps/zero/internal/web/dist`, which no branch
 or tag tracks. `.github/workflows/build.yml` builds it before Go compilation
 and publishes only GitHub release assets (decision 0079): a `vX.Y.Z` tag on a
-`main` commit publishes that stable release, and every green push to `main`
-replaces the assets of the `edge` prerelease. Installed releases contain no
-Node.js runtime or frontend sidecar; the install scripts are the supported
-install.
+`main` commit publishes that stable release. CI builds nothing else;
+`scripts/install-dev.sh` builds any branch or commit on the developer's
+machine with the ref's own `mise run dist` (decision 0134). Installed releases
+contain no Node.js runtime or frontend sidecar; the install scripts are the
+supported install.
 
-Both publish CLI archives and desktop packages (macOS zip, Linux tar.gz per
+Both build CLI archives and desktop packages (macOS zip, Linux tar.gz per
 arch): `mygo build` bundles that build's Go binary as `resources/bin/zero`.
 Bare `zero [path]` opens the installed app through the daemon and otherwise
 serves in a browser.

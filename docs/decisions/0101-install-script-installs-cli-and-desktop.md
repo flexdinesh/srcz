@@ -1,6 +1,6 @@
 # 0101: Install script installs the CLI and the desktop app
 
-- Status: Accepted
+- Status: Accepted; edge script replaced by `install-dev.sh` (no `--cli-only`) in [0134](0134-dev-installs-build-from-source.md)
 - Date: 2026-11-06
 - Revises: [0073](0073-install-scripts.md) (one script per purpose, no flags),
   [0079](0079-releases-edge-prerelease-and-install-scripts.md) (one script per

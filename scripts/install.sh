@@ -8,8 +8,9 @@
 # zero and zero-desktop go on PATH in ~/.local/bin (or ~/bin when that is on
 # PATH). Linux: the app goes to ~/.local/share/zero-desktop/app with a desktop
 # entry for zero:// links and an icon. macOS: zero-desktop.app in /Applications
-# (or ~/Applications). --cli-only writes only the zero binary. Latest main:
-# scripts/install-edge.sh. Remove with scripts/uninstall.sh.
+# (or ~/Applications). --cli-only writes only the zero binary. Any branch or
+# commit, built from source: scripts/install-dev.sh. Remove with
+# scripts/uninstall.sh.
 
 
 
@@ -283,6 +284,7 @@ name_available() {
 rerun() {
   printf 'Rerun: curl -fsSL https://raw.githubusercontent.com/%s/main/scripts/%s | sh -s --' "$REPO" "$INSTALL_SCRIPT" >&2
   if [ "$CLI_ONLY" = 1 ]; then printf ' --cli-only' >&2; fi
+  if [ -n "${REQUESTED_REF:-}" ]; then printf ' --ref %s' "$REQUESTED_REF" >&2; fi
   printf ' --name %s\n' "$1" >&2
 }
 select_name() {
@@ -522,45 +524,7 @@ install_desktop_macos() {
   link_desktop "$apps/zero-desktop.app/Contents/MacOS/zero-desktop"
 }
 
-# download_desktop unpacks the desktop app of release TAG into TMP/desktop.
-download_desktop() {
-  if [ "$OS" = linux ]; then
-    package="zero-desktop_${VERSION}_linux_${ARCH}.tar.gz"
-  else
-    package="zero-desktop_${VERSION}_darwin_${ARCH}.zip"
-  fi
-
-  step "downloading the zero desktop app $TAG ($OS/$ARCH)"
-  fetch "$(release_url "$package")" "$TMP/$package" ||
-    fail "zero $TAG has no $package; install the CLI alone with --cli-only"
-
-  mkdir -p "$TMP/desktop"
-  if [ "$OS" = linux ]; then
-    validate_tar "$TMP/$package"
-    tar -xzf "$TMP/$package" -C "$TMP/desktop"
-  else
-    unzip -tq "$TMP/$package" >/dev/null || fail "invalid archive $package"
-    unzip -Z -l "$TMP/$package" >"$TMP/archive-types" || fail "invalid archive $package"
-    if LC_ALL=C grep -q '^[lbcps]' "$TMP/archive-types"; then fail "unsafe archive entry in $package"; fi
-    unzip -Z1 "$TMP/$package" >"$TMP/archive-list" || fail "invalid archive $package"
-    validate_members "$TMP/archive-list"
-    if has ditto; then
-      ditto -x -k "$TMP/$package" "$TMP/desktop"
-    else
-      unzip -q "$TMP/$package" -d "$TMP/desktop"
-    fi
-  fi
-  if [ "$OS" = linux ]; then
-    { [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
-      [ -f "$TMP/desktop/bin/zero" ] && [ -x "$TMP/desktop/bin/zero" ] &&
-      [ -f "$TMP/desktop/zero-desktop.png" ]; } || fail "$package has no valid zero-desktop app"
-  else
-    { [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
-      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ]; } || fail "$package has no valid zero-desktop.app"
-  fi
-}
-
-# install_desktop installs the app download_desktop unpacked.
+# install_desktop installs the app unpack_desktop unpacked.
 install_desktop() {
   if [ "$OS" = linux ]; then
     install_desktop_linux "$TMP/desktop"
@@ -571,11 +535,7 @@ install_desktop() {
 }
 # shared:desktop-install:end
 
-# shared:release:begin
-release_url() {
-  printf 'https://github.com/%s/releases/download/%s/%s' "$REPO" "$TAG" "$1"
-}
-
+# shared:unpack:begin
 validate_members() {
   [ -s "$1" ] || fail "empty archive"
   while IFS= read -r member; do
@@ -590,15 +550,73 @@ validate_tar() {
   if LC_ALL=C grep -q '^[^d-]' "$TMP/archive-types"; then fail "unsafe archive entry in $1"; fi
 }
 
+# unpack_cli ARCHIVE extracts zero_<VERSION>_<OS>_<ARCH>.tar.gz and sets CLI.
+unpack_cli() {
+  name="zero_${VERSION}_${OS}_${ARCH}"
+  validate_tar "$1"
+  mkdir -p "$TMP/cli"
+  tar -xzf "$1" -C "$TMP/cli"
+  CLI="$TMP/cli/$name/zero"
+  { [ -f "$CLI" ] && [ -x "$CLI" ] && [ ! -L "$CLI" ]; } || fail "$name.tar.gz has no executable zero binary"
+}
+
+# desktop_package sets package, the desktop app's asset name for VERSION.
+desktop_package() {
+  if [ "$OS" = linux ]; then
+    package="zero-desktop_${VERSION}_linux_${ARCH}.tar.gz"
+  else
+    package="zero-desktop_${VERSION}_darwin_${ARCH}.zip"
+  fi
+}
+
+# unpack_desktop ARCHIVE unpacks the desktop app package into TMP/desktop.
+unpack_desktop() {
+  mkdir -p "$TMP/desktop"
+  if [ "$OS" = linux ]; then
+    validate_tar "$1"
+    tar -xzf "$1" -C "$TMP/desktop"
+  else
+    unzip -tq "$1" >/dev/null || fail "invalid archive $package"
+    unzip -Z -l "$1" >"$TMP/archive-types" || fail "invalid archive $package"
+    if LC_ALL=C grep -q '^[lbcps]' "$TMP/archive-types"; then fail "unsafe archive entry in $package"; fi
+    unzip -Z1 "$1" >"$TMP/archive-list" || fail "invalid archive $package"
+    validate_members "$TMP/archive-list"
+    if has ditto; then
+      ditto -x -k "$1" "$TMP/desktop"
+    else
+      unzip -q "$1" -d "$TMP/desktop"
+    fi
+  fi
+  if [ "$OS" = linux ]; then
+    { [ -f "$TMP/desktop/zero-desktop" ] && [ -x "$TMP/desktop/zero-desktop" ] &&
+      [ -f "$TMP/desktop/bin/zero" ] && [ -x "$TMP/desktop/bin/zero" ] &&
+      [ -f "$TMP/desktop/zero-desktop.png" ]; } || fail "$package has no valid zero-desktop app"
+  else
+    { [ -x "$TMP/desktop/zero-desktop.app/Contents/MacOS/zero-desktop" ] &&
+      [ -x "$TMP/desktop/zero-desktop.app/Contents/Resources/bin/zero" ]; } || fail "$package has no valid zero-desktop.app"
+  fi
+}
+# shared:unpack:end
+
+# shared:release:begin
+release_url() {
+  printf 'https://github.com/%s/releases/download/%s/%s' "$REPO" "$TAG" "$1"
+}
+
 download_cli() {
   name="zero_${VERSION}_${OS}_${ARCH}"
   step "downloading zero $TAG ($OS/$ARCH)"
   fetch "$(release_url "$name.tar.gz")" "$TMP/$name.tar.gz" || fail "could not download $name.tar.gz from zero $TAG"
-  validate_tar "$TMP/$name.tar.gz"
-  mkdir -p "$TMP/cli"
-  tar -xzf "$TMP/$name.tar.gz" -C "$TMP/cli"
-  CLI="$TMP/cli/$name/zero"
-  { [ -f "$CLI" ] && [ -x "$CLI" ] && [ ! -L "$CLI" ]; } || fail "$name.tar.gz has no executable zero binary"
+  unpack_cli "$TMP/$name.tar.gz"
+}
+
+# download_desktop unpacks the desktop app of release TAG into TMP/desktop.
+download_desktop() {
+  desktop_package
+  step "downloading the zero desktop app $TAG ($OS/$ARCH)"
+  fetch "$(release_url "$package")" "$TMP/$package" ||
+    fail "zero $TAG has no $package; install the CLI alone with --cli-only"
+  unpack_desktop "$TMP/$package"
 }
 # shared:release:end
 

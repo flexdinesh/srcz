@@ -285,6 +285,11 @@ done
 if [ "$REMOVED" = 0 ]; then ok "nothing to remove in $HOME"
 else ok "uninstalled zero"
 fi
+# Report the local images scripts/install-dev.sh built without deleting them.
+if has docker && images="$(docker image ls --format '{{.Repository}}:{{.Tag}}' zero-dev 2>/dev/null)" && [ -n "$images" ]; then
+  step "kept the zero-dev images scripts/install-dev.sh built; remove them with:"
+  note "docker image rm $(printf '%s' "$images" | tr '\n' ' ')"
+fi
 step "kept your data (delete it yourself if you no longer need it):"
 if [ "$OS" = linux ]; then
   note "$ZERO_CONFIG"
