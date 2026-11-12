@@ -13,7 +13,8 @@
 # `mise run dist:image` builds the zero-dev image zero attach uses when Docker
 # runs. Builds report 0.0.0-dev.<branch> (0.0.0-dev.g<commit> for a commit),
 # the commit, and its date. Installs in the same places as scripts/install.sh
-# and replaces either install. Remove with scripts/uninstall.sh.
+# and replaces either install, then stops a running daemon so the next zero
+# serves this build (decision 0136). Remove with scripts/uninstall.sh.
 
 # shared:base:begin
 set -eu
@@ -368,6 +369,25 @@ finish_records() {
 
 # shared:cli:end
 
+# shared:daemon:begin
+# stop_daemon stops a running zero daemon with the CLI just installed. A daemon
+# serves the web app of the build that started it until it exits, so without
+# this the next zero would keep showing the old build (decision 0136). A
+# running desktop app would start its own daemon again at once, so it is left
+# alone then.
+stop_daemon() {
+  if desktop_running; then
+    warn "the zero desktop app is running, so its daemon keeps the old build; quit the app, then run '$NAME daemon stop'"
+    return 0
+  fi
+  if ! stopped="$("$BIN_DIR/$NAME" daemon stop 2>&1)"; then
+    warn "could not stop the running zero daemon; run '$NAME daemon stop'"
+    return 0
+  fi
+  if [ "$stopped" = stopped ]; then ok "stopped the running zero daemon; the next $NAME starts this build"; fi
+}
+# shared:daemon:end
+
 # shared:desktop-install:begin
 # check_webkit warns on Linux without WebKitGTK 4.1, which the app's window
 # needs. The app still installs: the check cannot see every library path.
@@ -718,6 +738,7 @@ NEW_RECORD="$TMP/new-record"
 install_desktop
 install_cli
 finish_records
+stop_daemon
 check_webkit
 if [ -n "$IMAGE" ]; then ok "built $IMAGE for zero attach"; fi
 ok "done; open the current directory with:"

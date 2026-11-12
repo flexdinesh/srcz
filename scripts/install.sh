@@ -8,7 +8,9 @@
 # zero and zero-desktop go on PATH in ~/.local/bin (or ~/bin when that is on
 # PATH). Linux: the app goes to ~/.local/share/zero-desktop/app with a desktop
 # entry for zero:// links and an icon. macOS: zero-desktop.app in /Applications
-# (or ~/Applications). --cli-only writes only the zero binary. Any branch or
+# (or ~/Applications). --cli-only writes only the zero binary. A running daemon
+# is stopped after installing, so the next zero serves this version (decision
+# 0136). Any branch or
 # commit, built from source: scripts/install-dev.sh. Remove with
 # scripts/uninstall.sh.
 
@@ -367,6 +369,25 @@ finish_records() {
 
 # shared:cli:end
 
+# shared:daemon:begin
+# stop_daemon stops a running zero daemon with the CLI just installed. A daemon
+# serves the web app of the build that started it until it exits, so without
+# this the next zero would keep showing the old build (decision 0136). A
+# running desktop app would start its own daemon again at once, so it is left
+# alone then.
+stop_daemon() {
+  if desktop_running; then
+    warn "the zero desktop app is running, so its daemon keeps the old build; quit the app, then run '$NAME daemon stop'"
+    return 0
+  fi
+  if ! stopped="$("$BIN_DIR/$NAME" daemon stop 2>&1)"; then
+    warn "could not stop the running zero daemon; run '$NAME daemon stop'"
+    return 0
+  fi
+  if [ "$stopped" = stopped ]; then ok "stopped the running zero daemon; the next $NAME starts this build"; fi
+}
+# shared:daemon:end
+
 # shared:args:begin
 CLI_ONLY=0
 REQUESTED_NAME=""
@@ -662,6 +683,7 @@ NEW_RECORD="$TMP/new-record"
 if [ "$CLI_ONLY" = 0 ]; then install_desktop; fi
 install_cli
 finish_records
+stop_daemon
 if [ "$CLI_ONLY" = 0 ]; then check_webkit; fi
 ok "done; open the current directory with:"
 note "$NAME ."

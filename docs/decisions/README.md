@@ -137,3 +137,4 @@ rewriting history; update `Status` on the old record.
 | [0133](0133-sidebar-field-edges.md) | Sidebar field edges | Accepted; amends 0045 |
 | [0134](0134-dev-installs-build-from-source.md) | Development installs build any branch or commit from source | Accepted; supersedes 0079 edge, 0093; revises 0101, 0125, 0127 |
 | [0135](0135-walkthrough-narration-panel-and-one-way-review-scroll.md) | Walkthrough narration panel and one-way review scroll | Accepted; supersedes 0047's narration zone and 0113's step bar; extends 0034, 0048, 0111 |
+| [0136](0136-installs-stop-the-running-daemon.md) | Installs stop the running daemon | Accepted; extends 0061, 0101, 0134 |

@@ -29,7 +29,9 @@ toolchain and takes minutes; mise, Go, and pnpm keep their caches, so later
 builds are faster. When Docker runs it also builds the `zero-dev:<version>`
 image that `zero attach` uses for development builds; without it, attach is
 unavailable for that build. Refs from before `install-dev.sh` have no `dist`
-task and are refused. There is no `--cli-only`.
+task and are refused. There is no `--cli-only`. Once installed, it stops a
+running daemon with the new CLI, so the next `zero` starts this build's daemon
+and its web app (decision 0136).
 
 Builds report `0.0.0-dev.<branch>` (runs of other characters become `-`), or
 `0.0.0-dev.g<commit>` for a commit, then the commit and its date.
@@ -45,7 +47,6 @@ Run it:
 
 ```sh
 zero --version              # zero 0.0.0-dev.main <commit> <date>
-zero daemon stop            # restart the daemon on the new build (next zero starts it)
 zero .                      # desktop app, else browser
 zero browser .              # browser
 zero-desktop .              # desktop app, without the CLI

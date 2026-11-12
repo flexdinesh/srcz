@@ -148,12 +148,19 @@ const STUBS: Record<string, string[]> = {
 const SHA = '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'
 const FORK_SHA = 'f0e1d2c3b4a5968778695a4b3c2d1e0f0e1d2c3b'
 
+// fakeZero answers --version, daemon status (STUB_DAEMON_STATUS, not running
+// by default), and daemon stop: it logs the stop and prints STUB_DAEMON_STOP
+// ("not running" by default), failing when STUB_DAEMON_STOP_FAIL is set.
 function fakeZero(version: string): string {
   return [
     '#!/bin/sh',
-    'case "$1" in',
-    `  --version) echo "zero ${version}" ;;`,
-    '  daemon) exit "${STUB_DAEMON_STATUS:-1}" ;;',
+    'case "$1 ${2:-}" in',
+    `  "--version "*) echo "zero ${version}" ;;`,
+    '  "daemon stop")',
+    '    echo "daemon stop $0" >> "$STUB_LOG"',
+    '    [ -z "${STUB_DAEMON_STOP_FAIL:-}" ] || exit 1',
+    '    echo "${STUB_DAEMON_STOP:-not running}" ;;',
+    '  "daemon "*) exit "${STUB_DAEMON_STATUS:-1}" ;;',
     'esac',
     '',
   ].join('\n')
@@ -674,6 +681,41 @@ void test('running managed daemon or desktop stops uninstall; cli-only still upd
   assert.notEqual(install.code, 0)
   assertOk(await run('install.sh', sandbox, { STUB_PGREP: '0' }, CLI_ONLY))
 })
+
+// A daemon serves the build that started it, so installs stop it with the CLI
+// they installed, unless the desktop app would start it again (decision 0136).
+for (const { script, version, cliOnly } of CHANNELS) {
+  void test(`${script}: stops a running daemon with the installed CLI; a failed stop or running app only warns`, async (t) => {
+    const sandbox = await createSandbox(t.after.bind(t))
+    await createFullRelease(sandbox, { version })
+    const stopped = await run(script, sandbox, { STUB_DAEMON_STOP: 'stopped' }, ['--name', 'zero-new'])
+    assertOk(stopped)
+    assert.match(stopped.stdout, /stopped the running zero daemon; the next zero-new starts this build/)
+    assert.match(await readFile(sandbox.log, 'utf8'), new RegExp(`daemon stop ${cliPath(sandbox, 'zero-new')}\n`))
+
+    const idle = await run(script, sandbox)
+    assertOk(idle)
+    assert.doesNotMatch(idle.stdout + idle.stderr, /daemon/)
+
+    // Later runs keep the remembered name.
+    const failed = await run(script, sandbox, { STUB_DAEMON_STOP_FAIL: '1' })
+    assertOk(failed)
+    assert.match(failed.stdout, /could not stop the running zero daemon; run 'zero-new daemon stop'/)
+    assert.match(await readFile(cliPath(sandbox, 'zero-new'), 'utf8'), new RegExp(version.replaceAll('.', '\\.')))
+
+    // Only --cli-only installs while the app runs; install-dev.sh refuses.
+    await writeFile(sandbox.log, '')
+    const app = await run(script, sandbox, { STUB_PGREP: '0', STUB_DAEMON_STOP: 'stopped' }, cliOnly ? CLI_ONLY : [])
+    if (cliOnly) {
+      assertOk(app)
+      assert.match(app.stdout, /desktop app is running, so its daemon keeps the old build; quit the app, then run 'zero-new daemon stop'/)
+    } else {
+      assert.notEqual(app.code, 0)
+      assert.match(app.stderr, /desktop app is running/)
+    }
+    assert.doesNotMatch(await readFile(sandbox.log, 'utf8'), /daemon stop/)
+  })
+}
 
 void test('bin-directory preference and shell PATH instructions survive collision safety', async (t) => {
   for (const shell of ['fish', 'zsh', 'bash', 'dash']) {
