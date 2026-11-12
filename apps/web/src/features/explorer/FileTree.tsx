@@ -12,6 +12,7 @@ import { openDirectoryPaths } from "../../api/page-data.ts"
 import { projectShortcutLabel } from "../projects/ProjectPicker.tsx"
 import { Button } from "../../components/ui/button.tsx"
 import { treeCSS } from "../../lib/tree-css.ts"
+import { treeIcons } from "../../lib/tree-icons.ts"
 import { writeClipboard } from "../../lib/clipboard.ts"
 import { desktopBridge } from "../../lib/desktop-bridge.ts"
 import { absolutePath, isTreeMenuAction, treeMenuItems, treeRowPath, type TreeMenuAction } from "./tree-menu.ts"
@@ -170,7 +171,7 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
     search: false,
     unsafeCSS: treeCSS,
     fileTreeSearchMode: "hide-non-matches",
-    icons: { set: "complete", colored: true },
+    icons: treeIcons,
     onSelectionChange(selected) {
       if (syncing.current) return
       const focused = model.getFocusedPath()

@@ -7,8 +7,8 @@
   cursor: text;
   font-family: var(--font-mono);
   font-size: var(--text-code);
-  font-feature-settings: "calt" 1, "zero" 1, "cv02" 1, "cv08" 1, "ss01" 1;
-  font-variant-ligatures: normal;
+  /* No "calt": Source shows the characters typed, unligatured (decision 0138). */
+  font-feature-settings: "zero" 1, "cv02" 1, "cv08" 1, "ss01" 1;
   tab-size: 4;
 }
 

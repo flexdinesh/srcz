@@ -29,3 +29,21 @@ test("diffs highlight mapped families with zero syntax colors", async ({ page })
     return tokens.some((token) => token.textContent?.trim() === "export" && getComputedStyle(token).color === expected)
   })).toBe(true)
 })
+
+// Bold syntax tokens in the bundled mono face keep Pierre's 22px rows
+// (decisions 0130, 0138), so the review's reveal pin never fights a resize.
+test("diff rows with bold tokens keep their row height", async ({ page }) => {
+  await page.goto(`${gitApiOrigin}/view?project=${project}&review=working#f=added.md`)
+  const diff = page.getByRole("main").getByRole("region", { name: "added.md", exact: true }).locator(".diff-view")
+  await expect(diff.locator('[data-line-type="change-addition"]').first()).toBeVisible()
+  await expect.poll(() => diff.evaluate((host) => {
+    const lines = [...(host.shadowRoot?.querySelectorAll("[data-line]") ?? [])]
+    const bold = lines.filter((line) => [...line.querySelectorAll("span")].some((token) => Number(getComputedStyle(token).fontWeight) >= 700))
+    return {
+      bold: bold.length > 0,
+      heights: [...new Set(lines.map((line) => line.getBoundingClientRect().height))],
+      font: lines.length > 0 ? getComputedStyle(lines[0]).fontFamily.startsWith('"JetBrains Mono Variable"') : false,
+      ligatures: lines.length > 0 ? getComputedStyle(lines[0]).fontVariantLigatures : "",
+    }
+  })).toEqual({ bold: true, heights: [22], font: true, ligatures: "none" })
+})

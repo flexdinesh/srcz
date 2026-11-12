@@ -8,12 +8,9 @@
  * gray12 borders and text.
  */
 
-/* IBM Plex Mono, bundled: the one mono face of the app, site, and brand
-   (decision 0130). */
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
-@import "@fontsource/ibm-plex-mono/600.css";
-@import "@fontsource/ibm-plex-mono/700.css";
+/* JetBrains Mono, bundled: the one mono face of the app, site, and brand
+   (decision 0138). */
+@import "@fontsource-variable/jetbrains-mono";
 
 :root {
   --vocs-color-gray1: #1d2026;
@@ -54,8 +51,10 @@
   --sz-wash-coral: light-dark(#fcf1ee, #3d302d);
   --sz-mark: light-dark(#f2502e, #ff6b4a);
   --sz-mark-ink: light-dark(#2b2d33, #ffffff);
-  --sz-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --sz-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --vocs-font-family-mono: var(--sz-mono);
+  /* Code shows the characters typed: no ligatures (decision 0138). */
+  font-variant-ligatures: none;
 }
 
 /* Vocs rounds through utility classes in many components, so one rule covers them. */

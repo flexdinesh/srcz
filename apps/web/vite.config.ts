@@ -142,6 +142,9 @@ export default defineConfig(({ command, mode }) => ({
   base: command === "build" ? "/assets/" : "/",
   build: {
     assetsDir: "",
+    // Fonts stay files: the CSP's font-src 'self' refuses data: URLs, and
+    // JetBrains Mono's cyrillic-ext subset is under the 4 KB inline limit.
+    assetsInlineLimit: (file: string) => (/\.woff2?$/.test(file) ? false : undefined),
     emptyOutDir: true,
     outDir: "../zero/internal/web/dist",
   },

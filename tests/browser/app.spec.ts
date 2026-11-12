@@ -245,6 +245,33 @@ test("command palette opens settings at the chosen setting", async ({ page }) =>
   await expect(settings.locator("[data-revealed]")).toHaveCount(0)
 })
 
+// Folders carry a folder icon beside the chevron that opens with the folder
+// and sits over its children's icons; source is unligatured mono (decision 0138).
+test("tree folders show folder icons and source shows the characters typed", async ({ page }) => {
+  await page.goto("/view?path=code%2Fmain.go")
+  const tree = page.getByRole("complementary", { name: "Files" })
+  const code = tree.getByRole("treeitem", { name: "code", exact: true })
+  const reference = tree.getByRole("treeitem", { name: "reference", exact: true })
+  const main = tree.getByRole("treeitem", { name: "main.go", exact: true })
+  const folderIcon = (row: typeof code) => row.locator('[data-item-section="folder-icon"] svg')
+
+  await expect(folderIcon(code)).toHaveAttribute("data-icon-name", "file-tree-icon-folder-open")
+  await expect(folderIcon(reference)).toHaveAttribute("data-icon-name", "file-tree-icon-folder")
+  await expect(folderIcon(main)).toHaveCount(0)
+  const folderBox = await folderIcon(code).boundingBox()
+  const childBox = await main.locator('[data-item-section="icon"] svg').boundingBox()
+  if (!folderBox || !childBox) throw new Error("not laid out")
+  expect(Math.abs(folderBox.x - childBox.x)).toBeLessThan(0.5)
+
+  await reference.click()
+  await expect(folderIcon(reference)).toHaveAttribute("data-icon-name", "file-tree-icon-folder-open")
+
+  const line = page.getByRole("textbox", { name: "Go source" }).locator('[data-line="2"] .source-document-line-content')
+  await expect(line).toHaveText("package main")
+  expect(await line.evaluate((element) => getComputedStyle(element).fontFamily)).toMatch(/^"JetBrains Mono Variable"/)
+  await expect(line).toHaveCSS("font-variant-ligatures", "none")
+})
+
 test("highlights Source in the browser with the selected theme", async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem("zero-theme", "light"))
   await page.goto("/view?path=code%2Fmain.go")
