@@ -1,385 +1,457 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-08T04:01:40.000Z",
+  "generatedAt": "2026-11-13T04:57:33.000Z",
   "title": "Design System: zero",
   "extensions": {
     "colorMeta": {
       "bg": {
         "role": "neutral",
-        "displayName": "bg",
+        "displayName": "Slate Base",
+        "canonical": "light-dark(#fafafa, #272b32)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "light-dark(#e4e5e8, #1d2026)",
+        "tonalRamp": [
+          "oklch(15% 0.0021 271.37)",
+          "oklch(26% 0.0026 271.37)",
+          "oklch(38% 0.0033 271.37)",
+          "oklch(49% 0.0039 271.37)",
+          "oklch(61% 0.0039 271.37)",
+          "oklch(72% 0.0033 271.37)",
+          "oklch(84% 0.0026 271.37)",
+          "oklch(95% 0.0021 271.37)"
+        ]
+      },
+      "workspace-chrome": {
+        "role": "neutral",
+        "displayName": "Workspace Chrome",
+        "canonical": "light-dark(#e4e5e8, #2e323b)",
+        "tonalRamp": [
+          "oklch(15% 0.0021 271.37)",
+          "oklch(26% 0.0026 271.37)",
+          "oklch(38% 0.0033 271.37)",
+          "oklch(49% 0.0039 271.37)",
+          "oklch(61% 0.0039 271.37)",
+          "oklch(72% 0.0033 271.37)",
+          "oklch(84% 0.0026 271.37)",
+          "oklch(95% 0.0021 271.37)"
         ]
       },
       "surface": {
         "role": "neutral",
-        "displayName": "surface",
+        "displayName": "Document Surface",
+        "canonical": "light-dark(#fafafa, #272b32)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
         ]
       },
       "surface-secondary": {
         "role": "neutral",
-        "displayName": "surface secondary",
+        "displayName": "Explorer Surface",
+        "canonical": "light-dark(#eceef0, #2e323b)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
+        ]
+      },
+      "surface-recessed": {
+        "role": "neutral",
+        "displayName": "Recessed Fill",
+        "canonical": "var(--color-surface-secondary)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
         ]
       },
       "surface-raised": {
         "role": "neutral",
-        "displayName": "surface raised",
+        "displayName": "Raised Surface",
+        "canonical": "light-dark(#ffffff, #343944)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
         ]
       },
       "text-primary": {
         "role": "neutral",
-        "displayName": "text primary",
+        "displayName": "Primary Ink",
+        "canonical": "light-dark(#24272c, #dce0e5)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0050 260.70)",
+          "oklch(26% 0.0065 260.70)",
+          "oklch(38% 0.0080 260.70)",
+          "oklch(49% 0.0095 260.70)",
+          "oklch(61% 0.0095 260.70)",
+          "oklch(72% 0.0080 260.70)",
+          "oklch(84% 0.0065 260.70)",
+          "oklch(95% 0.0050 260.70)"
         ]
       },
       "text-secondary": {
         "role": "neutral",
-        "displayName": "text secondary",
+        "displayName": "Secondary Ink",
+        "canonical": "light-dark(#4b515b, #b0b6c2)",
         "tonalRamp": [
-          "oklch(15% 0.02449 264.30)",
-          "oklch(26% 0.02449 264.30)",
-          "oklch(38% 0.02449 264.30)",
-          "oklch(49% 0.02449 264.30)",
-          "oklch(61% 0.02449 264.30)",
-          "oklch(72% 0.02449 264.30)",
-          "oklch(84% 0.02449 264.30)",
-          "oklch(95% 0.02449 264.30)"
+          "oklch(15% 0.0090 260.69)",
+          "oklch(26% 0.0115 260.69)",
+          "oklch(38% 0.0143 260.69)",
+          "oklch(49% 0.0168 260.69)",
+          "oklch(61% 0.0168 260.69)",
+          "oklch(72% 0.0143 260.69)",
+          "oklch(84% 0.0115 260.69)",
+          "oklch(95% 0.0090 260.69)"
         ]
       },
       "text-muted": {
         "role": "neutral",
-        "displayName": "text muted",
+        "displayName": "Muted Ink",
+        "canonical": "light-dark(#5e6571, #959ca9)",
         "tonalRamp": [
-          "oklch(15% 0.02563 260.69)",
-          "oklch(26% 0.02563 260.69)",
-          "oklch(38% 0.02563 260.69)",
-          "oklch(49% 0.02563 260.69)",
-          "oklch(61% 0.02563 260.69)",
-          "oklch(72% 0.02563 260.69)",
-          "oklch(84% 0.02563 260.69)",
-          "oklch(95% 0.02563 260.69)"
+          "oklch(15% 0.0103 261.29)",
+          "oklch(26% 0.0132 261.29)",
+          "oklch(38% 0.0164 261.29)",
+          "oklch(49% 0.0194 261.29)",
+          "oklch(61% 0.0194 261.29)",
+          "oklch(72% 0.0164 261.29)",
+          "oklch(84% 0.0132 261.29)",
+          "oklch(95% 0.0103 261.29)"
         ]
       },
       "border": {
         "role": "neutral",
-        "displayName": "border",
+        "displayName": "Hairline",
+        "canonical": "light-dark(#c9ccd1, #3e444f)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0038 260.73)",
+          "oklch(26% 0.0048 260.73)",
+          "oklch(38% 0.0060 260.73)",
+          "oklch(49% 0.0071 260.73)",
+          "oklch(61% 0.0071 260.73)",
+          "oklch(72% 0.0060 260.73)",
+          "oklch(84% 0.0048 260.73)",
+          "oklch(95% 0.0038 260.73)"
         ]
       },
       "border-strong": {
         "role": "neutral",
-        "displayName": "border strong",
+        "displayName": "Strong Hairline",
+        "canonical": "light-dark(#aeb3bb, #5a616e)",
         "tonalRamp": [
-          "oklch(15% 0.01415 258.35)",
-          "oklch(26% 0.01415 258.35)",
-          "oklch(38% 0.01415 258.35)",
-          "oklch(49% 0.01415 258.35)",
-          "oklch(61% 0.01415 258.35)",
-          "oklch(72% 0.01415 258.35)",
-          "oklch(84% 0.01415 258.35)",
-          "oklch(95% 0.01415 258.35)"
+          "oklch(15% 0.0062 259.82)",
+          "oklch(26% 0.0080 259.82)",
+          "oklch(38% 0.0100 259.82)",
+          "oklch(49% 0.0117 259.82)",
+          "oklch(61% 0.0117 259.82)",
+          "oklch(72% 0.0100 259.82)",
+          "oklch(84% 0.0080 259.82)",
+          "oklch(95% 0.0062 259.82)"
         ]
       },
       "accent": {
         "role": "primary",
-        "displayName": "accent",
+        "displayName": "Functional Blue",
+        "canonical": "light-dark(#325dc8, #74ade8)",
         "tonalRamp": [
-          "oklch(15% 0.21521 262.88)",
-          "oklch(26% 0.21521 262.88)",
-          "oklch(38% 0.21521 262.88)",
-          "oklch(49% 0.21521 262.88)",
-          "oklch(61% 0.21521 262.88)",
-          "oklch(72% 0.21521 262.88)",
-          "oklch(84% 0.21521 262.88)",
-          "oklch(95% 0.21521 262.88)"
+          "oklch(15% 0.0853 264.49)",
+          "oklch(26% 0.1096 264.49)",
+          "oklch(38% 0.1361 264.49)",
+          "oklch(49% 0.1604 264.49)",
+          "oklch(61% 0.1604 264.49)",
+          "oklch(72% 0.1361 264.49)",
+          "oklch(84% 0.1096 264.49)",
+          "oklch(95% 0.0853 264.49)"
         ]
       },
       "accent-hover": {
         "role": "primary",
-        "displayName": "accent hover",
+        "displayName": "Functional Blue Hover",
+        "canonical": "light-dark(#2348ac, #a8cdf5)",
         "tonalRamp": [
-          "oklch(15% 0.21717 264.38)",
-          "oklch(26% 0.21717 264.38)",
-          "oklch(38% 0.21717 264.38)",
-          "oklch(49% 0.21717 264.38)",
-          "oklch(61% 0.21717 264.38)",
-          "oklch(72% 0.21717 264.38)",
-          "oklch(84% 0.21717 264.38)",
-          "oklch(95% 0.21717 264.38)"
+          "oklch(15% 0.0814 264.83)",
+          "oklch(26% 0.1046 264.83)",
+          "oklch(38% 0.1300 264.83)",
+          "oklch(49% 0.1532 264.83)",
+          "oklch(61% 0.1532 264.83)",
+          "oklch(72% 0.1300 264.83)",
+          "oklch(84% 0.1046 264.83)",
+          "oklch(95% 0.0814 264.83)"
         ]
       },
       "accent-subtle": {
         "role": "primary",
-        "displayName": "accent subtle",
+        "displayName": "Functional Blue Tint",
+        "canonical": "light-dark(#dbe5fa, #2f4563)",
         "tonalRamp": [
-          "oklch(15% 0.02282 266.91)",
-          "oklch(26% 0.02282 266.91)",
-          "oklch(38% 0.02282 266.91)",
-          "oklch(49% 0.02282 266.91)",
-          "oklch(61% 0.02282 266.91)",
-          "oklch(72% 0.02282 266.91)",
-          "oklch(84% 0.02282 266.91)",
-          "oklch(95% 0.02282 266.91)"
+          "oklch(15% 0.0150 265.33)",
+          "oklch(26% 0.0193 265.33)",
+          "oklch(38% 0.0240 265.33)",
+          "oklch(49% 0.0282 265.33)",
+          "oklch(61% 0.0282 265.33)",
+          "oklch(72% 0.0240 265.33)",
+          "oklch(84% 0.0193 265.33)",
+          "oklch(95% 0.0150 265.33)"
         ]
       },
       "on-accent": {
         "role": "primary",
-        "displayName": "on accent",
+        "displayName": "On Accent",
+        "canonical": "light-dark(#ffffff, #1d2026)",
         "tonalRamp": [
-          "oklch(15% 0.00000 89.88)",
-          "oklch(26% 0.00000 89.88)",
-          "oklch(38% 0.00000 89.88)",
-          "oklch(49% 0.00000 89.88)",
-          "oklch(61% 0.00000 89.88)",
-          "oklch(72% 0.00000 89.88)",
-          "oklch(84% 0.00000 89.88)",
-          "oklch(95% 0.00000 89.88)"
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
         ]
       },
       "success": {
-        "role": "neutral",
-        "displayName": "success",
+        "role": "secondary",
+        "displayName": "Success Green",
+        "canonical": "light-dark(#1d7a43, #8fc97a)",
         "tonalRamp": [
-          "oklch(15% 0.11365 157.06)",
-          "oklch(26% 0.11365 157.06)",
-          "oklch(38% 0.11365 157.06)",
-          "oklch(49% 0.11365 157.06)",
-          "oklch(61% 0.11365 157.06)",
-          "oklch(72% 0.11365 157.06)",
-          "oklch(84% 0.11365 157.06)",
-          "oklch(95% 0.11365 157.06)"
+          "oklch(15% 0.0593 152.43)",
+          "oklch(26% 0.0762 152.43)",
+          "oklch(38% 0.0947 152.43)",
+          "oklch(49% 0.1116 152.43)",
+          "oklch(61% 0.1116 152.43)",
+          "oklch(72% 0.0947 152.43)",
+          "oklch(84% 0.0762 152.43)",
+          "oklch(95% 0.0593 152.43)"
         ]
       },
       "warning": {
-        "role": "neutral",
-        "displayName": "warning",
+        "role": "secondary",
+        "displayName": "Warning Amber",
+        "canonical": "light-dark(#96590a, #dcb26b)",
         "tonalRamp": [
-          "oklch(15% 0.12015 62.73)",
-          "oklch(26% 0.12015 62.73)",
-          "oklch(38% 0.12015 62.73)",
-          "oklch(49% 0.12015 62.73)",
-          "oklch(61% 0.12015 62.73)",
-          "oklch(72% 0.12015 62.73)",
-          "oklch(84% 0.12015 62.73)",
-          "oklch(95% 0.12015 62.73)"
+          "oklch(15% 0.0561 64.29)",
+          "oklch(26% 0.0721 64.29)",
+          "oklch(38% 0.0895 64.29)",
+          "oklch(49% 0.1055 64.29)",
+          "oklch(61% 0.1055 64.29)",
+          "oklch(72% 0.0895 64.29)",
+          "oklch(84% 0.0721 64.29)",
+          "oklch(95% 0.0561 64.29)"
         ]
       },
       "warning-subtle": {
-        "role": "neutral",
-        "displayName": "warning subtle",
+        "role": "secondary",
+        "displayName": "Warning Tint",
+        "canonical": "light-dark(#f9e9c4, #4a3d24)",
         "tonalRamp": [
-          "oklch(15% 0.04676 88.29)",
-          "oklch(26% 0.04676 88.29)",
-          "oklch(38% 0.04676 88.29)",
-          "oklch(49% 0.04676 88.29)",
-          "oklch(61% 0.04676 88.29)",
-          "oklch(72% 0.04676 88.29)",
-          "oklch(84% 0.04676 88.29)",
-          "oklch(95% 0.04676 88.29)"
+          "oklch(15% 0.0252 87.40)",
+          "oklch(26% 0.0324 87.40)",
+          "oklch(38% 0.0402 87.40)",
+          "oklch(49% 0.0474 87.40)",
+          "oklch(61% 0.0474 87.40)",
+          "oklch(72% 0.0402 87.40)",
+          "oklch(84% 0.0324 87.40)",
+          "oklch(95% 0.0252 87.40)"
         ]
       },
       "destructive": {
-        "role": "neutral",
-        "displayName": "destructive",
+        "role": "secondary",
+        "displayName": "Destructive Red",
+        "canonical": "light-dark(#b8332c, #ee8f98)",
         "tonalRamp": [
-          "oklch(15% 0.17895 27.94)",
-          "oklch(26% 0.17895 27.94)",
-          "oklch(38% 0.17895 27.94)",
-          "oklch(49% 0.17895 27.94)",
-          "oklch(61% 0.17895 27.94)",
-          "oklch(72% 0.17895 27.94)",
-          "oklch(84% 0.17895 27.94)",
-          "oklch(95% 0.17895 27.94)"
+          "oklch(15% 0.0839 27.73)",
+          "oklch(26% 0.1079 27.73)",
+          "oklch(38% 0.1340 27.73)",
+          "oklch(49% 0.1579 27.73)",
+          "oklch(61% 0.1579 27.73)",
+          "oklch(72% 0.1340 27.73)",
+          "oklch(84% 0.1079 27.73)",
+          "oklch(95% 0.0839 27.73)"
         ]
       },
       "destructive-subtle": {
-        "role": "neutral",
-        "displayName": "destructive subtle",
+        "role": "secondary",
+        "displayName": "Destructive Tint",
+        "canonical": "light-dark(#f9e1df, #4a2f33)",
         "tonalRamp": [
-          "oklch(15% 0.01632 22.08)",
-          "oklch(26% 0.01632 22.08)",
-          "oklch(38% 0.01632 22.08)",
-          "oklch(49% 0.01632 22.08)",
-          "oklch(61% 0.01632 22.08)",
-          "oklch(72% 0.01632 22.08)",
-          "oklch(84% 0.01632 22.08)",
-          "oklch(95% 0.01632 22.08)"
+          "oklch(15% 0.0131 23.37)",
+          "oklch(26% 0.0168 23.37)",
+          "oklch(38% 0.0209 23.37)",
+          "oklch(49% 0.0246 23.37)",
+          "oklch(61% 0.0246 23.37)",
+          "oklch(72% 0.0209 23.37)",
+          "oklch(84% 0.0168 23.37)",
+          "oklch(95% 0.0131 23.37)"
         ]
       },
       "overlay": {
         "role": "neutral",
-        "displayName": "overlay",
+        "displayName": "Drawer Backdrop",
+        "canonical": "light-dark(rgb(15 18 23 / 48%), rgb(0 0 0 / 62%))",
         "tonalRamp": [
-          "oklch(15% 0.01136 260.64)",
-          "oklch(26% 0.01136 260.64)",
-          "oklch(38% 0.01136 260.64)",
-          "oklch(49% 0.01136 260.64)",
-          "oklch(61% 0.01136 260.64)",
-          "oklch(72% 0.01136 260.64)",
-          "oklch(84% 0.01136 260.64)",
-          "oklch(95% 0.01136 260.64)"
+          "oklch(15% 0.0056 260.64)",
+          "oklch(26% 0.0072 260.64)",
+          "oklch(38% 0.0089 260.64)",
+          "oklch(49% 0.0105 260.64)",
+          "oklch(61% 0.0105 260.64)",
+          "oklch(72% 0.0089 260.64)",
+          "oklch(84% 0.0072 260.64)",
+          "oklch(95% 0.0056 260.64)"
         ]
       },
       "syntax-comment": {
-        "role": "neutral",
-        "displayName": "syntax comment",
+        "role": "tertiary",
+        "displayName": "Syntax Comment",
+        "canonical": "light-dark(#57606a, #8b949e)",
         "tonalRamp": [
-          "oklch(15% 0.01961 251.02)",
-          "oklch(26% 0.01961 251.02)",
-          "oklch(38% 0.01961 251.02)",
-          "oklch(49% 0.01961 251.02)",
-          "oklch(61% 0.01961 251.02)",
-          "oklch(72% 0.01961 251.02)",
-          "oklch(84% 0.01961 251.02)",
-          "oklch(95% 0.01961 251.02)"
+          "oklch(15% 0.0096 251.02)",
+          "oklch(26% 0.0124 251.02)",
+          "oklch(38% 0.0154 251.02)",
+          "oklch(49% 0.0181 251.02)",
+          "oklch(61% 0.0181 251.02)",
+          "oklch(72% 0.0154 251.02)",
+          "oklch(84% 0.0124 251.02)",
+          "oklch(95% 0.0096 251.02)"
         ]
       },
       "syntax-keyword": {
-        "role": "neutral",
-        "displayName": "syntax keyword",
+        "role": "tertiary",
+        "displayName": "Syntax Keyword",
+        "canonical": "light-dark(#cf222e, #ff9389)",
         "tonalRamp": [
-          "oklch(15% 0.20512 24.53)",
-          "oklch(26% 0.20512 24.53)",
-          "oklch(38% 0.20512 24.53)",
-          "oklch(49% 0.20512 24.53)",
-          "oklch(61% 0.20512 24.53)",
-          "oklch(72% 0.20512 24.53)",
-          "oklch(84% 0.20512 24.53)",
-          "oklch(95% 0.20512 24.53)"
+          "oklch(15% 0.1007 24.53)",
+          "oklch(26% 0.1294 24.53)",
+          "oklch(38% 0.1607 24.53)",
+          "oklch(49% 0.1895 24.53)",
+          "oklch(61% 0.1895 24.53)",
+          "oklch(72% 0.1607 24.53)",
+          "oklch(84% 0.1294 24.53)",
+          "oklch(95% 0.1007 24.53)"
         ]
       },
       "syntax-type": {
-        "role": "neutral",
-        "displayName": "syntax type",
+        "role": "tertiary",
+        "displayName": "Syntax Type",
+        "canonical": "light-dark(#0550ae, #f5a05f)",
         "tonalRamp": [
-          "oklch(15% 0.16414 258.18)",
-          "oklch(26% 0.16414 258.18)",
-          "oklch(38% 0.16414 258.18)",
-          "oklch(49% 0.16414 258.18)",
-          "oklch(61% 0.16414 258.18)",
-          "oklch(72% 0.16414 258.18)",
-          "oklch(84% 0.16414 258.18)",
-          "oklch(95% 0.16414 258.18)"
+          "oklch(15% 0.0806 258.18)",
+          "oklch(26% 0.1036 258.18)",
+          "oklch(38% 0.1286 258.18)",
+          "oklch(49% 0.1516 258.18)",
+          "oklch(61% 0.1516 258.18)",
+          "oklch(72% 0.1286 258.18)",
+          "oklch(84% 0.1036 258.18)",
+          "oklch(95% 0.0806 258.18)"
         ]
       },
       "syntax-function": {
-        "role": "neutral",
-        "displayName": "syntax function",
+        "role": "tertiary",
+        "displayName": "Syntax Function",
+        "canonical": "light-dark(#6639ba, #d2a8ff)",
         "tonalRamp": [
-          "oklch(15% 0.19084 293.84)",
-          "oklch(26% 0.19084 293.84)",
-          "oklch(38% 0.19084 293.84)",
-          "oklch(49% 0.19084 293.84)",
-          "oklch(61% 0.19084 293.84)",
-          "oklch(72% 0.19084 293.84)",
-          "oklch(84% 0.19084 293.84)",
-          "oklch(95% 0.19084 293.84)"
+          "oklch(15% 0.0937 293.84)",
+          "oklch(26% 0.1204 293.84)",
+          "oklch(38% 0.1496 293.84)",
+          "oklch(49% 0.1763 293.84)",
+          "oklch(61% 0.1763 293.84)",
+          "oklch(72% 0.1496 293.84)",
+          "oklch(84% 0.1204 293.84)",
+          "oklch(95% 0.0937 293.84)"
         ]
       },
       "syntax-variable": {
-        "role": "neutral",
-        "displayName": "syntax variable",
+        "role": "tertiary",
+        "displayName": "Syntax Variable",
+        "canonical": "light-dark(#953800, #79c0ff)",
         "tonalRamp": [
-          "oklch(15% 0.13706 43.35)",
-          "oklch(26% 0.13706 43.35)",
-          "oklch(38% 0.13706 43.35)",
-          "oklch(49% 0.13706 43.35)",
-          "oklch(61% 0.13706 43.35)",
-          "oklch(72% 0.13706 43.35)",
-          "oklch(84% 0.13706 43.35)",
-          "oklch(95% 0.13706 43.35)"
+          "oklch(15% 0.0673 43.35)",
+          "oklch(26% 0.0865 43.35)",
+          "oklch(38% 0.1074 43.35)",
+          "oklch(49% 0.1266 43.35)",
+          "oklch(61% 0.1266 43.35)",
+          "oklch(72% 0.1074 43.35)",
+          "oklch(84% 0.0865 43.35)",
+          "oklch(95% 0.0673 43.35)"
         ]
       },
       "syntax-string": {
-        "role": "neutral",
-        "displayName": "syntax string",
+        "role": "tertiary",
+        "displayName": "Syntax String",
+        "canonical": "light-dark(#0a3069, #a5d6ff)",
         "tonalRamp": [
-          "oklch(15% 0.10845 259.11)",
-          "oklch(26% 0.10845 259.11)",
-          "oklch(38% 0.10845 259.11)",
-          "oklch(49% 0.10845 259.11)",
-          "oklch(61% 0.10845 259.11)",
-          "oklch(72% 0.10845 259.11)",
-          "oklch(84% 0.10845 259.11)",
-          "oklch(95% 0.10845 259.11)"
+          "oklch(15% 0.0532 259.11)",
+          "oklch(26% 0.0684 259.11)",
+          "oklch(38% 0.0850 259.11)",
+          "oklch(49% 0.1002 259.11)",
+          "oklch(61% 0.1002 259.11)",
+          "oklch(72% 0.0850 259.11)",
+          "oklch(84% 0.0684 259.11)",
+          "oklch(95% 0.0532 259.11)"
         ]
       },
       "syntax-number": {
-        "role": "neutral",
-        "displayName": "syntax number",
+        "role": "tertiary",
+        "displayName": "Syntax Number",
+        "canonical": "light-dark(#0550ae, #79c0ff)",
         "tonalRamp": [
-          "oklch(15% 0.16414 258.18)",
-          "oklch(26% 0.16414 258.18)",
-          "oklch(38% 0.16414 258.18)",
-          "oklch(49% 0.16414 258.18)",
-          "oklch(61% 0.16414 258.18)",
-          "oklch(72% 0.16414 258.18)",
-          "oklch(84% 0.16414 258.18)",
-          "oklch(95% 0.16414 258.18)"
+          "oklch(15% 0.0806 258.18)",
+          "oklch(26% 0.1036 258.18)",
+          "oklch(38% 0.1286 258.18)",
+          "oklch(49% 0.1516 258.18)",
+          "oklch(61% 0.1516 258.18)",
+          "oklch(72% 0.1286 258.18)",
+          "oklch(84% 0.1036 258.18)",
+          "oklch(95% 0.0806 258.18)"
         ]
       },
       "syntax-operator": {
-        "role": "neutral",
-        "displayName": "syntax operator",
+        "role": "tertiary",
+        "displayName": "Syntax Operator",
+        "canonical": "light-dark(#0550ae, #ff9389)",
         "tonalRamp": [
-          "oklch(15% 0.16414 258.18)",
-          "oklch(26% 0.16414 258.18)",
-          "oklch(38% 0.16414 258.18)",
-          "oklch(49% 0.16414 258.18)",
-          "oklch(61% 0.16414 258.18)",
-          "oklch(72% 0.16414 258.18)",
-          "oklch(84% 0.16414 258.18)",
-          "oklch(95% 0.16414 258.18)"
+          "oklch(15% 0.0806 258.18)",
+          "oklch(26% 0.1036 258.18)",
+          "oklch(38% 0.1286 258.18)",
+          "oklch(49% 0.1516 258.18)",
+          "oklch(61% 0.1516 258.18)",
+          "oklch(72% 0.1286 258.18)",
+          "oklch(84% 0.1036 258.18)",
+          "oklch(95% 0.0806 258.18)"
         ]
       },
       "site-muted": {
@@ -387,44 +459,74 @@
         "displayName": "Landing Muted Slate",
         "canonical": "light-dark(#5b616c, #a2a8b4)",
         "tonalRamp": [
-          "oklch(15% 0.00939 262.68)",
-          "oklch(26% 0.01217 262.68)",
-          "oklch(38% 0.01495 262.68)",
-          "oklch(49% 0.01773 262.68)",
-          "oklch(61% 0.01773 262.68)",
-          "oklch(72% 0.01495 262.68)",
-          "oklch(84% 0.01217 262.68)",
-          "oklch(95% 0.00939 262.68)"
+          "oklch(15% 0.0094 262.68)",
+          "oklch(26% 0.0121 262.68)",
+          "oklch(38% 0.0150 262.68)",
+          "oklch(49% 0.0177 262.68)",
+          "oklch(61% 0.0177 262.68)",
+          "oklch(72% 0.0150 262.68)",
+          "oklch(84% 0.0121 262.68)",
+          "oklch(95% 0.0094 262.68)"
         ]
-      },
-      "site-docs-bg": {
-        "role": "neutral",
-        "displayName": "Docs Page",
-        "canonical": "light-dark(#ffffff, #272b32)"
-      },
-      "site-docs-side": {
-        "role": "neutral",
-        "displayName": "Docs Sidebar",
-        "canonical": "light-dark(#f6f7f9, #2b2f37)"
-      },
-      "site-docs-chrome": {
-        "role": "neutral",
-        "displayName": "Docs Footer Band",
-        "canonical": "light-dark(#f2f3f5, #2e323b)"
       },
       "site-docs-muted": {
         "role": "neutral",
         "displayName": "Docs Muted Slate",
         "canonical": "light-dark(#5b616c, #a2a8b4)",
         "tonalRamp": [
-          "oklch(15% 0.01147 264.36)",
-          "oklch(26% 0.01487 264.36)",
-          "oklch(38% 0.01826 264.36)",
-          "oklch(49% 0.02166 264.36)",
-          "oklch(61% 0.02166 264.36)",
-          "oklch(72% 0.01826 264.36)",
-          "oklch(84% 0.01487 264.36)",
-          "oklch(95% 0.01147 264.36)"
+          "oklch(15% 0.0094 262.68)",
+          "oklch(26% 0.0121 262.68)",
+          "oklch(38% 0.0150 262.68)",
+          "oklch(49% 0.0177 262.68)",
+          "oklch(61% 0.0177 262.68)",
+          "oklch(72% 0.0150 262.68)",
+          "oklch(84% 0.0121 262.68)",
+          "oklch(95% 0.0094 262.68)"
+        ]
+      },
+      "site-docs-bg": {
+        "role": "neutral",
+        "displayName": "Docs Page",
+        "canonical": "light-dark(#ffffff, #272b32)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
+        ]
+      },
+      "site-docs-side": {
+        "role": "neutral",
+        "displayName": "Docs Sidebar",
+        "canonical": "light-dark(#f6f7f9, #2b2f37)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
+        ]
+      },
+      "site-docs-chrome": {
+        "role": "neutral",
+        "displayName": "Docs Footer Band",
+        "canonical": "light-dark(#f2f3f5, #2e323b)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.00)",
+          "oklch(26% 0.0000 0.00)",
+          "oklch(38% 0.0000 0.00)",
+          "oklch(49% 0.0000 0.00)",
+          "oklch(61% 0.0000 0.00)",
+          "oklch(72% 0.0000 0.00)",
+          "oklch(84% 0.0000 0.00)",
+          "oklch(95% 0.0000 0.00)"
         ]
       },
       "site-rail": {
@@ -432,14 +534,14 @@
         "displayName": "Blue Rail",
         "canonical": "light-dark(#b7c6ea, #3f5373)",
         "tonalRamp": [
-          "oklch(15% 0.02617 267.39)",
-          "oklch(26% 0.03392 267.39)",
-          "oklch(38% 0.04167 267.39)",
-          "oklch(49% 0.04943 267.39)",
-          "oklch(61% 0.04943 267.39)",
-          "oklch(72% 0.04167 267.39)",
-          "oklch(84% 0.03392 267.39)",
-          "oklch(95% 0.02617 267.39)"
+          "oklch(15% 0.0262 267.39)",
+          "oklch(26% 0.0336 267.39)",
+          "oklch(38% 0.0418 267.39)",
+          "oklch(49% 0.0492 267.39)",
+          "oklch(61% 0.0492 267.39)",
+          "oklch(72% 0.0418 267.39)",
+          "oklch(84% 0.0336 267.39)",
+          "oklch(95% 0.0262 267.39)"
         ]
       },
       "site-hatch": {
@@ -447,14 +549,14 @@
         "displayName": "Gutter Hatch",
         "canonical": "light-dark(#dfe2e8, #323741)",
         "tonalRamp": [
-          "oklch(15% 0.00430 264.52)",
-          "oklch(26% 0.00558 264.52)",
-          "oklch(38% 0.00685 264.52)",
-          "oklch(49% 0.00813 264.52)",
-          "oklch(61% 0.00813 264.52)",
-          "oklch(72% 0.00685 264.52)",
-          "oklch(84% 0.00558 264.52)",
-          "oklch(95% 0.00430 264.52)"
+          "oklch(15% 0.0043 264.52)",
+          "oklch(26% 0.0055 264.52)",
+          "oklch(38% 0.0069 264.52)",
+          "oklch(49% 0.0081 264.52)",
+          "oklch(61% 0.0081 264.52)",
+          "oklch(72% 0.0069 264.52)",
+          "oklch(84% 0.0055 264.52)",
+          "oklch(95% 0.0043 264.52)"
         ]
       },
       "site-dot": {
@@ -462,14 +564,14 @@
         "displayName": "Stage Dot",
         "canonical": "light-dark(#cdd2da, #3d434e)",
         "tonalRamp": [
-          "oklch(15% 0.00605 259.82)",
-          "oklch(26% 0.00784 259.82)",
-          "oklch(38% 0.00964 259.82)",
-          "oklch(49% 0.01143 259.82)",
-          "oklch(61% 0.01143 259.82)",
-          "oklch(72% 0.00964 259.82)",
-          "oklch(84% 0.00784 259.82)",
-          "oklch(95% 0.00605 259.82)"
+          "oklch(15% 0.0060 259.82)",
+          "oklch(26% 0.0078 259.82)",
+          "oklch(38% 0.0097 259.82)",
+          "oklch(49% 0.0114 259.82)",
+          "oklch(61% 0.0114 259.82)",
+          "oklch(72% 0.0097 259.82)",
+          "oklch(84% 0.0078 259.82)",
+          "oklch(95% 0.0060 259.82)"
         ]
       },
       "site-tint-blue": {
@@ -477,14 +579,14 @@
         "displayName": "Step Tint Blue",
         "canonical": "light-dark(#b7c6ea, #3f5373)",
         "tonalRamp": [
-          "oklch(15% 0.02617 267.39)",
-          "oklch(26% 0.03392 267.39)",
-          "oklch(38% 0.04167 267.39)",
-          "oklch(49% 0.04943 267.39)",
-          "oklch(61% 0.04943 267.39)",
-          "oklch(72% 0.04167 267.39)",
-          "oklch(84% 0.03392 267.39)",
-          "oklch(95% 0.02617 267.39)"
+          "oklch(15% 0.0262 267.39)",
+          "oklch(26% 0.0336 267.39)",
+          "oklch(38% 0.0418 267.39)",
+          "oklch(49% 0.0492 267.39)",
+          "oklch(61% 0.0492 267.39)",
+          "oklch(72% 0.0418 267.39)",
+          "oklch(84% 0.0336 267.39)",
+          "oklch(95% 0.0262 267.39)"
         ]
       },
       "site-tint-green": {
@@ -492,14 +594,14 @@
         "displayName": "Step Tint Green",
         "canonical": "light-dark(#a9d3b7, #3d5a47)",
         "tonalRamp": [
-          "oklch(15% 0.02895 155.72)",
-          "oklch(26% 0.03753 155.72)",
-          "oklch(38% 0.04611 155.72)",
-          "oklch(49% 0.05469 155.72)",
-          "oklch(61% 0.05469 155.72)",
-          "oklch(72% 0.04611 155.72)",
-          "oklch(84% 0.03753 155.72)",
-          "oklch(95% 0.02895 155.72)"
+          "oklch(15% 0.0290 155.72)",
+          "oklch(26% 0.0372 155.72)",
+          "oklch(38% 0.0462 155.72)",
+          "oklch(49% 0.0545 155.72)",
+          "oklch(61% 0.0545 155.72)",
+          "oklch(72% 0.0462 155.72)",
+          "oklch(84% 0.0372 155.72)",
+          "oklch(95% 0.0290 155.72)"
         ]
       },
       "site-tint-coral": {
@@ -507,14 +609,14 @@
         "displayName": "Step Tint Coral",
         "canonical": "light-dark(#efc3b6, #6a4339)",
         "tonalRamp": [
-          "oklch(15% 0.02636 37.07)",
-          "oklch(26% 0.03417 37.07)",
-          "oklch(38% 0.04199 37.07)",
-          "oklch(49% 0.04980 37.07)",
-          "oklch(61% 0.04980 37.07)",
-          "oklch(72% 0.04199 37.07)",
-          "oklch(84% 0.03417 37.07)",
-          "oklch(95% 0.02636 37.07)"
+          "oklch(15% 0.0264 37.07)",
+          "oklch(26% 0.0339 37.07)",
+          "oklch(38% 0.0421 37.07)",
+          "oklch(49% 0.0496 37.07)",
+          "oklch(61% 0.0496 37.07)",
+          "oklch(72% 0.0421 37.07)",
+          "oklch(84% 0.0339 37.07)",
+          "oklch(95% 0.0264 37.07)"
         ]
       },
       "site-wash-blue": {
@@ -522,14 +624,14 @@
         "displayName": "Wash Blue",
         "canonical": "light-dark(#eef2fb, #2c3445)",
         "tonalRamp": [
-          "oklch(15% 0.00628 266.70)",
-          "oklch(26% 0.00814 266.70)",
-          "oklch(38% 0.01000 266.70)",
-          "oklch(49% 0.01187 266.70)",
-          "oklch(61% 0.01187 266.70)",
-          "oklch(72% 0.01000 266.70)",
-          "oklch(84% 0.00814 266.70)",
-          "oklch(95% 0.00628 266.70)"
+          "oklch(15% 0.0063 266.70)",
+          "oklch(26% 0.0081 266.70)",
+          "oklch(38% 0.0100 266.70)",
+          "oklch(49% 0.0118 266.70)",
+          "oklch(61% 0.0118 266.70)",
+          "oklch(72% 0.0100 266.70)",
+          "oklch(84% 0.0081 266.70)",
+          "oklch(95% 0.0063 266.70)"
         ]
       },
       "site-wash-green": {
@@ -537,14 +639,14 @@
         "displayName": "Wash Green",
         "canonical": "light-dark(#eef7f1, #2c3a31)",
         "tonalRamp": [
-          "oklch(15% 0.00607 157.00)",
-          "oklch(26% 0.00787 157.00)",
-          "oklch(38% 0.00967 157.00)",
-          "oklch(49% 0.01147 157.00)",
-          "oklch(61% 0.01147 157.00)",
-          "oklch(72% 0.00967 157.00)",
-          "oklch(84% 0.00787 157.00)",
-          "oklch(95% 0.00607 157.00)"
+          "oklch(15% 0.0061 157.00)",
+          "oklch(26% 0.0078 157.00)",
+          "oklch(38% 0.0097 157.00)",
+          "oklch(49% 0.0114 157.00)",
+          "oklch(61% 0.0114 157.00)",
+          "oklch(72% 0.0097 157.00)",
+          "oklch(84% 0.0078 157.00)",
+          "oklch(95% 0.0061 157.00)"
         ]
       },
       "site-wash-coral": {
@@ -552,14 +654,14 @@
         "displayName": "Wash Coral",
         "canonical": "light-dark(#fcf1ee, #3d302d)",
         "tonalRamp": [
-          "oklch(15% 0.00617 35.73)",
-          "oklch(26% 0.00800 35.73)",
-          "oklch(38% 0.00983 35.73)",
-          "oklch(49% 0.01166 35.73)",
-          "oklch(61% 0.01166 35.73)",
-          "oklch(72% 0.00983 35.73)",
-          "oklch(84% 0.00800 35.73)",
-          "oklch(95% 0.00617 35.73)"
+          "oklch(15% 0.0062 35.73)",
+          "oklch(26% 0.0079 35.73)",
+          "oklch(38% 0.0099 35.73)",
+          "oklch(49% 0.0116 35.73)",
+          "oklch(61% 0.0116 35.73)",
+          "oklch(72% 0.0099 35.73)",
+          "oklch(84% 0.0079 35.73)",
+          "oklch(95% 0.0062 35.73)"
         ]
       },
       "site-mark": {
@@ -567,14 +669,14 @@
         "displayName": "Logo Coral",
         "canonical": "light-dark(#f2502e, #ff6b4a)",
         "tonalRamp": [
-          "oklch(15% 0.10013 33.52)",
-          "oklch(26% 0.12980 33.52)",
-          "oklch(38% 0.15946 33.52)",
-          "oklch(49% 0.18913 33.52)",
-          "oklch(61% 0.18913 33.52)",
-          "oklch(72% 0.15946 33.52)",
-          "oklch(84% 0.12980 33.52)",
-          "oklch(95% 0.10013 33.52)"
+          "oklch(15% 0.1001 33.52)",
+          "oklch(26% 0.1287 33.52)",
+          "oklch(38% 0.1598 33.52)",
+          "oklch(49% 0.1884 33.52)",
+          "oklch(61% 0.1884 33.52)",
+          "oklch(72% 0.1598 33.52)",
+          "oklch(84% 0.1287 33.52)",
+          "oklch(95% 0.1001 33.52)"
         ]
       },
       "site-mark-ink": {
@@ -582,61 +684,65 @@
         "displayName": "Logo Ink",
         "canonical": "light-dark(#2b2d33, #ffffff)",
         "tonalRamp": [
-          "oklch(15% 0.00550 271.02)",
-          "oklch(26% 0.00713 271.02)",
-          "oklch(38% 0.00876 271.02)",
-          "oklch(49% 0.01039 271.02)",
-          "oklch(61% 0.01039 271.02)",
-          "oklch(72% 0.00876 271.02)",
-          "oklch(84% 0.00713 271.02)",
-          "oklch(95% 0.00550 271.02)"
+          "oklch(15% 0.0055 271.02)",
+          "oklch(26% 0.0071 271.02)",
+          "oklch(38% 0.0088 271.02)",
+          "oklch(49% 0.0104 271.02)",
+          "oklch(61% 0.0104 271.02)",
+          "oklch(72% 0.0088 271.02)",
+          "oklch(84% 0.0071 271.02)",
+          "oklch(95% 0.0055 271.02)"
         ]
       }
     },
     "typographyMeta": {
       "headline": {
-        "displayName": "headline",
-        "purpose": "Effective headline role from style.css."
+        "displayName": "Preview H1",
+        "purpose": "Preview H1, 26px at the 13px base; 600, -0.02em; Inter."
       },
       "section": {
-        "displayName": "section",
-        "purpose": "Effective section role from style.css."
+        "displayName": "Preview H2",
+        "purpose": "Preview H2, 21px; 600, -0.02em."
       },
       "subsection": {
-        "displayName": "subsection",
-        "purpose": "Effective subsection role from style.css."
+        "displayName": "Preview H3",
+        "purpose": "Preview H3, 17px; 600, -0.02em."
       },
       "minor-heading": {
-        "displayName": "minor heading",
-        "purpose": "Effective minor-heading role from style.css."
+        "displayName": "Preview H4",
+        "purpose": "Preview H4, 15px; 600, -0.02em."
       },
       "body": {
-        "displayName": "body",
-        "purpose": "Desktop preview prose; mobile uses body-mobile."
+        "displayName": "Preview prose",
+        "purpose": "Preview prose, 14px / 1.6 desktop, 75ch measure, left aligned."
       },
       "body-mobile": {
-        "displayName": "body mobile",
-        "purpose": "Effective body-mobile role from style.css."
+        "displayName": "Preview prose (mobile)",
+        "purpose": "Preview prose at max-width 48rem: 15px / 1.6."
       },
       "label": {
-        "displayName": "label",
-        "purpose": "Effective label role from style.css."
+        "displayName": "Label",
+        "purpose": "Labels, fields, buttons, and controls (--text-label, 13px = base); buttons 500."
+      },
+      "list": {
+        "displayName": "Sidebar row",
+        "purpose": "Sidebar rows in Explorer, Search, Source Control, Walkthroughs, Feedback (--text-list, 14px Inter); file names in them are 13px mono."
       },
       "supporting": {
-        "displayName": "supporting",
-        "purpose": "Effective supporting role from style.css."
+        "displayName": "Supporting",
+        "purpose": "Supporting UI, the search input, and tables: 14px / 20px."
       },
       "metadata": {
-        "displayName": "metadata",
-        "purpose": "Effective metadata role from style.css."
-      },
-      "source": {
-        "displayName": "source",
-        "purpose": "Source lines; preview code uses 1.6 line-height."
+        "displayName": "Metadata",
+        "purpose": "Footer and metadata, 12px sans: counts, ages, stats, git status letters, kbd, toggle glyphs, the blame card's age."
       },
       "code": {
-        "displayName": "code",
-        "purpose": "Preview code; block line-height 1.6."
+        "displayName": "Code",
+        "purpose": "JetBrains Mono at 13px for preview code (block line-height 1.6), --text-code UI snippets, file names in lists (--text-file), and inline blame; ligatures off."
+      },
+      "source": {
+        "displayName": "Source",
+        "purpose": "Source lines: JetBrains Mono 13px on fixed 22px rows (--source-line-height)."
       },
       "site-display": {
         "displayName": "Site display",
@@ -644,7 +750,7 @@
       },
       "site-heading": {
         "displayName": "Site heading",
-        "purpose": "Each landing feature row h2."
+        "purpose": "Each landing feature row h2; balanced."
       },
       "site-lede": {
         "displayName": "Site lede",
@@ -656,57 +762,107 @@
       },
       "site-chrome": {
         "displayName": "Site chrome",
-        "purpose": "Mono feature label, chips, tabs, bands, terminals, pane code."
+        "purpose": "JetBrains Mono: feature label (accent, lowercase), chips, tabs, bands, terminals, pane code on 22px rows."
       },
       "site-status": {
         "displayName": "Site status",
-        "purpose": "Mono kbd, pane status bars, install Copy action."
+        "purpose": "Mono kbd, pane status bars, the install Copy action (uppercase, 0.08em)."
       },
       "site-label": {
         "displayName": "Site label",
-        "purpose": "Uppercase mono chrome names (pane heads, note titles); never a headline eyebrow."
+        "purpose": "Uppercase mono chrome names (pane side heads, note titles); never a headline eyebrow."
       },
       "site-docs-section": {
         "displayName": "Docs section label",
-        "purpose": "Vocs sidebar section labels in --sz-muted."
+        "purpose": "Vocs sidebar section labels, code block band labels, and Copy, in --sz-muted."
       },
       "site-docs-nav": {
         "displayName": "Docs nav",
-        "purpose": "Vocs sidebar items; the text-only outline uses 0.75rem on 22px rows."
+        "purpose": "Vocs sidebar items; outline rows use 0.75rem on 22px."
       }
     },
     "shadows": [
       {
         "name": "control",
         "value": "var(--shadow-control, 0 1px 2px rgb(15 18 23 / 8%))",
-        "purpose": "Outlined primitives and diagram controls; theme overrides inherit."
+        "purpose": "Primary and outline buttons, the raised and chip CopyButton, gutter controls, the pressed sm segment. Dark: rgb(0 0 0 / 24%); named themes override."
       },
       {
         "name": "overlay",
         "value": "var(--shadow-overlay, 0 1.5rem 4rem rgb(15 18 23 / 22%))",
-        "purpose": "Palette, theme menu, process panel."
+        "purpose": "The one overlay surface: dialogs, the drawer, popovers, menus, and HoverCard. Dark: rgb(0 0 0 / 42%); named themes override."
+      },
+      {
+        "name": "selection-ring",
+        "value": "inset 0 0 0 1px var(--color-selected-border, #325dc8)",
+        "purpose": "The 1px accent mark on selected rows, highlighted menu items, and pressed IconButtons; holds 3:1 over the 12% selection fill."
+      },
+      {
+        "name": "field-focus-ring",
+        "value": "0 0 0 1px var(--color-focus, #325dc8)",
+        "purpose": "Fields swap their border to the focus color and add this ring; destructive when invalid."
+      },
+      {
+        "name": "status-hairline",
+        "value": "inset 0 1px 0 var(--color-border, #c9ccd1)",
+        "purpose": "The footer's top hairline, inset so its flush controls keep the full status height."
+      },
+      {
+        "name": "site-edge",
+        "value": "inset 0 2px 0 var(--tint)",
+        "purpose": "Site only: a feature row's 2px tint top edge and the selected install tab's 2px accent edge. The site has no drop shadows."
       }
     ],
     "motion": [
       {
-        "name": "navigation-opacity",
-        "value": "120ms ease",
-        "purpose": "Navigation progress visibility."
+        "name": "duration-fast",
+        "value": "100ms ease-out",
+        "purpose": "State changes: button, row, and inline blame color; HoverCard fade; the change-mark wedge."
       },
       {
-        "name": "navigation-transform",
+        "name": "duration-base",
+        "value": "120ms",
+        "purpose": "Progress bar opacity, navigation progress fade, walkthrough chevron and panel (with ease-out-expo)."
+      },
+      {
+        "name": "duration-progress",
         "value": "800ms ease",
         "purpose": "Navigation progress advance."
       },
       {
-        "name": "theme-menu",
-        "value": "100ms",
-        "purpose": "Theme-menu state transitions; reduced motion applies."
+        "name": "duration-loop",
+        "value": "1s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+        "purpose": "The 2px ProgressBar sweep."
       },
       {
-        "name": "site-stage-fade",
-        "value": "160ms cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "Landing stage pane swap; reduced motion swaps without the fade."
+        "name": "delay-progress",
+        "value": "150ms",
+        "purpose": "Short work finishes before a progress indicator appears."
+      },
+      {
+        "name": "duration-feedback",
+        "value": "1.6s",
+        "purpose": "CopyButton check or X feedback; the settings reveal flash."
+      },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Expressive easing for progress, walkthrough, and settings motion."
+      },
+      {
+        "name": "hover-card-open",
+        "value": "400ms",
+        "purpose": "A precise pointer resting on a HoverCard trigger opens it."
+      },
+      {
+        "name": "hover-card-close",
+        "value": "150ms",
+        "purpose": "Delay before a HoverCard closes after the pointer leaves trigger and card."
+      },
+      {
+        "name": "duration-instant",
+        "value": "0.01ms",
+        "purpose": "Reduced motion collapses transitions and animations."
       },
       {
         "name": "site-button",
@@ -717,19 +873,31 @@
     "breakpoints": [
       {
         "name": "mobile",
-        "value": "48rem"
+        "value": "48rem (max-width): drawer sidebar, 44px touch controls, 15px prose"
+      },
+      {
+        "name": "narrow-diff",
+        "value": "30rem (max-width): Source Control diff layout"
+      },
+      {
+        "name": "fine-pointer",
+        "value": "(hover: hover) and (pointer: fine): inactive tabs hide their close action"
       },
       {
         "name": "site-narrow",
-        "value": "56.1875rem"
+        "value": "56.1875rem (max-width): rails hide, rows stack, 44px controls"
       },
       {
-        "name": "site-short",
-        "value": "47.5rem (max-height, at min-width 56.25rem)"
+        "name": "site-docs-mobile",
+        "value": "767px (max-width)"
+      },
+      {
+        "name": "site-docs-desktop",
+        "value": "1024px (min-width)"
       },
       {
         "name": "site-docs-wide",
-        "value": "1376px"
+        "value": "1376px (min-width): the right gutter is framed"
       }
     ]
   },
@@ -738,135 +906,148 @@
       "name": "Primary button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Shared Button primary variant; default 40px size.",
-      "html": "<button class=\"ds-button-primary\" type=\"button\">Action</button>",
-      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 12px;border:1px solid var(--color-accent, #2563eb);border-radius:0;background:var(--color-accent, #2563eb);color:var(--color-on-accent, #ffffff);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:14px;font-weight:500;box-shadow:var(--shadow-control,0 1px 2px rgb(15 18 23 / 8%));cursor:pointer;transition:color 150ms,background-color 150ms}.ds-button-primary:hover{background:var(--color-accent-hover, #1d4ed8);color:var(--color-on-accent, #ffffff);}.ds-button-primary:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-button-primary:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none}}"
+      "description": "Button primary: md 28px default (sm 24, lg 32), 13px 500 label, control shadow; 44px on narrow screens.",
+      "html": "<button class=\"ds-button-primary\" type=\"button\">Open Commit</button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1,0.25rem);height:var(--control-md,1.75rem);padding:0 var(--space-3,0.75rem);border:1px solid transparent;border-radius:0;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);font-weight:500;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color 100ms ease-out,border-color 100ms ease-out,color 100ms ease-out;border-color:var(--color-accent,#325dc8);background:var(--color-accent,#325dc8);color:var(--color-on-accent,#ffffff);box-shadow:var(--shadow-control,0 1px 2px rgb(15 18 23 / 8%))}.ds-button-primary:hover{border-color:var(--color-accent-hover,#2348ac);background:var(--color-accent-hover,#2348ac)}.ds-button-primary:focus-visible{outline:2px solid var(--color-focus, #325dc8);outline-offset:1px}.ds-button-primary:disabled{cursor:default;opacity:.5}@media(max-width:48rem){.ds-button-primary{height:var(--control-touch,2.75rem)}}@media(prefers-reduced-motion:reduce){.ds-button-primary{transition:none}}"
     },
     {
       "name": "Outline button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Shared Button outline variant; default 40px size.",
-      "html": "<button class=\"ds-button-outline\" type=\"button\">Action</button>",
-      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 12px;border:1px solid var(--color-border, #e5e5e5);border-radius:0;background:var(--color-surface-raised, #ffffff);color:var(--color-text-secondary, #515866);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:14px;font-weight:500;box-shadow:var(--shadow-control,0 1px 2px rgb(15 18 23 / 8%));cursor:pointer;transition:color 150ms,background-color 150ms}.ds-button-outline:hover{background:var(--color-surface-secondary, #f3f3f3);color:var(--color-text-primary, #333333);border-color:var(--color-border-strong, #c5cbd4);}.ds-button-outline:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-button-outline:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button-outline{transition:none}}"
+      "description": "Button outline: strong hairline on the raised surface; hover and press layer translucent ink. Retry, Open File, and Clear filter are outline md.",
+      "html": "<button class=\"ds-button-outline\" type=\"button\">Retry</button>",
+      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1,0.25rem);height:var(--control-md,1.75rem);padding:0 var(--space-3,0.75rem);border:1px solid transparent;border-radius:0;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);font-weight:500;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color 100ms ease-out,border-color 100ms ease-out,color 100ms ease-out;border-color:var(--color-border-strong,#aeb3bb);background-color:var(--color-surface-raised,#ffffff);color:var(--color-text-secondary,#4b515b);box-shadow:var(--shadow-control,0 1px 2px rgb(15 18 23 / 8%))}.ds-button-outline:hover{color:var(--color-text-primary,#24272c);background-image:linear-gradient(var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)),var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)))}.ds-button-outline:active{background-image:linear-gradient(var(--color-active, color-mix(in srgb, #24272c 12%, transparent)),var(--color-active, color-mix(in srgb, #24272c 12%, transparent)))}.ds-button-outline:focus-visible{outline:2px solid var(--color-focus, #325dc8);outline-offset:1px}.ds-button-outline:disabled{cursor:default;opacity:.5}@media(max-width:48rem){.ds-button-outline{height:var(--control-touch,2.75rem)}}@media(prefers-reduced-motion:reduce){.ds-button-outline{transition:none}}"
     },
     {
       "name": "Ghost button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "Shared Button ghost variant; default 40px size.",
-      "html": "<button class=\"ds-button-ghost\" type=\"button\">Action</button>",
-      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 12px;border:1px solid transparent;border-radius:0;background:transparent;color:var(--color-text-secondary, #515866);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:14px;font-weight:500;cursor:pointer;transition:color 150ms,background-color 150ms}.ds-button-ghost:hover{background:var(--color-surface-secondary, #f3f3f3);color:var(--color-text-primary, #333333);}.ds-button-ghost:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-button-ghost:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none}}"
+      "description": "Button ghost: no fill at rest; the hover and press state layers only. Plain is ghost without either layer.",
+      "html": "<button class=\"ds-button-ghost\" type=\"button\">Show File History</button>",
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1,0.25rem);height:var(--control-md,1.75rem);padding:0 var(--space-3,0.75rem);border:1px solid transparent;border-radius:0;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);font-weight:500;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color 100ms ease-out,border-color 100ms ease-out,color 100ms ease-out;background-color:transparent;color:var(--color-text-secondary,#4b515b)}.ds-button-ghost:hover{color:var(--color-text-primary,#24272c);background-image:linear-gradient(var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)),var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)))}.ds-button-ghost:active{background-image:linear-gradient(var(--color-active, color-mix(in srgb, #24272c 12%, transparent)),var(--color-active, color-mix(in srgb, #24272c 12%, transparent)))}.ds-button-ghost:focus-visible{outline:2px solid var(--color-focus, #325dc8);outline-offset:1px}.ds-button-ghost:disabled{cursor:default;opacity:.5}@media(max-width:48rem){.ds-button-ghost{height:var(--control-touch,2.75rem)}}@media(prefers-reduced-motion:reduce){.ds-button-ghost{transition:none}}"
     },
     {
       "name": "Destructive button",
       "kind": "button",
       "refersTo": "button-destructive",
-      "description": "Shared Button destructive variant; default 40px size.",
+      "description": "Button destructive: destructive ink and border on its subtle fill; hover fills solid.",
       "html": "<button class=\"ds-button-destructive\" type=\"button\">Delete</button>",
-      "css": ".ds-button-destructive{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 12px;border:1px solid var(--color-destructive, #bd3029);border-radius:0;background:var(--color-destructive-subtle, #fff0ef);color:var(--color-destructive, #bd3029);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:14px;font-weight:500;cursor:pointer;transition:color 150ms,background-color 150ms}.ds-button-destructive:hover{background:var(--color-destructive, #bd3029);color:var(--color-on-accent, #ffffff);}.ds-button-destructive:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-button-destructive:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button-destructive{transition:none}}"
+      "css": ".ds-button-destructive{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1,0.25rem);height:var(--control-md,1.75rem);padding:0 var(--space-3,0.75rem);border:1px solid transparent;border-radius:0;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);font-weight:500;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color 100ms ease-out,border-color 100ms ease-out,color 100ms ease-out;border-color:var(--color-destructive,#b8332c);background:var(--color-destructive-subtle,#f9e1df);color:var(--color-destructive,#b8332c)}.ds-button-destructive:hover{background:var(--color-destructive,#b8332c);color:var(--color-on-accent,#ffffff)}.ds-button-destructive:focus-visible{outline:2px solid var(--color-focus, #325dc8);outline-offset:1px}.ds-button-destructive:disabled{cursor:default;opacity:.5}@media(max-width:48rem){.ds-button-destructive{height:var(--control-touch,2.75rem)}}@media(prefers-reduced-motion:reduce){.ds-button-destructive{transition:none}}"
     },
     {
       "name": "Link button",
       "kind": "button",
       "refersTo": "button-link",
-      "description": "Shared Button link variant; default 40px size.",
+      "description": "Button link: accent text, underlined on hover.",
       "html": "<button class=\"ds-button-link\" type=\"button\">Retry search</button>",
-      "css": ".ds-button-link{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 12px;border:1px solid transparent;border-radius:0;background:transparent;color:var(--color-accent, #2563eb);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:14px;font-weight:500;cursor:pointer;transition:color 150ms,background-color 150ms}.ds-button-link:hover{background:transparent;color:var(--color-accent-hover, #1d4ed8);text-decoration:underline;}.ds-button-link:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-button-link:disabled{pointer-events:none;opacity:.5}@media(prefers-reduced-motion:reduce){.ds-button-link{transition:none}}"
+      "css": ".ds-button-link{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-1,0.25rem);height:var(--control-md,1.75rem);padding:0 var(--space-3,0.75rem);border:1px solid transparent;border-radius:0;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);font-weight:500;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color 100ms ease-out,border-color 100ms ease-out,color 100ms ease-out;background:transparent;color:var(--color-accent,#325dc8);text-underline-offset:0.16em}.ds-button-link:hover{color:var(--color-accent-hover,#2348ac);text-decoration:underline}.ds-button-link:focus-visible{outline:2px solid var(--color-focus, #325dc8);outline-offset:1px}.ds-button-link:disabled{cursor:default;opacity:.5}@media(max-width:48rem){.ds-button-link{height:var(--control-touch,2.75rem)}}@media(prefers-reduced-motion:reduce){.ds-button-link{transition:none}}"
     },
     {
-      "name": "Footer content-search action",
-      "kind": "button",
-      "refersTo": "footer-action",
-      "description": "Flat status-bar action; grows to 44px on mobile.",
-      "html": "<button class=\"ds-footer-action\" type=\"button\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>Find in files</span><kbd>Ctrl+Shift+F</kbd></button>",
-      "css": ".ds-footer-action{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 8px;border:0;border-radius:0;color:var(--color-text-secondary, #515866);background:transparent;font:400 12px var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);cursor:pointer}.ds-footer-action svg{width:14px;height:14px}.ds-footer-action kbd{font:inherit;color:var(--color-text-muted, #6d7685)}.ds-footer-action:hover{background:var(--color-surface-raised, #ffffff)}.ds-footer-action:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}@media(max-width:48rem){.ds-footer-action{height:44px}.ds-footer-action kbd{display:none}}"
-    },
-    {
-      "name": "Content-search field",
+      "name": "Sidebar query field",
       "kind": "input",
-      "refersTo": "search-field",
-      "description": "Search view field with inline Match Case / Whole Word / Regex toggles; matches the filename filter field. Both sit in the sidebar shelf: a workspace-chrome band under the header (4px top, 8px bottom, 12px sides) ending in a 1px border divider.",
-      "html": "<div class=\"ds-search-box\"><input class=\"ds-search-box-input\" type=\"text\" aria-label=\"Search\" placeholder=\"Search\"/><button class=\"ds-search-toggle\" type=\"button\" aria-label=\"Match Case\" aria-pressed=\"true\">Aa</button><button class=\"ds-search-toggle\" type=\"button\" aria-label=\"Match Whole Word\" aria-pressed=\"false\">ab</button><button class=\"ds-search-toggle\" type=\"button\" aria-label=\"Use Regular Expression\" aria-pressed=\"false\">.*</button></div>",
-      "css": ".ds-search-box{display:flex;align-items:center;gap:4px;height:28px;padding:0 2px 0 8px;border:1px solid var(--color-border, #e5e5e5);border-radius:0;color:var(--color-text-primary, #333333);background:var(--color-surface, #ffffff);font:13px var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif)}.ds-search-box:hover{border-color:var(--color-border-strong, #c5cbd4)}.ds-search-box:focus-within{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-search-box-input{flex:1;min-width:0;height:100%;padding:0;border:0;outline:0;color:inherit;background:transparent;font:inherit}.ds-search-box-input::placeholder{color:var(--color-text-secondary, #515866)}.ds-search-toggle{display:grid;place-items:center;width:22px;height:22px;padding:0;border:1px solid transparent;border-radius:0;color:var(--color-text-muted, #6d7685);background:transparent;font:600 11px var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);cursor:pointer}.ds-search-toggle:hover{color:var(--color-text-primary, #333333);background:var(--color-surface-secondary, #f3f3f3)}.ds-search-toggle[aria-pressed=\"true\"]{border-color:var(--color-accent, #2563eb);color:var(--color-accent, #2563eb);background:var(--color-accent-subtle, #e8efff)}@media(max-width:48rem){.ds-search-box{height:40px}.ds-search-toggle{width:32px;height:32px}}"
+      "refersTo": "text-field",
+      "description": "Search view TextField with ToggleButton options (Match Case, Whole Word, Regex). 28px; sidebar query fields rest on border-strong (decision 0133); focus swaps the border to accent and adds a 1px ring. Toggles are 20px with 12px 500 UI-face glyphs; pressed takes an accent border with the selection fill. 44px field and 32px toggles on narrow screens.",
+      "html": "<div class=\"ds-field\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-field-input\" type=\"text\" aria-label=\"Search\" placeholder=\"Search\"/><span class=\"ds-field-trailing\"><button class=\"ds-toggle\" type=\"button\" aria-label=\"Match Case\" aria-pressed=\"true\">Aa</button><button class=\"ds-toggle\" type=\"button\" aria-label=\"Match Whole Word\" aria-pressed=\"false\"><span class=\"ds-toggle-underline\">ab</span></button><button class=\"ds-toggle\" type=\"button\" aria-label=\"Use Regular Expression\" aria-pressed=\"false\">.*</button></span></div>",
+      "css": ".ds-field{display:flex;align-items:center;gap:var(--space-1,0.25rem);height:var(--field-height,1.75rem);padding:0 0.125rem 0 var(--space-2,0.5rem);border:1px solid var(--color-border-strong,#aeb3bb);border-radius:0;color:var(--color-text-primary,#24272c);background:var(--color-field-bg,#fafafa);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);cursor:text}.ds-field>svg{flex:none;width:var(--icon-sm,0.875rem);height:var(--icon-sm,0.875rem);color:var(--color-text-secondary,#4b515b)}.ds-field:focus-within{border-color:var(--color-focus, #325dc8);box-shadow:0 0 0 1px var(--color-focus, #325dc8)}.ds-field-input{flex:1;min-width:0;height:100%;padding:0;border:0;outline:none;color:inherit;background:transparent;font:inherit}.ds-field-input::placeholder{color:var(--color-text-secondary,#4b515b);opacity:1}.ds-field-trailing{display:inline-flex;flex:none;align-items:center;gap:0.125rem}.ds-toggle{display:inline-flex;align-items:center;justify-content:center;width:var(--control-xs,1.25rem);height:var(--control-xs,1.25rem);padding:0;border:1px solid transparent;border-radius:0;color:var(--color-text-secondary,#4b515b);background:transparent;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-metadata,0.75rem);font-weight:500;letter-spacing:-0.01em;line-height:1;cursor:pointer}.ds-toggle-underline{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}.ds-toggle:hover{color:var(--color-text-primary,#24272c);background:var(--color-hover, color-mix(in srgb, #24272c 8%, transparent))}.ds-toggle[aria-pressed=\"true\"]{border-color:var(--color-accent,#325dc8);color:var(--color-selected-text,#24272c);background:var(--color-selected, color-mix(in srgb, #24272c 12%, transparent))}.ds-toggle:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}@media(max-width:48rem){.ds-field{height:var(--control-touch,2.75rem)}.ds-toggle{width:var(--control-lg,2rem);height:var(--control-lg,2rem)}}"
     },
     {
-      "name": "Explorer selected row",
+      "name": "Explorer rows",
       "kind": "nav",
-      "refersTo": "explorer-row",
-      "description": "Token-styled representative Pierre row; actual tree provides editor selection semantics.",
-      "html": "<nav aria-label=\"Markdown files\" class=\"ds-explorer\"><button class=\"ds-explorer-row\" type=\"button\" aria-current=\"page\"><svg aria-hidden=\"true\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>README.md</span></button></nav>",
-      "css": ".ds-explorer{padding:4px;background:var(--color-surface-secondary, #f3f3f3)}.ds-explorer-row{display:flex;align-items:center;gap:8px;width:100%;height:24px;padding:0 8px;border:0;border-radius:0;text-align:left;color:var(--color-accent, #2563eb);background:var(--color-accent-subtle, #e8efff);font:13px var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);cursor:pointer}.ds-explorer-row:hover{color:var(--color-accent, #2563eb);background:var(--color-accent-subtle, #e8efff)}.ds-explorer-row:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}@media(max-width:48rem){.ds-explorer-row{height:40px}}"
+      "refersTo": "list-row",
+      "description": "ListRow at list density (24px; 32px narrow) on the explorer surface. File names are 13px JetBrains Mono in text-primary; hover adds the 8% ink layer; the selected row takes the neutral 12% selection fill plus a 1px inset accent ring (decision 0109); focus is a 1px inset outline.",
+      "html": "<nav class=\"ds-explorer\" aria-label=\"Files\"><button class=\"ds-row\" type=\"button\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>main.go</span></button><button class=\"ds-row\" type=\"button\" aria-current=\"page\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>README.md</span></button><button class=\"ds-row\" type=\"button\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>go.mod</span></button></nav>",
+      "css": ".ds-explorer{display:grid;padding:var(--space-1,0.25rem) 0;background:var(--color-surface-secondary,#eceef0)}.ds-row{display:flex;align-items:center;gap:var(--space-2,0.5rem);width:100%;min-height:var(--row-list,1.5rem);padding:0 var(--space-2,0.5rem);border:0;border-radius:0;color:var(--color-text-primary,#24272c);background:transparent;font-family:var(--font-mono, \"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace);font-size:var(--text-file,0.8125rem);text-align:left;cursor:pointer;user-select:none}.ds-row>svg{flex:none;width:var(--icon-xs,0.75rem);height:var(--icon-xs,0.75rem);color:var(--color-text-secondary,#4b515b)}.ds-row:hover{background:var(--color-hover, color-mix(in srgb, #24272c 8%, transparent))}.ds-row[aria-current=\"page\"]{color:var(--color-selected-text,#24272c);background:var(--color-selected, color-mix(in srgb, #24272c 12%, transparent));box-shadow:inset 0 0 0 1px var(--color-selected-border,#325dc8)}.ds-row:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}@media(max-width:48rem){.ds-row{min-height:2rem}}"
     },
     {
-      "name": "Active document tab",
+      "name": "Document tab strip",
       "kind": "nav",
       "refersTo": "document-tab",
-      "description": "Flat 32px tab with top accent and independent close action.",
-      "html": "<div class=\"ds-tab\"><button class=\"ds-tab-target\" type=\"button\" aria-current=\"page\" title=\"README.md\"><svg aria-hidden=\"true\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>README.md</span></button><button class=\"ds-tab-close\" type=\"button\" aria-label=\"Close README.md\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m18 6-12 12M6 6l12 12\"/></svg></button></div>",
-      "css": ".ds-tab{position:relative;display:inline-flex;align-items:center;height:32px;max-width:200px;border-right:1px solid var(--color-border, #e5e5e5);color:var(--color-text-primary, #333333);background:var(--color-surface, #ffffff)}.ds-tab::before{position:absolute;inset:0 0 auto;height:2px;background:var(--color-accent, #2563eb);content:\"\"}.ds-tab-target{display:flex;align-items:center;gap:4px;height:100%;min-width:0;padding:0 4px 0 8px;border:0;color:inherit;background:transparent;font:13px var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);cursor:pointer}.ds-tab-target svg{width:12px;height:12px;color:var(--color-text-muted, #6d7685)}.ds-tab-target span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-tab-close{display:grid;place-items:center;flex:none;width:20px;height:20px;margin-right:4px;padding:0;border:0;border-radius:0;color:var(--color-text-muted, #6d7685);background:transparent;cursor:pointer}.ds-tab-close svg{width:12px;height:12px}.ds-tab-close:hover{color:var(--color-text-primary, #333333);background:var(--color-surface-secondary, #f3f3f3)}.ds-tab-target:hover{color:var(--color-text-primary, #333333)}.ds-tab-target:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}.ds-tab-close:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}@media(max-width:48rem){.ds-tab{height:44px}}"
+      "description": "32px tab strip on workspace-chrome. Tabs set the name in 12px chrome mono, text-secondary; the active tab joins the document surface with no accent mark (decision 0056). Inactive hover takes the chrome hover; close actions hide on inactive tabs for precise pointers.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><div class=\"ds-tab\" data-active><button class=\"ds-tab-target\" type=\"button\" role=\"tab\" aria-selected=\"true\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>README.md</span></button><button class=\"ds-tab-close\" type=\"button\" aria-label=\"Close README.md\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m18 6-12 12M6 6l12 12\"/></svg></button></div><div class=\"ds-tab\"><button class=\"ds-tab-target\" type=\"button\" role=\"tab\" aria-selected=\"false\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>main.go</span></button><button class=\"ds-tab-close\" type=\"button\" aria-label=\"Close main.go\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m18 6-12 12M6 6l12 12\"/></svg></button></div></div>",
+      "css": ".ds-tabs{display:flex;height:var(--chrome-height,2rem);box-shadow:inset 0 -1px 0 var(--color-border,#c9ccd1);background:var(--color-workspace-chrome,#e4e5e8)}.ds-tab{position:relative;display:flex;align-items:center;max-width:12.5rem;border-right:1px solid var(--color-border,#c9ccd1);color:var(--color-text-secondary,#4b515b);background:var(--color-workspace-chrome,#e4e5e8)}.ds-tab:not([data-active]):hover{color:var(--color-text-primary,#24272c);background:var(--color-chrome-hover,color-mix(in srgb,#fafafa,#e4e5e8))}.ds-tab[data-active]{color:var(--color-text-primary,#24272c);background:var(--color-surface,#fafafa)}.ds-tab-target{display:flex;align-items:center;gap:var(--space-1,0.25rem);min-width:0;height:100%;padding:0 var(--space-1,0.25rem) 0 var(--space-2,0.5rem);border:0;color:inherit;background:transparent;font-family:var(--font-mono, \"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace);font-size:var(--text-chrome,0.75rem);cursor:pointer}.ds-tab-target>svg{flex:none;width:var(--icon-xs,0.75rem);height:var(--icon-xs,0.75rem);color:var(--color-text-secondary,#4b515b)}.ds-tab-target>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-tab-target:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}.ds-tab-close{display:grid;place-items:center;flex:none;width:var(--control-xs,1.25rem);height:var(--control-xs,1.25rem);margin-right:var(--space-1,0.25rem);padding:0;border:0;border-radius:0;color:var(--color-text-secondary,#4b515b);background:transparent;cursor:pointer}.ds-tab-close>svg{width:var(--icon-xs,0.75rem);height:var(--icon-xs,0.75rem)}.ds-tab-close:hover{color:var(--color-text-primary,#24272c);background:var(--color-hover, color-mix(in srgb, #24272c 8%, transparent))}.ds-tab-close:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}@media(hover:hover) and (pointer:fine){.ds-tab:not([data-active],:hover,:focus-within) .ds-tab-close{opacity:0}}"
     },
     {
-      "name": "Fenced code with copy control",
+      "name": "Inline blame and HoverCard",
+      "kind": "custom",
+      "description": "Inline blame (decision 0139): muted mono text 2rem after the active line, at most 60ch, truncated; hover or an open card lifts it to text-secondary. It is a HoverCard trigger (opens after a 400ms rest, closes 150ms after leaving; a click toggles it). The card is the overlay surface (strong hairline, raised fill, overlay shadow), 28rem: author 600, muted email, 12px age on the end; subject 600; body in text-secondary capped at 10rem; the short hash in amber mono with Copy Hash; ghost sm actions.",
+      "html": "<div class=\"ds-blame\"><div class=\"ds-blame-line\"><span class=\"ds-blame-code\">return &amp;Server{addr: addr}</span><button class=\"ds-blame-trigger\" type=\"button\" tabindex=\"-1\" aria-label=\"Blame for line 12: Ada, 3 days ago, Serve on the configured address\">Ada, 3 days ago · Serve on the configured address</button></div><div class=\"ds-hover-card\" role=\"dialog\" aria-label=\"Blame for line 12\"><div class=\"ds-blame-head\"><span class=\"ds-blame-author\">Ada Lovelace</span><span class=\"ds-blame-email\">ada@example.com</span><span class=\"ds-blame-time\" title=\"10 Nov 2026, 14:02\">3 days ago</span></div><p class=\"ds-blame-subject\">Serve on the configured address</p><p class=\"ds-blame-body\">The listener used to bind every interface.\nIt now honours --addr.</p><div class=\"ds-blame-hash\"><code>abc1234</code><button class=\"ds-blame-icon\" type=\"button\" aria-label=\"Copy Hash\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></div><div class=\"ds-blame-actions\"><button class=\"ds-blame-action\" type=\"button\">Open Commit</button><button class=\"ds-blame-action\" type=\"button\">Show File History</button><button class=\"ds-blame-action\" type=\"button\">Open PR #42</button></div></div></div>",
+      "css": ".ds-blame{display:grid;gap:var(--space-1,0.25rem);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif)}.ds-blame-line{display:flex;align-items:center;gap:2rem;min-width:0;padding:0 var(--space-3,0.75rem);background:var(--color-surface-recessed,#eceef0);font-family:var(--font-mono, \"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace);font-size:var(--text-code,0.8125rem);line-height:var(--source-line-height,1.375rem)}.ds-blame-code{flex:none;color:var(--color-text-primary,#24272c);white-space:pre}.ds-blame-trigger{display:block;min-width:0;max-width:60ch;padding:0;border:0;color:var(--color-text-muted,#5e6571);background:transparent;font:inherit;text-align:inherit;white-space:pre;overflow:hidden;text-overflow:ellipsis;user-select:none;cursor:pointer;transition:color 100ms ease-out}.ds-blame-trigger:hover,.ds-blame:has(.ds-hover-card) .ds-blame-trigger{color:var(--color-text-secondary,#4b515b)}.ds-blame-trigger:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}.ds-hover-card{display:grid;gap:var(--space-2,0.5rem);width:28rem;max-width:calc(100% - var(--space-4,1rem));padding:var(--space-3,0.75rem);border:1px solid var(--color-border-strong,#aeb3bb);border-radius:0;color:var(--color-text-primary,#24272c);background:var(--color-surface-raised,#ffffff);box-shadow:var(--shadow-overlay,0 1.5rem 4rem rgb(15 18 23 / 22%));font-size:var(--text-label,0.8125rem);line-height:1.25rem}.ds-hover-card p{margin:0}.ds-blame-head{display:flex;align-items:baseline;gap:var(--space-2,0.5rem);min-width:0}.ds-blame-author{flex:none;font-weight:600}.ds-blame-email{min-width:0;overflow:hidden;color:var(--color-text-muted,#5e6571);text-overflow:ellipsis;white-space:nowrap}.ds-blame-time{flex:none;margin-left:auto;color:var(--color-text-muted,#5e6571);font-size:var(--text-metadata,0.75rem)}.ds-blame-subject{font-weight:600;overflow-wrap:anywhere}.ds-blame-body{max-height:10rem;overflow:auto;color:var(--color-text-secondary,#4b515b);white-space:pre-wrap;overflow-wrap:anywhere}.ds-blame-hash{display:flex;align-items:center;gap:var(--space-1,0.25rem)}.ds-blame-hash code{color:var(--color-commit-hash,#96590a);font-family:var(--font-mono, \"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace);font-size:var(--text-code,0.8125rem)}.ds-blame-icon{display:grid;place-items:center;width:var(--control-xs,1.25rem);height:var(--control-xs,1.25rem);padding:0;border:0;border-radius:0;color:var(--color-text-secondary,#4b515b);background:transparent;cursor:pointer}.ds-blame-icon>svg{width:var(--icon-xs,0.75rem);height:var(--icon-xs,0.75rem)}.ds-blame-icon:hover{color:var(--color-text-primary,#24272c);background:var(--color-hover, color-mix(in srgb, #24272c 8%, transparent))}.ds-blame-actions{display:flex;flex-wrap:wrap;gap:var(--space-1,0.25rem);margin:0 calc(var(--space-2,0.5rem) * -1) calc(var(--space-1,0.25rem) * -1)}.ds-blame-action{height:var(--control-sm,1.5rem);padding:0 var(--space-2,0.5rem);border:1px solid transparent;border-radius:0;color:var(--color-text-secondary,#4b515b);background:transparent;font:500 var(--text-label,0.8125rem)/1 var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);cursor:pointer;transition:color 100ms ease-out,background-color 100ms ease-out}.ds-blame-action:hover{color:var(--color-text-primary,#24272c);background-image:linear-gradient(var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)),var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)))}.ds-blame-action:active{background-image:linear-gradient(var(--color-active, color-mix(in srgb, #24272c 12%, transparent)),var(--color-active, color-mix(in srgb, #24272c 12%, transparent)))}.ds-blame-action:focus-visible,.ds-blame-icon:focus-visible{outline:2px solid var(--color-focus, #325dc8);outline-offset:1px}@media(prefers-reduced-motion:reduce){.ds-blame-trigger,.ds-blame-action{transition:none}}"
+    },
+    {
+      "name": "Fenced code with copy chip",
       "kind": "custom",
       "refersTo": "code-block",
-      "description": "Neutral prose block; language becomes copy affordance on hover/focus.",
-      "html": "<div class=\"ds-code-block\"><pre class=\"ds-code-pre\"><code class=\"ds-code-text\">go run . ./docs</code></pre><button class=\"ds-code-copy\" type=\"button\" aria-label=\"Copy code\"><span class=\"ds-code-language\">go</span><svg class=\"ds-code-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button></div>",
-      "css": ".ds-code-block{position:relative}.ds-code-pre{margin:12px 0;overflow:auto;padding:16px;border:1px solid var(--color-border, #e5e5e5);border-radius:0;background:var(--color-surface-secondary, #f3f3f3);color:var(--color-text-primary, #333333);line-height:1.6}.ds-code-text{font-family:var(--font-mono,ui-monospace,Consolas,monospace);font-size:13.5px}.ds-code-copy{position:absolute;top:4px;right:4px;display:flex;align-items:center;justify-content:center;height:24px;padding:0 8px;border:1px solid var(--color-border, #e5e5e5);border-radius:0;color:var(--color-text-secondary, #515866);background:var(--color-surface-raised, #ffffff);font:12px var(--font-mono,ui-monospace,Consolas,monospace);cursor:pointer}.ds-code-icon{display:none;width:12px;height:12px}.ds-code-block:hover .ds-code-language,.ds-code-copy:focus-visible .ds-code-language{display:none}.ds-code-block:hover .ds-code-icon,.ds-code-copy:focus-visible .ds-code-icon{display:block}.ds-code-copy:hover{background:var(--color-surface-secondary, #f3f3f3);color:var(--color-text-primary, #333333)}.ds-code-copy:focus-visible{outline:2px solid var(--color-accent, #2563eb);outline-offset:2px}"
+      "description": "Prose code block: recessed fill, 1px hairline, 8px 12px padding, 13px mono at 1.6. The CopyButton chip (24px, raised, control shadow) sits 8px in, shows the language until hover or focus, then the copy icon.",
+      "html": "<div class=\"ds-code-block\"><pre class=\"ds-code-pre\"><code>go run ./apps/zero ./docs</code></pre><button class=\"ds-code-copy\" type=\"button\" aria-label=\"Copy code\"><span class=\"ds-code-language\">shell</span><span class=\"ds-code-icon\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></span></button></div>",
+      "css": ".ds-code-block{position:relative;margin:var(--space-3,0.75rem) 0}.ds-code-pre{margin:0;overflow:auto;padding:var(--space-2,0.5rem) var(--space-3,0.75rem);border:1px solid var(--color-border,#c9ccd1);border-radius:0;color:var(--color-text-primary,#24272c);background:var(--color-surface-recessed,#eceef0);font-family:var(--font-mono, \"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace);font-size:var(--text-code,0.8125rem);font-variant-ligatures:none;line-height:1.6}.ds-code-copy{position:absolute;top:var(--space-2,0.5rem);right:var(--space-2,0.5rem);display:inline-flex;align-items:center;justify-content:center;min-width:var(--control-sm,1.5rem);height:var(--control-sm,1.5rem);padding:0 var(--space-2,0.5rem);border:1px solid var(--color-border,#c9ccd1);border-radius:0;color:var(--color-text-secondary,#4b515b);background:var(--color-surface-raised,#ffffff);box-shadow:var(--shadow-control,0 1px 2px rgb(15 18 23 / 8%));font-family:var(--font-mono, \"JetBrains Mono Variable\", ui-monospace, \"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace);font-size:var(--text-label,0.8125rem);cursor:pointer}.ds-code-icon{display:none}.ds-code-icon>svg{display:block;width:var(--icon-xs,0.75rem);height:var(--icon-xs,0.75rem)}.ds-code-block:hover .ds-code-copy,.ds-code-copy:focus-visible{padding:0}.ds-code-block:hover .ds-code-language,.ds-code-copy:focus-visible .ds-code-language{display:none}.ds-code-block:hover .ds-code-icon,.ds-code-copy:focus-visible .ds-code-icon{display:block}.ds-code-copy:hover{color:var(--color-text-primary,#24272c);background-image:linear-gradient(var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)),var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)))}.ds-code-copy:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}"
+    },
+    {
+      "name": "Footer Find in files",
+      "kind": "button",
+      "description": "Status bar on workspace-chrome under an inset 1px hairline, 28px, 12px sans; text-secondary on the chrome. Find in files is a ghost sm Button filling the band height; on narrow screens the band is 44px and the label and shortcut hide.",
+      "html": "<footer class=\"ds-status\"><button class=\"ds-status-search\" type=\"button\" aria-label=\"Find in files\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><span>Find in files</span><kbd>Ctrl+Shift+F</kbd></button><span class=\"ds-status-detail\">Markdown · 4.2 KB</span></footer>",
+      "css": ".ds-status{display:flex;align-items:center;gap:var(--space-3,0.75rem);height:var(--status-height,1.75rem);padding:0 var(--space-3,0.75rem);color:var(--color-text-secondary,#4b515b);background:var(--color-workspace-chrome,#e4e5e8);box-shadow:inset 0 1px 0 var(--color-border,#c9ccd1);font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-xs,0.75rem);line-height:1;white-space:nowrap}.ds-status-search{display:inline-flex;align-items:center;gap:var(--space-2,0.5rem);height:var(--status-height,1.75rem);padding:0 var(--space-2,0.5rem);border:0;border-radius:0;color:var(--color-text-secondary,#4b515b);background:transparent;font-family:var(--font-sans, \"Inter Variable\", Inter, ui-sans-serif, system-ui, sans-serif);font-size:var(--text-label,0.8125rem);font-weight:400;line-height:1;cursor:pointer;transition:color 100ms ease-out}.ds-status-search>svg{width:var(--icon-sm,0.875rem);height:var(--icon-sm,0.875rem)}.ds-status-search kbd{font-family:inherit;font-size:var(--text-xs,0.75rem)}.ds-status-search:hover{color:var(--color-text-primary,#24272c);background-image:linear-gradient(var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)),var(--color-hover, color-mix(in srgb, #24272c 8%, transparent)))}.ds-status-search:focus-visible{outline:1px solid var(--color-focus, #325dc8);outline-offset:-1px}.ds-status-detail{font-variant-numeric:tabular-nums}@media(max-width:48rem){.ds-status,.ds-status-search{height:var(--control-touch,2.75rem)}.ds-status-search{width:var(--control-touch,2.75rem);justify-content:center;padding:0}.ds-status-search span,.ds-status-search kbd,.ds-status-detail{display:none}}"
     },
     {
       "name": "Site primary button",
       "kind": "button",
       "refersTo": "site-button-primary",
-      "description": "Landing Get started; 32px, 44px under 900px.",
+      "description": "Landing Get started; 32px, 44px under 900px; 120ms color transitions.",
       "html": "<a class=\"ds-site-button-primary\" href=\"#\">Get started</a>",
-      "css": ".ds-site-button-primary{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-accent,#325dc8);border-radius:0;background:var(--l-accent,#325dc8);color:var(--l-on-accent,#ffffff);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:background-color 120ms,border-color 120ms}.ds-site-button-primary:hover{background:var(--l-accent-hover,#2348ac);border-color:var(--l-accent-hover,#2348ac)}.ds-site-button-primary:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}@media(prefers-reduced-motion:reduce){.ds-site-button-primary{transition:none}}"
+      "css": ".ds-site-button-primary{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-accent,#325dc8);border-radius:0;background:var(--l-accent,#325dc8);color:var(--l-on-accent,#ffffff);font-family:ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:background-color 120ms,border-color 120ms}.ds-site-button-primary:hover{background:var(--l-accent-hover,#2348ac);border-color:var(--l-accent-hover,#2348ac)}.ds-site-button-primary:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}@media(max-width:56.1875rem){.ds-site-button-primary{height:2.75rem}}@media(prefers-reduced-motion:reduce){.ds-site-button-primary{transition:none}}"
     },
     {
       "name": "Site outline button",
       "kind": "button",
       "refersTo": "site-button-outline",
-      "description": "Landing Read the docs.",
+      "description": "Landing Read the docs: surface with a 1px border; hover border muted.",
       "html": "<a class=\"ds-site-button\" href=\"#\">Read the docs</a>",
-      "css": ".ds-site-button{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-border,#c9ccd1);border-radius:0;background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:border-color 120ms}.ds-site-button:hover{border-color:var(--l-muted,#5b616c)}.ds-site-button:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
+      "css": ".ds-site-button{display:inline-flex;align-items:center;justify-content:center;height:2rem;padding:0 .875rem;border:1px solid var(--l-border,#c9ccd1);border-radius:0;background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);font-family:ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif;font-size:.8125rem;font-weight:550;text-decoration:none;transition:background-color 120ms,border-color 120ms}.ds-site-button:hover{border-color:var(--l-muted,#5b616c)}.ds-site-button:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}@media(max-width:56.1875rem){.ds-site-button{height:2.75rem}}@media(prefers-reduced-motion:reduce){.ds-site-button{transition:none}}"
     },
     {
       "name": "Site feature row",
       "kind": "custom",
-      "description": "Landing row: lowercase mono feature label, heading, lede in a 29.375rem column on a rail, beside the pane on a dot grid; 2px tint top edge.",
-      "html": "<section class=\"ds-site-row\" style=\"--tint:#a9d3b7\"><div class=\"ds-site-row-copy\"><p class=\"ds-site-row-label\">diffs</p><h2>Review like a pull request.</h2><p class=\"ds-site-row-lede\">Uncommitted work, commits, branches, and ranges in one stacked diff.</p></div><div class=\"ds-site-row-visual\"><div class=\"ds-site-row-pane\">pane</div></div></section>",
-      "css": ".ds-site-row{display:grid;grid-template-columns:minmax(0,18rem) minmax(0,1fr);border-top:1px solid var(--l-border,#c9ccd1);box-shadow:inset 0 2px 0 var(--tint);background:var(--l-bg,#fafafa);color:var(--l-text,#24272c);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.8125rem}.ds-site-row-copy{display:flex;flex-direction:column;justify-content:center;gap:.75rem;padding:1.5rem;border-right:1px solid var(--l-rail,#b7c6ea)}.ds-site-row-copy h2{margin:0;font-size:1.625rem;font-weight:650;letter-spacing:-.03em;line-height:1.1}.ds-site-row-label{margin:0;font-family:\"JetBrains Mono Variable\",ui-monospace,\"SF Mono\",Menlo,Consolas,monospace;font-size:.75rem;color:var(--l-accent,#325dc8)}.ds-site-row-lede{margin:0;font-size:.9375rem;line-height:1.55;color:var(--l-text-2,#4b515b)}.ds-site-row-visual{display:flex;align-items:center;padding:1.75rem;background-image:radial-gradient(var(--l-dot,#cdd2da) 1px,transparent 1.2px);background-size:.75rem .75rem}.ds-site-row-pane{flex:1;height:6rem;border:1px solid var(--l-border,#c9ccd1);background:var(--l-surface,#ffffff)}"
+      "description": "Landing row: a 29.375rem copy column (padded 48px 32px, 1px rail on its right) with the lowercase mono feature label, heading, and lede, beside the feature's pane on a 12px dot grid; rows after the hero take a 2px tint top edge.",
+      "html": "<section class=\"ds-site-row\" style=\"--tint:#a9d3b7\"><div class=\"ds-site-row-copy\"><p class=\"ds-site-row-label\">diffs</p><h2>Review like a pull request.</h2><p class=\"ds-site-row-lede\">Uncommitted work, commits, branches, and ranges in one stacked diff.</p></div><div class=\"ds-site-row-visual\"><div class=\"ds-site-row-pane\">synthetic demo</div></div></section>",
+      "css": ".ds-site-row{display:grid;grid-template-columns:minmax(0,29.375rem) minmax(0,1fr);border-top:1px solid var(--l-border,#c9ccd1);box-shadow:inset 0 2px 0 var(--tint);background:var(--l-bg,#fafafa);color:var(--l-text,#24272c);font-family:ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif;font-size:.8125rem;line-height:1.5}.ds-site-row-copy{display:flex;flex-direction:column;justify-content:center;gap:1.125rem;min-width:0;padding:3rem 2rem;border-right:1px solid var(--l-rail,#b7c6ea)}.ds-site-row-copy h2{margin:0;font-size:clamp(1.625rem,2.4vw,2rem);font-weight:650;letter-spacing:-.03em;line-height:1.1;text-wrap:balance}.ds-site-row-label{margin:0;font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace;font-size:.75rem;color:var(--l-accent,#325dc8)}.ds-site-row-lede{max-width:34rem;margin:0;font-size:.9375rem;line-height:1.55;color:var(--l-text-2,#4b515b)}.ds-site-row-visual{display:flex;align-items:center;min-width:0;padding:1.75rem;background-image:radial-gradient(var(--l-dot,#cdd2da) 1px,transparent 1.2px);background-size:.75rem .75rem}.ds-site-row-pane{flex:1;display:grid;place-items:center;height:6rem;border:1px solid var(--l-border,#c9ccd1);background:var(--l-surface,#ffffff);color:var(--l-muted,#5b616c);font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace;font-size:.65625rem;letter-spacing:.08em;text-transform:uppercase}@media(max-width:56.1875rem){.ds-site-row{grid-template-columns:1fr}.ds-site-row-copy{padding:1.5rem 1rem;border-right:0}}"
     },
     {
       "name": "Site install command",
       "kind": "custom",
       "refersTo": "site-install-tab",
-      "description": "Install tabs over a copyable command; selected tab lifts with a 2px accent top edge.",
+      "description": "Install tabs over a copyable command on a surface-2 frame; the selected tab lifts onto surface with a 2px accent top edge; accent $, 12.5px mono command, uppercase Copy behind a 1px rule.",
       "html": "<div class=\"ds-site-install\"><div class=\"ds-site-install-tabs\" role=\"tablist\"><button class=\"ds-site-install-tab\" role=\"tab\" aria-selected=\"true\">macOS / Linux</button><button class=\"ds-site-install-tab\" role=\"tab\" aria-selected=\"false\">Go</button></div><div class=\"ds-site-install-command\"><code><span class=\"ds-site-install-prompt\">$</span>curl -fsSL https://example.invalid/install.sh | sh</code><button class=\"ds-site-install-copy\" type=\"button\">Copy</button></div></div>",
-      "css": ".ds-site-install{max-width:34rem;border:1px solid var(--l-border,#c9ccd1);background:var(--l-surface-2,#eceef0);font-family:\"JetBrains Mono Variable\",ui-monospace,\"SF Mono\",Menlo,Consolas,monospace}.ds-site-install-tabs{display:flex;border-bottom:1px solid var(--l-border,#c9ccd1)}.ds-site-install-tab{height:1.75rem;padding:0 .625rem;border:0;border-right:1px solid var(--l-border,#c9ccd1);border-radius:0;background:transparent;color:var(--l-muted,#5b616c);font:inherit;font-size:.75rem;cursor:pointer}.ds-site-install-tab:hover{color:var(--l-text,#24272c)}.ds-site-install-tab[aria-selected=true]{background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);box-shadow:inset 0 2px 0 var(--l-accent,#325dc8)}.ds-site-install-command{display:flex;background:var(--l-surface,#ffffff)}.ds-site-install-command code{flex:1;min-width:0;padding:.5625rem .75rem;overflow-x:auto;white-space:nowrap;font-size:.78125rem}.ds-site-install-prompt{margin-right:.5rem;color:var(--l-accent,#325dc8);user-select:none}.ds-site-install-copy{padding:0 .75rem;border:0;border-left:1px solid var(--l-border,#c9ccd1);border-radius:0;background:transparent;color:var(--l-text-2,#4b515b);font:inherit;font-size:.6875rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}.ds-site-install-copy:hover{color:var(--l-text,#24272c);background:var(--l-surface-2,#eceef0)}.ds-site-install-tab:focus-visible,.ds-site-install-copy:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}"
+      "css": ".ds-site-install{max-width:34rem;border:1px solid var(--l-border,#c9ccd1);background:var(--l-surface-2,#eceef0);font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace}.ds-site-install-tabs{display:flex;border-bottom:1px solid var(--l-border,#c9ccd1)}.ds-site-install-tab{height:1.75rem;padding:0 .625rem;border:0;border-right:1px solid var(--l-border,#c9ccd1);border-radius:0;background:transparent;color:var(--l-muted,#5b616c);font:inherit;font-size:.75rem;cursor:pointer}.ds-site-install-tab:hover{color:var(--l-text,#24272c)}.ds-site-install-tab[aria-selected=true]{background:var(--l-surface,#ffffff);color:var(--l-text,#24272c);box-shadow:inset 0 2px 0 var(--l-accent,#325dc8)}.ds-site-install-command{display:flex;align-items:stretch;background:var(--l-surface,#ffffff)}.ds-site-install-command code{flex:1;min-width:0;padding:.5625rem .75rem;overflow-x:auto;white-space:nowrap;font-size:.78125rem}.ds-site-install-prompt{margin-right:.5rem;color:var(--l-accent,#325dc8);user-select:none}.ds-site-install-copy{flex:none;padding:0 .75rem;border:0;border-left:1px solid var(--l-border,#c9ccd1);border-radius:0;background:transparent;color:var(--l-text-2,#4b515b);font:inherit;font-size:.6875rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}.ds-site-install-copy:hover{color:var(--l-text,#24272c);background:var(--l-surface-2,#eceef0)}.ds-site-install-tab:focus-visible,.ds-site-install-copy:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}@media(max-width:56.1875rem){.ds-site-install-tab{height:2.75rem}}"
+    },
+    {
+      "name": "Docs code block",
+      "kind": "custom",
+      "description": "Each docs fence is a small pane: a 1px border on bg, a 28px --sz-side band labelled shell or code with an uppercase Copy cell behind a 1px rule, then 13px mono at 1.6.",
+      "html": "<div class=\"ds-docs-code\"><div class=\"ds-docs-code-band\"><span>shell</span><button class=\"ds-docs-code-copy\" type=\"button\">Copy</button></div><pre><code>zero ./docs</code></pre></div>",
+      "css": ".ds-docs-code{border:1px solid var(--sz-border,#c9ccd1);border-radius:0;background:var(--sz-bg,#ffffff)}.ds-docs-code-band{display:flex;align-items:center;justify-content:space-between;height:1.75rem;padding-left:.875rem;border-bottom:1px solid var(--sz-border,#c9ccd1);background:var(--sz-side,#f6f7f9);color:var(--sz-muted,#5b616c);font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace;font-size:.6875rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}.ds-docs-code-copy{height:100%;padding:0 .75rem;border:0;border-left:1px solid var(--sz-border,#c9ccd1);border-radius:0;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}.ds-docs-code-copy:hover,.ds-docs-code-copy:focus-visible{background:var(--sz-surface-2,#eceef0);color:var(--sz-text,#24272c)}.ds-docs-code-copy:focus-visible{outline:2px solid var(--l-accent,#325dc8);outline-offset:1px}.ds-docs-code pre{margin:0;padding:.625rem .875rem;overflow-x:auto;color:var(--sz-text,#24272c);font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace;font-size:.8125rem;line-height:1.6;font-variant-ligatures:none}"
     },
     {
       "name": "Docs callouts",
       "kind": "card",
-      "description": "Vocs callouts: full 1px tinted border and wash per kind, no side stripe.",
+      "description": "Vocs callouts: full 1px tinted border and wash per kind (note and info blue, tip and success green, warning and danger coral), no side stripe.",
       "html": "<div class=\"ds-docs-callout\">Note: the daemon exits after 30 idle minutes.</div><div class=\"ds-docs-callout\" data-kind=\"tip\">Tip: pass a path to open it directly.</div><div class=\"ds-docs-callout\" data-kind=\"warning\">Warning: remote serving needs a token.</div>",
       "css": ".ds-docs-callout{margin:0 0 .5rem;padding:.75rem 1rem;border:1px solid var(--sz-tint-blue,#b7c6ea);border-radius:0;background:var(--sz-wash-blue,#eef2fb);color:var(--sz-text-2,#4b515b);font-size:.875rem}.ds-docs-callout[data-kind=tip]{border-color:var(--sz-tint-green,#a9d3b7);background:var(--sz-wash-green,#eef7f1)}.ds-docs-callout[data-kind=warning]{border-color:var(--sz-tint-coral,#efc3b6);background:var(--sz-wash-coral,#fcf1ee)}"
     },
     {
       "name": "Site walkthrough note",
       "kind": "custom",
-      "description": "Inline step note inside a demo pane, after its lines.",
+      "description": "Inline step note inside a demo pane, after its lines: 1px accent border on --l-note, a mono label title with a 16px accent step pin, 12.5px text-2 prose.",
       "html": "<div class=\"ds-site-note\"><div class=\"ds-site-note-title\"><span class=\"ds-site-pin\">4</span>Step 4 of 7</div>The session now expires after <code>idle</code> minutes.</div>",
-      "css": ".ds-site-note{padding:.5rem .625rem;border:1px solid var(--l-accent,#325dc8);border-radius:0;background:var(--l-note,#eef2fb);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",sans-serif;font-size:.78125rem;line-height:1.5;color:var(--l-text-2,#4b515b)}.ds-site-note code{font-family:\"JetBrains Mono Variable\",ui-monospace,\"SF Mono\",Menlo,Consolas,monospace;color:var(--l-accent,#325dc8)}.ds-site-note-title{display:flex;align-items:center;gap:.5rem;margin-bottom:.1875rem;font-family:\"JetBrains Mono Variable\",ui-monospace,\"SF Mono\",Menlo,Consolas,monospace;font-size:.65625rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--l-muted,#5b616c)}.ds-site-pin{display:inline-grid;place-items:center;width:1rem;height:1rem;background:var(--l-accent,#325dc8);color:var(--l-on-accent,#ffffff);font-size:.625rem;letter-spacing:0}"
+      "css": ".ds-site-note{padding:.5rem .625rem;border:1px solid var(--l-accent,#325dc8);border-radius:0;background:var(--l-note,#eef2fb);font-family:ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif;font-size:.78125rem;line-height:1.5;color:var(--l-text-2,#4b515b)}.ds-site-note code{font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace;color:var(--l-accent,#325dc8)}.ds-site-note-title{display:flex;align-items:center;gap:.5rem;margin-bottom:.1875rem;font-family:\"JetBrains Mono Variable\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace;font-size:.65625rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--l-muted,#5b616c)}.ds-site-pin{display:inline-grid;place-items:center;width:1rem;height:1rem;background:var(--l-accent,#325dc8);color:var(--l-on-accent,#ffffff);font-size:.625rem;letter-spacing:0}"
     }
   ],
   "narrative": {
     "northStar": "Sharp slate panes",
-    "overview": "zero follows familiar editor conventions: a compact explorer, document tabs, a readable preview, and a quiet status footer. Square panes meet on 1px hairlines; slate surfaces, flat rows, and restrained controls keep local files central.\n\nWorkspace identity sits above the explorer. App identity, content search, process state, and theme selection sit in the footer. There is no top app header; the logo sits in the footer and on Welcome. Mobile keeps the document visible and opens files in a drawer.",
+    "overview": "zero keeps VS Code's conventions and takes Zed's visual language (decision 0102): an activity bar, a compact explorer and search sidebar, document tabs, a readable preview, and a quiet status footer, as square panes meeting on 1px hairlines. Slate surfaces, flat rows, and restrained controls keep local files central.\n\nWorkspace identity sits above the explorer as the project picker trigger. App identity, content search, process state, and the Settings gear sit in the footer; Ctrl/Cmd+Shift+P opens the command palette. There is no top app header; the logo sits in the footer and on Welcome. The macOS desktop app draws only a title band under its traffic lights (decision 0119). Mobile keeps the document visible and opens files in a drawer.\n\nThe marketing landing (`/`, `apps/site/src/landing/`) and the Vocs docs chrome (`apps/site/src/pages/_root.css`) carry the same sharp slate world onto the web (decisions 0102, 0105, 0106, 0107). The landing is a column of feature rows: the hero, then browse, diffs, walkthroughs, remote, and lean, each with its copy on the left beside its own app pane on the right. Nothing here changes the app sections above; the site has no runtime theme set, only Vocs' light and dark.",
     "keyCharacteristics": [
       "Compact editor navigation.",
-      "Square corners and panes on hairlines; slate Zero surfaces.",
-      "Left-aligned proportional prose and monospace code.",
+      "Square corners everywhere; panes meet on 1px hairlines, with no canvas gaps.",
+      "Left-aligned proportional prose and monospace code; monospace chrome labels.",
       "Shared semantic roles across named editor themes.",
       "Site: a framed 75rem column on 1px blue-tinted rails over a diagonal hatch.",
       "Site: one mild tint per feature, on its row's top edge and its pane's framing.",
@@ -891,17 +1072,19 @@
       },
       {
         "name": "The Four-Sided Border Rule",
-        "body": "In the docs chrome a tinted element is framed on all four sides by a 1px border: code blocks take `tint-blue` on `surface`; callouts take their kind's tint with its wash (note and info blue, tip and success green, warning and danger coral). No side stripes on callouts, code, or content.",
+        "body": "In the docs chrome a tinted element is framed on all four sides by a 1px border: code blocks take `border` on `bg`; callouts take their kind's tint with its wash (note and info blue, tip and success green, warning and danger coral). No side stripes on callouts, code, or content.",
         "section": "shapes"
       }
     ],
     "dos": [
       "Do reuse semantic CSS tokens and shared primitives across every theme.",
-      "Do retain 15px desktop / 16px mobile prose, 75ch measure, and left alignment.",
-      "Do keep file/path search separate from content search.",
+      "Do retain 14px desktop / 15px mobile prose (at the 13px base), 75ch measure, and left alignment.",
+      "Do size new UI in rem so it follows the Font Size setting; reserve px for 1–2px borders and offsets.",
+      "Do keep file/path search (Explorer) separate from content search (Search view).",
       "Do preserve keyboard focus, accessible labels, modal behavior, and reduced motion.",
       "Do keep fonts, icons, and runtime assets local to the embedded Go distribution.",
-      "Do review shadcn-generated code against this system and strict TypeScript: no `any`, non-null assertions, or type assertions.",
+      "Do build UI from the primitives and tokens; extend a primitive rather than restyling it in a feature.",
+      "Do keep strict TypeScript: no `any`, non-null assertions, or type assertions.",
       "Do scope landing styles under `.landing` with `--l-*` tokens, and docs styles in `_root.css` with `--sz-*` tokens over Vocs' `data-v-*` hooks.",
       "Do write every site color as `light-dark(light, dark)` so both Vocs themes follow its toggle.",
       "Do give each feature one tint and repeat it on its row's top edge, its terminal, and its pane framing.",
@@ -912,7 +1095,9 @@
     ],
     "donts": [
       "Don't add a top app header or logo; keep workspace identity above the explorer and app identity in the footer.",
-      "Don't restore the mobile split; use the files drawer with 40px rows and 44px toolbar/footer.",
+      "Don't restore the mobile split; use the files drawer with 32px rows/toolbar and a 44px footer.",
+      "Don't hand-roll buttons, fields, rows, or overlays; don't add color, size, or motion literals outside the token files.",
+      "Don't round a corner, or separate panes with gaps; panes meet on 1px hairlines.",
       "Don't center preview prose or substitute generic heading/body tokens for the preview scale.",
       "Don't introduce decorative gradients, pill containers, heavy shadows, or cards around document sections.",
       "Don't rely on color alone for selection, focus, errors, or status.",
