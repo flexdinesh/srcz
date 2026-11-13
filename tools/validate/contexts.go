@@ -3,7 +3,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -228,11 +230,16 @@ func (o objectStore) materialize(dir string, entries []entry) error {
 			if writeErr == nil {
 				writeErr = os.Chmod(temp.Name(), mode)
 			}
+			// Publish without replacing: renaming over an object another
+			// group just published unlinks it while that group links it,
+			// and linking an unlinked file fails with ENOENT.
 			if writeErr == nil {
-				writeErr = os.Rename(temp.Name(), object)
+				if writeErr = os.Link(temp.Name(), object); errors.Is(writeErr, fs.ErrExist) {
+					writeErr = nil
+				}
 			}
+			os.Remove(temp.Name())
 			if writeErr != nil {
-				os.Remove(temp.Name())
 				return writeErr
 			}
 		} else if err != nil {
