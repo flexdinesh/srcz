@@ -610,8 +610,8 @@ action row is the filter row (below) with a [Branch][All] small
 `SegmentedControl` (12px) beside the field at the field's height; when
 HEAD is the base branch both items are disabled, All shows pressed, and the
 title says “HEAD is the base branch, so all history shows”. A `role="listbox"`
-named “Commits” (`aria-multiselectable` on desktop) holds 24px rows (32px
-narrow) with the Search view's state treatment: a leading 20px chevron
+named “Commits” (`aria-multiselectable` on desktop) holds two-line 42px rows
+(4px padding, an 18px subject line, a 16px meta line; also on phones) with the Search view's state treatment: a leading 20px chevron
 (“Show commit details”, in the pane title's chevron column), the subject in
 `text-primary` on the other rows' indent, and a muted right-aligned compact
 age (`3h`, `2d`, `4mo`). The title adds author, absolute date, and short
@@ -633,7 +633,7 @@ message body (secondary, line breaks kept), `author <email>`, the absolute
 date, the short hash chip with a 20px Copy action for the full hash, and,
 for stack layer tips, a 12px git-branch icon and branch names (12px
 monospace, unboxed, both in the layer's lane hue). Details are
-12px muted lines; items wrap whole and truncate when wider than the pane.
+12px muted lines 2px apart, flush under the row with 4px below; items wrap whole and truncate when wider than the pane.
 Last come the commit's files (decision 0112), read on expand: Uncommitted's
 flat rows (Pierre icon, name in `text-primary` at body size, muted 12px
 folder, status letter; no line counts) bleeding to the pane's edges, in
