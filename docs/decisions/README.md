@@ -60,7 +60,7 @@ rewriting history; update `Status` on the old record.
 | [0052](0052-welcome-tab-and-contextual-empty-state.md) | Welcome tab and an empty pane that follows the sidebar view | Accepted |
 | [0053](0053-files-rail-viewed-marks.md) | Viewed marks in the review Files rail | Accepted |
 | [0054](0054-worktree-checks.md) | Queued worktree checks and critical browser coverage | Accepted; supersedes 0032/0038 check execution; check output superseded by 0057 |
-| [0055](0055-scrollbars.md) | Thin, hover-revealed scrollbars with reserved gutters | Accepted; review gutter surface revised by 0102 |
+| [0055](0055-scrollbars.md) | Thin, hover-revealed scrollbars with reserved gutters | Accepted; review gutter surface revised by 0102; gutters, hover-only thumb, and native bars superseded by 0140 |
 | [0057](0057-quiet-check-runner.md) | Quiet check runner and targeted agent checks | Accepted |
 | [0058](0058-local-dagger-validation.md) | Explicit local Dagger validation before PR work | Boundaries, certification, and PR wrappers superseded by 0059; engine ownership superseded by 0110 |
 | [0059](0059-validation-execution-boundaries.md) | Test isolation and safe host checks before PR work | Accepted; groups revised by 0095; suites and inputs by 0096; execution by 0110 |
@@ -105,7 +105,7 @@ rewriting history; update `Status` on the old record.
 | [0099](0099-desktop-notifications.md) | Desktop notifications | Accepted |
 | [0100](0100-rename-to-srcz.md) | Rename to srcz (Source Zero) | Accepted |
 | [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted; edge script replaced by `install-dev.sh` in 0134 |
-| [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130 |
+| [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130; review gutter hairline by 0140 |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130, restored by 0138 |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
@@ -141,3 +141,4 @@ rewriting history; update `Status` on the old record.
 | [0137](0137-review-selection-is-the-chosen-file.md) | Review selection is the chosen file | Accepted; supersedes 0135's file in view and the scroll-following selection of 0035 and 0040; amends 0051, 0117 |
 | [0138](0138-jetbrains-mono-and-tree-folder-icons.md) | JetBrains Mono, no ligatures, and folder icons in trees | Accepted; supersedes 0130's Plex Mono face; restores 0104's wordmark; amends 0102's tree |
 | [0139](0139-inline-blame.md) | Inline blame on the active line | Accepted; extends 0008, 0083, 0112, 0114, 0115 |
+| [0140](0140-overlay-scrollbars.md) | Overlay scrollbars | Accepted; supersedes 0055's gutters, hover-only thumb, and native bars, and 0102's review gutter hairline |

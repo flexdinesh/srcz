@@ -116,15 +116,13 @@
 }
 
 /* A review stacks every file of a compare in the document pane as one
-   continuous buffer: bands divide the files, not cards. Sharing main's surface
-   makes main's reserved scrollbar gutter part of the pane; bands end on the
-   hairline that makes it the scrollbar's lane. */
+   continuous buffer: bands divide the files, not cards. Bands run to the
+   pane's edge; its overlay scrollbar draws over them (decision 0140). */
 .review {
   display: flex;
   min-width: 0;
   min-height: 100%;
   flex-direction: column;
-  border-right: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 

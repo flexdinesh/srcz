@@ -16,6 +16,7 @@ import {
 
 import { FolderGit2Icon, PanelLeftIcon } from "lucide-react"
 import { IconButton } from "./components/ui/icon-button.tsx"
+import { OverlayScrollbars } from "./components/ui/overlay-scrollbars.tsx"
 import { ProjectPicker, type PickerOpenOptions } from "./features/projects/ProjectPicker.tsx"
 import { DocumentModeToggle, type DocumentMode } from "./features/documents/DocumentModeToggle.tsx"
 import { DocumentPane } from "./features/documents/DocumentPane.tsx"
@@ -1035,6 +1036,7 @@ export function App({ project }: AppProps) {
       <ColorThemePicker registerOpen={registerColorTheme} />
       <RecentLocations log={historyLog} project={project} registerOpen={registerRecent} onOpen={navigateToHref} />
       <NavigationDialog panel={codeNavigation.panel} onClose={closeNavigation} onOpen={openNavigationResult} />
+      <OverlayScrollbars />
     </>
   )
 }

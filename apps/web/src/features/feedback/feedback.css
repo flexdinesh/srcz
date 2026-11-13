@@ -249,7 +249,6 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  scrollbar-gutter: stable;
   padding-bottom: var(--space-2);
 }
 

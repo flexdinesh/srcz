@@ -93,8 +93,12 @@
   --color-scrollbar-thumb: color-mix(in srgb, var(--color-text-primary) 22%, transparent);
   --color-scrollbar-thumb-hover: color-mix(in srgb, var(--color-text-primary) 35%, transparent);
   --color-scrollbar-thumb-active: color-mix(in srgb, var(--color-text-primary) 45%, transparent);
-  /* VS Code's 10px vertical scrollbar; the gutter is always reserved. */
+  /* Overlay scrollbars (decision 0140): VS Code's 10px lane over the edge,
+     reserving no space; a 6px thumb inset 2px, the full lane under the
+     pointer. */
   --scrollbar-size: 0.625rem;
+  --scrollbar-thumb-size: 0.375rem;
+  --scrollbar-inset: 0.125rem;
 
   /* Spacing scale. */
   --space-1: 0.25rem;
@@ -152,6 +156,8 @@
   --z-popover: 20;
   --z-progress: 30;
   --z-menu: 60;
+  /* Overlay scrollbars sit over every scroll area, menus included. */
+  --z-scrollbar: 70;
 
   /* Component tokens: controls, icons, rows. */
   --control-xs: 1.25rem;
