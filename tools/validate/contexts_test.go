@@ -3,10 +3,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"syscall"
 	"testing"
 )
@@ -179,6 +181,50 @@ func TestContextTreesHardlinkOneObjectPerFile(t *testing.T) {
 	}
 	if err := store.materialize(filepath.Join(root, "bad"), []entry{{Path: "x", Mode: "120000", Content: []byte("../../etc/passwd")}}); err == nil {
 		t.Fatal("escaping symlink materialized")
+	}
+}
+
+// Container groups materialize their contexts concurrently into one store, so
+// two groups often publish the same object at once; neither may fail.
+func TestConcurrentGroupsShareObjects(t *testing.T) {
+	root := t.TempDir()
+	store := objectStore{filepath.Join(root, "objects")}
+	var files []entry
+	for i := range 500 {
+		files = append(files, entry{Path: fmt.Sprintf("dir%d/file%d", i%20, i), Mode: "100644", Content: []byte(fmt.Sprint(i))})
+	}
+	const groups = 3
+	errs := make(chan error, groups)
+	var wg sync.WaitGroup
+	for group := range groups {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs <- store.materialize(filepath.Join(root, fmt.Sprint("group", group)), files)
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, file := range files {
+		first, err := os.Stat(filepath.Join(root, "group0", file.Path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for group := 1; group < groups; group++ {
+			other, err := os.Stat(filepath.Join(root, fmt.Sprint("group", group), file.Path))
+			if err != nil || !os.SameFile(first, other) {
+				t.Fatalf("%s in group%d is not the shared object: %v", file.Path, group, err)
+			}
+		}
+	}
+	leftovers, err := filepath.Glob(filepath.Join(store.dir, ".object-*"))
+	if err != nil || len(leftovers) > 0 {
+		t.Fatalf("temporary objects left: %v %v", leftovers, err)
 	}
 }
 
