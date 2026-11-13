@@ -332,9 +332,12 @@
   padding-left: var(--space-1);
 }
 
-/* The filter spans the view; long labels truncate before it overflows. */
+/* The filter spans the view; long labels truncate before it overflows. The
+   pressed segment fills the track's full height, with no inset around it. */
 .feedback-filter {
+  gap: 0;
   margin: var(--space-1) var(--space-3) var(--space-2);
+  padding: 0;
 }
 
 .feedback-filter > .ui-segmented-item {
