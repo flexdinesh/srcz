@@ -131,7 +131,7 @@ export function TabBar({ active, name: tabName, onClose, onCloseMany, onPin, onS
   }
 
   return (
-    <div className="buffer-tabs" role="tablist" aria-label="Open documents" ref={tabList}>
+    <div className="buffer-tabs" data-scrollbar="none" role="tablist" aria-label="Open documents" ref={tabList}>
       {tabs.map((tab, index) => {
         const selected = sameTab(tab, active)
         const previewing = sameTab(tab, preview)

@@ -325,25 +325,97 @@ test("F7, N and P, and the toolbar step through changes across the review's file
   await expect(reviewFile(page, "untracked.txt").locator(".diff-view [data-line][data-selected-line]").first()).toBeInViewport()
 })
 
-test("a review's scrollbar runs only its pane's height, in a lane on the review's surface", async ({ page }) => {
+test("a review's scrollbar runs only its pane's height and reserves no lane", async ({ page }) => {
   await openReview(page, "review=branch#f=clean.md")
   await expect(rail(page)).toBeVisible()
   const main = page.locator("#document-pane")
   const review = main.locator(".review")
-  const background = (element: Element) => getComputedStyle(element).backgroundColor
-  // The gutter main reserves paints as part of the review, and the file bands
-  // end on the lane's hairline.
-  expect(await main.evaluate(background)).toBe(await review.evaluate(background))
-  expect(await review.evaluate((element) => getComputedStyle(element).borderRightWidth)).toBe("1px")
   const [mainBox, reviewBox, railBox, toolbarBox] = await Promise.all([
     main.boundingBox(), review.boundingBox(), rail(page).boundingBox(), page.locator(".workspace-toolbar").boundingBox(),
   ])
   if (!mainBox || !reviewBox || !railBox || !toolbarBox) throw new Error("review panes are not laid out")
-  // Playwright's WebKit reserves no gutter, so the review may reach the edge.
-  expect(reviewBox.x + reviewBox.width).toBeLessThanOrEqual(mainBox.x + mainBox.width)
+  // The overlay scrollbar takes no space: file bands run to the pane's edge
+  // (decision 0140).
+  expect(await main.evaluate((pane) => pane instanceof HTMLElement ? pane.offsetWidth - pane.clientWidth : -1)).toBe(0)
+  expect(reviewBox.x + reviewBox.width).toBe(mainBox.x + mainBox.width)
   expect(mainBox.y).toBe(toolbarBox.y + toolbarBox.height)
   expect(railBox.y).toBe(mainBox.y)
   expect(railBox.y + railBox.height).toBe(mainBox.y + mainBox.height)
+})
+
+function verticalBar(page: Page) {
+  return page.locator(".ui-scrollbar[data-axis='y']")
+}
+
+// Overlay scrollbars (decision 0140) show while their area scrolls or the
+// pointer rests on it, fade when idle, and drag like native ones.
+test("overlay scrollbars show on hover and scroll, fade when idle, and drag", async ({ page }) => {
+  await openReview(page, "review=working")
+  await expect(diffLines(page, "change-addition", "src/app.ts").first()).toBeVisible()
+  const main = page.locator("main")
+  const box = await main.boundingBox()
+  if (!box) throw new Error("the review pane is not laid out")
+  const bar = verticalBar(page)
+  const thumb = bar.locator(".ui-scrollbar-thumb")
+
+  // The lane runs the pane's height at its edge; off the pane it hides, and
+  // a scroll shows it again.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await expect(bar).toHaveAttribute("data-visible", "")
+  const lane = await bar.boundingBox()
+  if (!lane) throw new Error("the scrollbar is not laid out")
+  expect(lane.x + lane.width).toBeCloseTo(box.x + box.width, 0)
+  expect(lane.y).toBeCloseTo(box.y, 0)
+  expect(lane.height).toBeCloseTo(box.height, 0)
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height + 12)
+  await expect(bar).not.toHaveAttribute("data-visible", "")
+  await main.evaluate((pane) => { pane.scrollTop = 400 })
+  await expect(bar).toHaveAttribute("data-visible", "")
+  await expect(bar).not.toHaveAttribute("data-visible", "", { timeout: 3_000 })
+
+  // The thumb is slim until the pointer reaches its lane.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  const slim = await thumb.boundingBox()
+  await page.mouse.move(box.x + box.width - 3, box.y + box.height / 2)
+  await expect(bar).toHaveAttribute("data-active", "")
+  await expect.poll(async () => (await thumb.boundingBox())?.width ?? 0).toBeGreaterThan(slim?.width ?? 0)
+
+  // Dragging the thumb scrolls the pane.
+  const before = await main.evaluate((pane) => pane.scrollTop)
+  const grip = await thumb.boundingBox()
+  if (!grip) throw new Error("the thumb is not laid out")
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + 60, { steps: 4 })
+  await page.mouse.up()
+  expect(await main.evaluate((pane) => pane.scrollTop)).toBeGreaterThan(before)
+})
+
+// Wide diff code keeps Pierre's native bar: hiding it changes Pierre's row
+// layout in WebKit (decision 0140). The overlay draws no second bar there.
+test("wide diff code keeps its own scrollbar and gets no overlay", async ({ page }) => {
+  // Narrow enough that large.txt's lines overflow their code column.
+  await page.setViewportSize({ width: 460, height: 700 })
+  await openReview(page, "review=working#f=large.txt")
+  const code = reviewFile(page, "large.txt").locator(".diff-view [data-code]").first()
+  await expect(code).toBeVisible()
+  expect(await code.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+  expect(await code.evaluate((element) => getComputedStyle(element).getPropertyValue("scrollbar-width"))).not.toBe("none")
+  const box = await code.boundingBox()
+  if (!box) throw new Error("the diff is not laid out")
+  await page.mouse.move(box.x + box.width / 2, box.y + 40)
+  await expect(verticalBar(page)).toHaveAttribute("data-visible", "")
+  await expect(page.locator(".ui-scrollbar[data-axis='x']")).not.toHaveAttribute("data-visible", "")
+})
+
+test.describe("on touch screens", () => {
+  test.use({ hasTouch: true, isMobile: true })
+
+  test("scrollbars stay the platform's own", async ({ page }) => {
+    await openReview(page, "review=working")
+    await expect(diffLines(page, "change-addition", "src/app.ts").first()).toBeVisible()
+    await expect(page.locator(".ui-scrollbars")).toHaveCount(0)
+  })
 })
 
 test("every Source Control pane scrolls in one lane at the sidebar's edge", async ({ page }) => {

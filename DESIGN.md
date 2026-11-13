@@ -363,7 +363,7 @@ Content palette (command palette, project picker, navigation results; `DialogShe
 
 Spacing scale: 4, 8, 12, 16, 24, 32, 48px. Prose blocks use 12px margins; H1/H2 start with 32px above, H3/H4 with 24px. Wide code, tables, and diagrams scroll within their bounds.
 
-Scrollbars (decision 0055): 10px (`--scrollbar-size`), no track or arrows, a square thumb inset 2px in translucent ink (`--color-scrollbar-thumb`, darker hovered and dragged), shown only while the pointer is over its scroll area. The document pane and sidebar, palette, and Settings lists reserve the gutter (`scrollbar-gutter: stable`) so content never shifts as overflow comes and goes; the document pane's end padding gives it back. A pane's scrollbar belongs to it: the gutter shares its pane's surface, and the document pane's track runs from the tab strip's hairline to the status bar; a review ends its file bands on a 1px hairline beside the gutter (decision 0102). Each Source Control pane owns one scroller (its list or tree; the pane body never scrolls), so every pane's thumb runs in the same lane at the sidebar's edge. Pierre trees and diffs take the same thumb.
+Scrollbars (decision 0140): overlay scrollbars that reserve no space, as in VS Code. For fine pointers native bars are hidden, in Pierre's trees too, and one fixed layer draws a 10px lane (`--scrollbar-size`) over the edge of the scroll area under the pointer, or the one being scrolled: no track or arrows, a square thumb in translucent ink (`--color-scrollbar-thumb`, darker hovered and dragged), 6px inset 2px at rest (`--scrollbar-thumb-size`, `--scrollbar-inset`), the full lane under the pointer or while dragging, at least 20px long. It shows while its area scrolls and 800ms after, while the pointer is over the area or lane, and while dragging, then fades (none with reduced motion). Dragging scrolls; a lane press pages. Lanes keep to the visible edge of their area. Wide diff code keeps Pierre's native thin bar (square, inset 2px, shown while its file is hovered): hiding it changes Pierre's row layout in WebKit, and the overlay draws no second bar where a native one remains. The document pane's track runs from the tab strip's hairline to the status bar; file bands run to the pane's edge. Each Source Control pane owns one scroller (its list or tree; the pane body never scrolls), so every pane's thumb runs in the same lane at the sidebar's edge. The tab strip opts out (`data-scrollbar="none"`). Touch keeps the platform's own overlay bars.
 
 ## Elevation & Depth
 
@@ -759,8 +759,8 @@ button opens a bottom sheet (`DialogShell` sheet: flush to the bottom and sides,
 up to 70% of the viewport or 32rem tall) with a 32px header, the same filter and tree, and Close files;
 choosing a file jumps there and closes the sheet.
 
-The tab body is one continuous buffer on `surface`, sharing `main`'s reserved
-scrollbar gutter (decision 0102). It opens on a flat header (16px inset, a 1px
+The tab body is one continuous buffer on `surface`, under `main`'s overlay
+scrollbar (decision 0140). It opens on a flat header (16px inset, a 1px
 `border` rule below): the compare's title (16px, 600; the tab label, so
 “Uncommitted” for the working tree, or a commit's subject),
 the commit's meta, the branch's merge-base, or the range's span, then totals:

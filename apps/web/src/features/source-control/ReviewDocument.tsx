@@ -15,6 +15,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Notice, StatusMessage } from "@/components/ui/notice"
+import { scrollbarPressEvent } from "@/components/ui/overlay-scrollbars"
 
 import { FileIcon } from "../../components/FileIcon.tsx"
 import { Chevron } from "../../components/ui/section-toggle.tsx"
@@ -63,7 +64,9 @@ const poolOptions: WorkerPoolOptions = {
 
 // Browser surfaces inside Pierre's shadow root follow zero tokens: square
 // corners over Pierre's own radii (decision 0102), the selection, and wide
-// code's square, inset scrollbar thumb (decision 0055).
+// code's square, inset scrollbar thumb (decision 0055). Wide code keeps this
+// native bar, not the overlay: hiding it changes Pierre's row layout in
+// WebKit, and reveals then miss their lines (decision 0140).
 const diffCSS = `*, ::before, ::after { border-radius: 0 !important; }
 ::selection { color: var(--color-text-primary); background: var(--color-accent-subtle); }
 [data-code]::-webkit-scrollbar-thumb { border: 2px solid transparent; }
@@ -468,19 +471,23 @@ function ReviewBody({
       window.clearTimeout(timer)
       observer.disconnect()
       for (const type of events) root.removeEventListener(type, onInput)
+      root.removeEventListener(scrollbarPressEvent, onPress)
     }
     const end = () => {
       revealed.current.released = true
       release()
     }
     // A press inside the content (selecting lines, toggling Viewed) keeps the
-    // pin; one on the pane itself is its scrollbar.
+    // pin; one on the pane itself is its native scrollbar, and the overlay
+    // scrollbar announces its own (decision 0140).
     const onInput = (event: Event) => {
       if (event.type !== "pointerdown" || event.target === root) end()
     }
+    const onPress = () => end()
     pin()
     observer.observe(content)
     for (const type of events) root.addEventListener(type, onInput, { passive: true })
+    root.addEventListener(scrollbarPressEvent, onPress)
     return release
   }, [anchor, ready, request, scrollPane, scrollRoot, target])
 

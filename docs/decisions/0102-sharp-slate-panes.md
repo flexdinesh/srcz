@@ -1,6 +1,6 @@
 # 0102: Sharp slate panes
 
-- Status: Accepted
+- Status: Accepted; review gutter hairline superseded by [0140](0140-overlay-scrollbars.md)
 - Date: 2026-11-07
 - Supersedes: [0041](0041-white-canvas-srcz-light.md)'s white canvas and island
   hairline; the Source Zero Light values in

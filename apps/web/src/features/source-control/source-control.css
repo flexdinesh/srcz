@@ -124,7 +124,7 @@
 }
 
 /* Each pane owns one scroller (its list or the tree), so every pane's
-   scrollbar sits in the same 10px lane at the sidebar's edge. */
+   scrollbar sits in the same lane at the sidebar's edge. */
 .scm-panes:not([data-mobile]) .scm-pane-body {
   overflow: hidden;
 }
@@ -181,7 +181,6 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  scrollbar-gutter: stable;
 }
 
 .changes-list {
@@ -249,7 +248,6 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  scrollbar-gutter: stable;
   padding-bottom: var(--space-2);
 }
 
@@ -597,7 +595,6 @@
 .base-picker-list {
   max-height: 18rem;
   overflow: auto;
-  scrollbar-gutter: stable;
 }
 
 .base-picker-option {

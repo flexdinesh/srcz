@@ -1,6 +1,6 @@
 # 0055: Thin, hover-revealed scrollbars with reserved gutters
 
-- Status: Accepted; review gutter surface revised by [0102](0102-sharp-slate-panes.md)
+- Status: Accepted; review gutter surface revised by [0102](0102-sharp-slate-panes.md); gutters, hover-only thumb, and native bars superseded by [0140](0140-overlay-scrollbars.md)
 - Date: 2026-10-28
 
 ## Context

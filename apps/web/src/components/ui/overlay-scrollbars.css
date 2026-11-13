@@ -1,0 +1,74 @@
+/* Overlay scrollbars (decision 0140): a fixed layer over every scroll area,
+   taking no layout space. A lane sits on the area's edge; its square thumb is
+   slim while it scrolls and fills the lane under the pointer. */
+.ui-scrollbars {
+  position: fixed;
+  z-index: var(--z-scrollbar);
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.ui-scrollbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity var(--duration-progress) var(--ease-out-expo);
+}
+
+.ui-scrollbar[data-axis="y"] {
+  width: var(--scrollbar-size);
+}
+
+.ui-scrollbar[data-axis="x"] {
+  height: var(--scrollbar-size);
+}
+
+.ui-scrollbar[data-visible] {
+  opacity: 1;
+  pointer-events: auto;
+  transition-duration: var(--duration-fast);
+}
+
+.ui-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--color-scrollbar-thumb);
+  transition:
+    width var(--duration-base) var(--ease-out-expo),
+    height var(--duration-base) var(--ease-out-expo),
+    left var(--duration-base) var(--ease-out-expo),
+    top var(--duration-base) var(--ease-out-expo),
+    background-color var(--duration-fast);
+}
+
+.ui-scrollbar[data-axis="y"] .ui-scrollbar-thumb {
+  left: calc(var(--scrollbar-size) - var(--scrollbar-thumb-size) - var(--scrollbar-inset));
+  width: var(--scrollbar-thumb-size);
+}
+
+.ui-scrollbar[data-axis="x"] .ui-scrollbar-thumb {
+  top: calc(var(--scrollbar-size) - var(--scrollbar-thumb-size) - var(--scrollbar-inset));
+  height: var(--scrollbar-thumb-size);
+}
+
+.ui-scrollbar[data-axis="y"][data-active] .ui-scrollbar-thumb {
+  left: 0;
+  width: var(--scrollbar-size);
+}
+
+.ui-scrollbar[data-axis="x"][data-active] .ui-scrollbar-thumb {
+  top: 0;
+  height: var(--scrollbar-size);
+}
+
+.ui-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
+
+.ui-scrollbar[data-dragging] .ui-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb-active);
+}
