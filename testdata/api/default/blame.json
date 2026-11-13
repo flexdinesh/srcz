@@ -1,0 +1,84 @@
+{
+  "repository": true,
+  "path": "navigation/greet.go",
+  "commit": "3577ec6f1d2e4b8a9c0d7e6f5a4b3c2d1e0f9a8b",
+  "lineCount": 7,
+  "ranges": [
+    {
+      "start": 1,
+      "count": 2,
+      "kind": "commit",
+      "commit": 0,
+      "originalLine": 1
+    },
+    {
+      "start": 3,
+      "count": 1,
+      "kind": "boundary",
+      "commit": 1,
+      "originalLine": 2
+    },
+    {
+      "start": 4,
+      "count": 2,
+      "kind": "commit",
+      "commit": 2,
+      "originalLine": 3
+    },
+    {
+      "start": 6,
+      "count": 1,
+      "kind": "uncommitted",
+      "commit": -1,
+      "originalLine": 0
+    },
+    {
+      "start": 7,
+      "count": 1,
+      "kind": "commit",
+      "commit": 0,
+      "originalLine": 5
+    }
+  ],
+  "commits": [
+    {
+      "hash": "3577ec6f1d2e4b8a9c0d7e6f5a4b3c2d1e0f9a8b",
+      "subject": "Add the navigation sample (#42)",
+      "body": "Greet calls Format so Cmd/Ctrl+click has a target.\n\nCo-authored-by: Sam <sam@example.com>",
+      "author": {
+        "name": "Ada Lovelace",
+        "email": "ada@example.com"
+      },
+      "authorTime": "2026-10-02T14:05:00+10:00",
+      "pullRequest": {
+        "number": 42,
+        "url": "https://github.com/example/zero/pull/42"
+      }
+    },
+    {
+      "hash": "1f2e3d4c5b6a79881726354a5b6c7d8e9f0a1b2c",
+      "subject": "Initial commit",
+      "body": "",
+      "author": {
+        "name": "Ada Lovelace",
+        "email": "ada@example.com"
+      },
+      "authorTime": "2026-01-05T08:00:00+00:00"
+    },
+    {
+      "hash": "9c1e2d3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d",
+      "subject": "Name the greeting's argument",
+      "body": "",
+      "author": {
+        "name": "Grace Hopper",
+        "email": "grace@example.com"
+      },
+      "authorTime": "2026-09-18T09:30:00-04:00",
+      "pullRequest": {
+        "number": 17,
+        "url": "https://github.com/example/zero/pull/17"
+      }
+    }
+  ],
+  "truncated": true
+}

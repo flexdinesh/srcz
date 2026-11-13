@@ -81,6 +81,21 @@
   white-space: pre;
 }
 
+/* The active line's blame follows its last character (decision 0139); the
+   row's end space moves after it. */
+.source-document-line.blamed .source-document-line-content {
+  flex: none;
+  padding-right: 0;
+}
+
+.source-line-blame {
+  display: flex;
+  min-width: max-content;
+  flex: 1;
+  padding: 0 var(--source-line-end) 0 var(--space-6);
+  user-select: none;
+}
+
 /* Ctrl/Cmd over a name: a link to its definition, as in VS Code. */
 .source-document.navigation-linking .source-document-line-content {
   cursor: pointer;

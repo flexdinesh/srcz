@@ -152,6 +152,9 @@ test("mockFixtureName maps supported API scenarios", () => {
     }
   }
   assert.deepEqual(mockFixtureName("GET", "/changes?project=%2Fwork"), { name: "changes.json", status: 200 })
+  assert.deepEqual(mockFixtureName("GET", "/blame?project=%2Fwork&path=navigation%2Fgreet.go"), { name: "blame.json", status: 200 })
+  assert.deepEqual(mockFixtureName("GET", "/blame?path=navigation%2Fgreet.go&at=3577ec6f1d2e4b8a9c0d7e6f5a4b3c2d1e0f9a8b"), { name: "blame.json", status: 200 })
+  assert.deepEqual(mockFixtureName("GET", "/blame?path=code%2Fapp.js"), { name: "error-not-found.json", status: 404 })
   assert.deepEqual(mockFixtureName("GET", "/diff?project=%2Fwork&path=code%2Fmain.go"), { name: "diff-modified.json", status: 200 })
   assert.deepEqual(mockFixtureName("GET", "/diff?path=config%2Fzero.toml"), { name: "diff-deleted.json", status: 200 })
   assert.deepEqual(mockFixtureName("GET", "/diff?path=guides%2Fnew-guide.md"), { name: "diff-untracked.json", status: 200 })

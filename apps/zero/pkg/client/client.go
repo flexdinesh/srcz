@@ -57,6 +57,9 @@ type Client interface {
 	BranchStack(ctx context.Context, project, base string) (contract.StackResponse, error)
 	// CompareStats counts the changed lines of a compare's files.
 	CompareStats(ctx context.Context, request contract.CompareStatsRequest) (contract.CompareStatsResponse, error)
+	// Blame credits each line of a file, in the working tree or at a
+	// commit, to the commit that last changed it.
+	Blame(ctx context.Context, request contract.BlameRequest) (contract.BlameResponse, error)
 
 	// NavigationStatus reports whether a file can navigate and its language
 	// server's state; it never starts a server.

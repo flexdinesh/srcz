@@ -126,6 +126,22 @@ Drag between open panes to resize them. The base defaults to `origin/HEAD`,
 and Zero remembers it per project. Zero reads git data directly; `git` need not be
 installed.
 
+### Inline blame
+
+Click a line in Source and its blame follows its text, as in Zed: who last
+changed it, when, and the commit's subject. Lines changed since the last
+commit read “Uncommitted changes”. Hover the blame, or click or tap it, for
+the whole commit message, its hash to copy, and Open Commit, which opens the
+commit's diff at that line. Show File History lists the file's commits, and
+Open PR opens the pull request on GitHub when the commit names one.
+
+- **Source Control › Show Line Blame** in the command palette opens the
+  active line's blame from the keyboard.
+- Turn it off in Settings › Source Control › Inline Blame.
+- Blame does not follow renames: lines from before a rename belong to the
+  commit that renamed the file. In very long histories, lines older than the
+  50,000 most recent commits read “Older than” the commit where blame stopped.
+
 ### File history and commit search
 
 **Show File History**, in a file's Explorer or tab menu or the command palette

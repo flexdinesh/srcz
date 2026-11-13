@@ -24,6 +24,7 @@
 @import "./components/ui/brand-mark.css" layer(ui);
 @import "./components/ui/dialog-shell.css" layer(ui);
 @import "./components/ui/menu.css" layer(ui);
+@import "./components/ui/hover-card.css" layer(ui);
 @import "./styles/layout.css" layer(features);
 @import "./features/explorer/explorer.css" layer(features);
 @import "./workspace/tabs.css" layer(features);
@@ -48,6 +49,7 @@
 @import "./features/source-control/source-control.css" layer(features);
 @import "./features/walkthrough/walkthrough.css" layer(features);
 @import "./features/feedback/feedback.css" layer(features);
+@import "./features/blame/blame.css" layer(features);
 @import "./features/welcome/welcome.css" layer(features);
 @import "./workspace/empty-workspace.css" layer(features);
 @import "./styles/print.css" layer(features);

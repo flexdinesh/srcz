@@ -106,14 +106,7 @@ const (
 // Lines diffs old against new.
 func Lines(old, new []byte, options Options) Result {
 	oldLines, newLines := splitLines(old), splitLines(new)
-	oldIDs, newIDs := lineIDsOf(oldLines, newLines, options)
-	ops, ok := myers(oldIDs, newIDs, time.Now().Add(myersTimeout))
-	if !ok {
-		ops = editScript(oldLines, newLines, options)
-	}
-	if changes(ops) > maxChanges {
-		ops = coarsen(ops)
-	}
+	ops := lineScript(oldLines, newLines, options)
 	result := Result{Hunks: hunks(ops)}
 	for i := range result.Hunks {
 		hunk := &result.Hunks[i]
@@ -123,6 +116,54 @@ func Lines(old, new []byte, options Options) Result {
 	}
 	result.Gaps = gaps(result.Hunks, len(oldLines), len(newLines))
 	return result
+}
+
+// lineScript is the edit script Lines lays out: jsdiff's search, the
+// bisecting diff past its time bound, coarsened past maxChanges.
+func lineScript(oldLines, newLines [][]byte, options Options) []op {
+	oldIDs, newIDs := lineIDsOf(oldLines, newLines, options)
+	ops, ok := myers(oldIDs, newIDs, time.Now().Add(myersTimeout))
+	if !ok {
+		ops = editScript(oldLines, newLines, options)
+	}
+	if changes(ops) > maxChanges {
+		ops = coarsen(ops)
+	}
+	return ops
+}
+
+// Match is a run of Lines rows two texts share: Old and New are the 0-based
+// rows it starts at on each side.
+type Match struct {
+	Old, New, Lines int
+}
+
+// Matches lists the rows old and new share, in order, from the edit script
+// Lines uses. Rows here are lines as an editor shows them: each ends after
+// "\n", "\r\n", or a lone "\r", which stays part of the row.
+func Matches(old, new []byte) []Match {
+	var result []Match
+	oldRow, newRow := 0, 0
+	for _, run := range lineScript(splitRows(old), splitRows(new), Options{}) {
+		switch run.kind {
+		case equal:
+			result = append(result, Match{Old: oldRow, New: newRow, Lines: run.lines})
+			oldRow += run.lines
+			newRow += run.lines
+		case deleted:
+			oldRow += run.lines
+		case inserted:
+			newRow += run.lines
+		}
+	}
+	return result
+}
+
+// Rows counts content's rows as Matches splits them: zero for empty
+// content, and a final line break ends the last row rather than starting
+// another.
+func Rows(content []byte) int {
+	return len(splitRows(content))
 }
 
 // Count counts the lines a line diff from old to new adds and removes, as
@@ -404,6 +445,27 @@ func splitLines(content []byte) [][]byte {
 		content = content[end:]
 	}
 	return lines
+}
+
+// splitRows splits content after each "\n", "\r\n", or lone "\r", keeping
+// it; a last row without one is kept as it is.
+func splitRows(content []byte) [][]byte {
+	if bytes.IndexByte(content, '\r') < 0 {
+		return splitLines(content)
+	}
+	var rows [][]byte
+	for len(content) > 0 {
+		end := bytes.IndexAny(content, "\r\n") + 1
+		switch {
+		case end == 0:
+			end = len(content)
+		case content[end-1] == '\r' && end < len(content) && content[end] == '\n':
+			end++
+		}
+		rows = append(rows, content[:end])
+		content = content[end:]
+	}
+	return rows
 }
 
 // trimSpace removes leading and trailing JavaScript whitespace.

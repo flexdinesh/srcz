@@ -579,6 +579,26 @@ func repositoryName(dir, common string) string {
 // originName reads the repository name from the origin remote URL in a common
 // git directory's config, as in "git@host:owner/name.git" or "../name".
 func originName(common string) string {
+	url := strings.TrimRight(originURL(common), `/\`)
+	if url == "" {
+		return ""
+	}
+	return strings.TrimSuffix(url[strings.LastIndexAny(url, `/\:`)+1:], ".git")
+}
+
+// OriginURL returns the origin remote's URL as a checkout's shared git
+// config records it, or empty when the checkout has none.
+func OriginURL(dir string) string {
+	common, err := commonDir(dir)
+	if err != nil {
+		return ""
+	}
+	return originURL(common)
+}
+
+// originURL reads the origin remote's first URL from a common git
+// directory's config, unquoted.
+func originURL(common string) string {
 	content, err := os.ReadFile(filepath.Join(common, "config"))
 	if err != nil {
 		return ""
@@ -594,8 +614,7 @@ func originName(common string) string {
 		if !origin || !ok || !strings.EqualFold(strings.TrimSpace(key), "url") {
 			continue
 		}
-		url := strings.TrimRight(strings.Trim(strings.TrimSpace(value), `"`), `/\`)
-		return strings.TrimSuffix(url[strings.LastIndexAny(url, `/\:`)+1:], ".git")
+		return strings.Trim(strings.TrimSpace(value), `"`)
 	}
 	return ""
 }

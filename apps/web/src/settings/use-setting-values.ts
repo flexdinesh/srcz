@@ -3,6 +3,8 @@ import { useTheme } from "./ThemeProvider.tsx"
 import {
   DEFAULT_FONT_SIZE,
   defaultSettings,
+  inlineBlameOptions,
+  isInlineBlameSetting,
   isLanguageServerSetting,
   isNotifySetting,
   isShowWelcomeSetting,
@@ -48,6 +50,10 @@ function languageServerLabel(value: string): string {
 
 function showWelcomeLabel(value: string): string {
   return showWelcomeOptions.find((option) => option.value === value)?.label ?? value
+}
+
+function inlineBlameLabel(value: string): string {
+  return inlineBlameOptions.find((option) => option.value === value)?.label ?? value
 }
 
 function notifyLabel(value: string): string {
@@ -132,6 +138,19 @@ export function useSettingValues(): SettingValues {
           return true
         },
         reset() { resetSetting("showWelcome") },
+      },
+      inlineBlame: {
+        definition: definition("inlineBlame"),
+        value: settings.inlineBlame,
+        label: inlineBlameLabel(settings.inlineBlame),
+        defaultLabel: inlineBlameLabel(defaultSettings.inlineBlame),
+        modified: settings.inlineBlame !== defaultSettings.inlineBlame,
+        set(value) {
+          if (!isInlineBlameSetting(value)) return false
+          setSetting("inlineBlame", value)
+          return true
+        },
+        reset() { resetSetting("inlineBlame") },
       },
       notifyCommits: notify("notifyCommits"),
       notifyBranches: notify("notifyBranches"),

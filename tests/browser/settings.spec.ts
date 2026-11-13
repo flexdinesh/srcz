@@ -8,7 +8,7 @@ test("settings categories, global search, and modified filter compose and recove
   const search = dialog.getByRole("searchbox", { name: "Search settings" })
   const modified = dialog.getByRole("button", { name: "Show modified settings" })
   await expect(search).toBeFocused()
-  await expect(dialog.getByRole("status")).toHaveText("4 settings")
+  await expect(dialog.getByRole("status")).toHaveText("5 settings")
   // A browser cannot show desktop notifications, so it offers no settings for them.
   await expect(categories.getByRole("button", { name: "Notifications" })).toHaveCount(0)
   await categories.getByRole("button", { name: "Code Navigation" }).click()
@@ -26,7 +26,7 @@ test("settings categories, global search, and modified filter compose and recove
   await expect(dialog.getByRole("status")).toHaveText("0 settings")
   await dialog.getByRole("button", { name: "Clear filters" }).click()
   await expect(search).toBeFocused()
-  await expect(dialog.getByRole("status")).toHaveText("4 settings")
+  await expect(dialog.getByRole("status")).toHaveText("5 settings")
   await search.fill("nothing matches")
   await dialog.getByRole("button", { name: "Clear settings search" }).click()
   await expect(search).toHaveValue("")

@@ -517,6 +517,12 @@ func (r *Repository) HeadBlob(name string) (Blob, error) {
 	return Blob{Size: size, Commit: Hash(commit.Hash), hash: committed.hash, storage: r.storage}, nil
 }
 
+// Head returns HEAD's commit, zero on an unborn branch.
+func (r *Repository) Head() (Hash, error) {
+	hash, err := r.head("")
+	return Hash(hash), err
+}
+
 // validPath reports whether name is a clean, slash-separated relative path
 // outside any .git directory.
 // ValidPath reports whether name is a repository-relative path git could

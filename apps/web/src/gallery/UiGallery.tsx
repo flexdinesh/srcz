@@ -7,6 +7,7 @@ import { Button, type ButtonSize, type ButtonVariant } from "../components/ui/bu
 import { ChangeMark } from "../components/ui/change-mark.tsx"
 import { CopyButton } from "../components/ui/copy-button.tsx"
 import { DialogShell } from "../components/ui/dialog-shell.tsx"
+import { HoverCard } from "../components/ui/hover-card.tsx"
 import { IconButton, type IconButtonSize } from "../components/ui/icon-button.tsx"
 import { Kbd } from "../components/ui/kbd.tsx"
 import { ListButton, ListRow } from "../components/ui/list-row.tsx"
@@ -51,6 +52,7 @@ export default function UiGallery() {
   const [expanded, setExpanded] = useState(true)
   const [busy, setBusy] = useState(true)
   const [opacity, setOpacity] = useState(50)
+  const [cardOpen, setCardOpen] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
 
   return (
@@ -164,6 +166,21 @@ export default function UiGallery() {
           <span className="gallery-gutter"><ChangeMark kind="added" label="Added line 3" onActivate={() => {}} /></span>
           <span className="gallery-gutter"><ChangeMark kind="modified" label="Modified line 8" onActivate={() => {}} /></span>
           <span className="gallery-gutter"><ChangeMark kind="deleted" edge="start" label="Deleted 2 lines before line 1" onActivate={() => {}} /></span>
+        </Row>
+      </Section>
+
+      <Section title="HoverCard">
+        <Row>
+          <HoverCard trigger="Rest on me or tap" triggerLabel="Show sample details" triggerClassName="gallery-hover-trigger" label="Sample details">
+            <p className="gallery-hover-text">Opens after a pause on hover; a click or tap toggles it. Escape closes it.</p>
+            <Row><Button variant="ghost" size="sm">First action</Button><CopyButton text="3577ec6" label="Copy Hash" /></Row>
+          </HoverCard>
+          <HoverCard trigger="Controlled" triggerLabel="Show controlled details" triggerClassName="gallery-hover-trigger" label="Controlled details"
+            open={cardOpen} onOpenChange={setCardOpen}>
+            <p className="gallery-hover-text">Opened from outside, focused on its first control.</p>
+            <Row><Button variant="ghost" size="sm" onClick={() => setCardOpen(false)}>Close</Button></Row>
+          </HoverCard>
+          <Button variant="outline" size="sm" onClick={() => setCardOpen(true)}>Open controlled card</Button>
         </Row>
       </Section>
 

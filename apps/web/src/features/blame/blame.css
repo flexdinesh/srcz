@@ -1,0 +1,96 @@
+/* Inline blame (decision 0139): muted code-face text after the active line,
+   truncated so a long subject never runs on. */
+.blame-inline {
+  display: block;
+  min-width: 0;
+  max-width: 60ch;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  line-height: var(--source-line-height);
+  text-overflow: ellipsis;
+  white-space: pre;
+  transition: color var(--duration-fast) ease-out;
+}
+
+.blame-inline:hover,
+.blame-inline[data-popup-open] {
+  color: var(--color-text-secondary);
+}
+
+.blame-card {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* A commit's card keeps one reading width; Uncommitted fits its action. */
+.blame-card:has(.blame-card-head) {
+  width: 28rem;
+}
+
+.blame-card p {
+  margin: 0;
+}
+
+.blame-card-head {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.blame-card-author {
+  flex: none;
+  font-weight: 600;
+}
+
+.blame-card-email {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blame-card-time {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-metadata);
+}
+
+.blame-card-subject {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.blame-card-body {
+  max-height: 10rem;
+  overflow: auto;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.blame-card-note {
+  color: var(--color-text-muted);
+}
+
+.blame-card-hash {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.blame-card-hash code {
+  color: var(--color-commit-hash);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+
+/* Actions sit flush with the card's text, one ghost button per action. */
+.blame-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0 calc(var(--space-2) * -1) calc(var(--space-1) * -1);
+}

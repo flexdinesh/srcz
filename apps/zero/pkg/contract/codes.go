@@ -10,6 +10,9 @@ const (
 	// CodeUnknownHead marks an invalid head that is not a local branch
 	// /api/refs lists.
 	CodeUnknownHead = "unknownHead"
+	// CodeBlameUnavailable marks a blame refused for the file's content
+	// (decision 0139): binary (unprocessable) or over 4 MiB (too large).
+	CodeBlameUnavailable = "blameUnavailable"
 )
 
 // Code navigation error codes (decision 0018): every navigation failure

@@ -233,6 +233,13 @@ func (c *HTTP) CompareStats(ctx context.Context, request contract.CompareStatsRe
 	return response, c.getJSON(ctx, "/api/compare-stats", query, &response)
 }
 
+func (c *HTTP) Blame(ctx context.Context, request contract.BlameRequest) (contract.BlameResponse, error) {
+	query := url.Values{"project": {request.Project}, "path": {request.Path}}
+	setNonEmpty(query, "at", request.At)
+	var response contract.BlameResponse
+	return response, c.getJSON(ctx, "/api/blame", query, &response)
+}
+
 func (c *HTTP) NavigationStatus(ctx context.Context, request contract.NavigationStatusRequest) (contract.NavigationStatus, error) {
 	query := url.Values{"project": {request.Project}, "path": {request.Path}}
 	setFlag(query, "refresh", request.Refresh)

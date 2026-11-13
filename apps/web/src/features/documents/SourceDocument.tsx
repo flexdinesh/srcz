@@ -58,6 +58,15 @@ export interface SourceChanges {
   onOpen(marker: ChangeMarker): void
 }
 
+// SourceBlame shows who last changed the active line, after its text
+// (decision 0139). onActiveLine reports the active line: a clicked row, a
+// pressed line number, or a loaded line anchor's first line. render draws the
+// active line's blame, null for none.
+export interface SourceBlame {
+  onActiveLine(line: number): void
+  render(line: number): ReactNode
+}
+
 // LineDrag previews a gutter selection until pointer release commits it.
 interface LineDrag {
   anchor: number
@@ -79,6 +88,7 @@ interface SourceDocumentProps {
   annotation?: SourceAnnotation
   changes?: SourceChanges
   comments?: SourceComments
+  blame?: SourceBlame
 }
 
 // LineCopyButton copies a line reference from the gutter. Its presses stay
@@ -108,6 +118,14 @@ function LineCommentButton({ onComment }: { onComment(): void }) {
   )
 }
 
+// LineBlame holds the active line's blame after its text, outside native
+// text selection and copies. Its presses stay out of the row and the code,
+// which would set the active line and point at a name.
+function LineBlame({ children }: { children: ReactNode }) {
+  const stop = (event: { stopPropagation(): void }) => event.stopPropagation()
+  return <span className="source-line-blame" onPointerDown={stop} onMouseDown={stop} onClick={stop}>{children}</span>
+}
+
 // isTextField reports a target that takes typed text, whose keys are its own.
 function isTextField(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
@@ -131,21 +149,26 @@ const SourceLineContent = memo(function SourceLineContent({ line, highlighted }:
     : <span className="source-document-line-content">{line}</span>
 })
 
-export function SourceDocument({ source, language, label, selection, navigation, annotation, changes, comments }: SourceDocumentProps) {
+export function SourceDocument({ source, language, label, selection, navigation, annotation, changes, comments, blame }: SourceDocumentProps) {
   const lines = splitSourceLines(source)
   // Rows show plain text until highlighting arrives.
   const highlightedLines = useHighlightedLines(source, language)
-  const [activeLine, setActiveLine] = useState<number | null>(null)
   const selectionAnchor = useRef<number | null>(null)
   const container = useRef<HTMLDivElement>(null)
   const gutterWidth = `calc(${String(lines.length).length}ch + 36px)`
   const range = clampLineRange(selection?.range ?? null, lines.length)
   const [drag, setDrag] = useState<LineDrag | null>(null)
+  // The active line is the last row clicked or line number pressed, or a
+  // loaded anchor's first line; ownRange is the selection this gutter last
+  // made, whose anchor keeps the pressed line active.
+  const [activeLine, setActiveLine] = useState<number | null>(range?.start ?? null)
+  const [ownRange, setOwnRange] = useState("")
   // A committed drag shows until the URL catches up, then the URL rules again.
   const [seenRange, setSeenRange] = useState(rangeKey(range))
   if (seenRange !== rangeKey(range)) {
     setSeenRange(rangeKey(range))
     if (drag && !drag.active) setDrag(null)
+    if (range && rangeKey(range) !== ownRange) setActiveLine(range.start)
   }
   const shown = drag?.range ?? range
   const pointer = useRef<{ x: number; y: number } | null>(null)
@@ -196,6 +219,7 @@ export function SourceDocument({ source, language, label, selection, navigation,
         return
       }
       setDrag({ ...drag, active: false })
+      setOwnRange(rangeKey(drag.range))
       selection.onChange(drag.range)
     }
     const cancel = () => setDrag(null)
@@ -222,14 +246,23 @@ export function SourceDocument({ source, language, label, selection, navigation,
     return () => window.removeEventListener("keydown", key)
   }, [comment, range])
 
+  // The active line's blame loads once a line is active.
+  const reportActive = blame?.onActiveLine
+  useEffect(() => {
+    if (activeLine !== null) reportActive?.(activeLine)
+  }, [activeLine, reportActive])
+
   function pressGutter(event: PointerEvent, lineNumber: number) {
     if (!selection || event.button !== 0) return
     container.current?.focus({ preventScroll: true })
+    setActiveLine(lineNumber)
     const next = startLineSelection(range, selectionAnchor.current, lineNumber, event.shiftKey)
     selectionAnchor.current = next.anchor
     // Touch keeps scrolling the page; it selects on tap without dragging.
-    if (event.pointerType === "touch") selection.onChange(next.range)
-    else setDrag({ ...next, active: true })
+    if (event.pointerType === "touch") {
+      setOwnRange(rangeKey(next.range))
+      selection.onChange(next.range)
+    } else setDrag({ ...next, active: true })
   }
 
   function dragOver(event: PointerEvent) {
@@ -286,8 +319,9 @@ export function SourceDocument({ source, language, label, selection, navigation,
       tabIndex={0}
       aria-keyshortcuts={comments && range ? "c" : undefined}
       onKeyDown={(event) => {
-        // A zone's text field keeps its own keys.
-        if (isTextField(event.target)) return
+        // A zone's text field keeps its own keys, as does a card portaled
+        // out of the document, such as the blame card.
+        if (isTextField(event.target) || !(event.target instanceof Node && event.currentTarget.contains(event.target))) return
         if (navigation && event.key === "F12" && !event.altKey && !modified(event)) {
           event.preventDefault()
           navigation.onNavigate(event.shiftKey ? "references" : "definition", null)
@@ -317,10 +351,11 @@ export function SourceDocument({ source, language, label, selection, navigation,
           const selected = shown !== null && lineNumber >= shown.start && lineNumber <= shown.end
           const unfocused = focus ? lineNumber < focus.start || lineNumber > focus.end : false
           const mark = changes ? marks.get(lineNumber) : undefined
+          const blamed = blame && activeLine === lineNumber ? blame.render(lineNumber) : null
           return (
             <Fragment key={lineNumber}>
             <span
-              className={`source-document-line${activeLine === lineNumber ? " active" : ""}${selected ? " selected" : ""}${unfocused ? " unfocused" : ""}`}
+              className={`source-document-line${activeLine === lineNumber ? " active" : ""}${selected ? " selected" : ""}${unfocused ? " unfocused" : ""}${blamed ? " blamed" : ""}`}
               data-line={lineNumber}
               onClick={() => setActiveLine(lineNumber)}
             >
@@ -351,6 +386,7 @@ export function SourceDocument({ source, language, label, selection, navigation,
                 )}
               </span>
               <SourceLineContent line={line} highlighted={highlightedLines[index]} />
+              {blamed && <LineBlame>{blamed}</LineBlame>}
             </span>
             {zone(lineNumber)}
             </Fragment>

@@ -168,6 +168,21 @@ func TestSourceControlParityAcrossTransports(t *testing.T) {
 		{"CompareStats of an unknown compare", func(c client.Client) outcome {
 			return result(c.CompareStats(ctx, contract.CompareStatsRequest{Project: f.root, Compare: "nope"}))
 		}, contract.KindInvalid, ""},
+		{"Blame working", func(c client.Client) outcome {
+			return result(c.Blame(ctx, contract.BlameRequest{Project: f.root, Path: "lines.txt"}))
+		}, "", ""},
+		{"Blame edited", func(c client.Client) outcome {
+			return result(c.Blame(ctx, contract.BlameRequest{Project: f.root, Path: "README.md"}))
+		}, "", ""},
+		{"Blame at a commit", func(c client.Client) outcome {
+			return result(c.Blame(ctx, contract.BlameRequest{Project: f.root, Path: "lines.txt", At: f.main}))
+		}, "", ""},
+		{"Blame a bad commit", func(c client.Client) outcome {
+			return result(c.Blame(ctx, contract.BlameRequest{Project: f.root, Path: "lines.txt", At: "main"}))
+		}, contract.KindInvalid, ""},
+		{"Blame a missing file", func(c client.Client) outcome {
+			return result(c.Blame(ctx, contract.BlameRequest{Project: f.root, Path: "gone.txt"}))
+		}, contract.KindNotFound, ""},
 	}
 	outcomes := map[string]outcome{}
 	for _, tc := range cases {
@@ -206,6 +221,10 @@ func TestSourceControlParityAcrossTransports(t *testing.T) {
 	}
 	if lines := response.LineDiff; lines.Additions != 2 || lines.Deletions != 2 || len(lines.Hunks) != 2 || len(lines.Gaps) != 1 {
 		t.Errorf("Diff branch line diff = %+v, want two hunks of one change each around one gap", lines)
+	}
+	blamed, ok := outcomes["Blame working"].Value.(contract.BlameResponse)
+	if !ok || blamed.LineCount != 13 || len(blamed.Commits) != 2 || blamed.Commits[0].Hash != f.main || blamed.Commits[1].Hash != f.feature {
+		t.Fatalf("Blame working = %+v, want lines.txt credited to main and feature", outcomes["Blame working"])
 	}
 	stats := outcomes["CompareStats commit"]
 	counted, ok := stats.Value.(contract.CompareStatsResponse)

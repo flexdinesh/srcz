@@ -469,3 +469,97 @@ export function isCompareStatsResponse(value: unknown): value is CompareStatsRes
     && isArrayOf(value.files, isFileStats)
     && isBoolean(value.budgetExceeded)
 }
+
+// BlameKind is what a blame range's lines are credited to (decision 0139).
+export type BlameKind = "commit" | "uncommitted" | "boundary"
+
+export function isBlameKind(value: unknown): value is BlameKind {
+  return value === "commit" || value === "uncommitted" || value === "boundary"
+}
+
+// PullRequest is the GitHub pull request a commit came from, read from its
+// message or the merge that brought it in.
+export interface PullRequest {
+  number: number
+  url: string
+}
+
+export function isPullRequest(value: unknown): value is PullRequest {
+  return isRecord(value)
+    && isNumber(value.number)
+    && isString(value.url)
+}
+
+// BlameCommitInfo is a commit blame credits lines to. Body is capped at 4 KiB.
+export interface BlameCommitInfo {
+  hash: string
+  subject: string
+  // body is the message after the subject line, "" when there is none.
+  body: string
+  author: Author
+  // authorTime is RFC 3339 with the author's offset.
+  authorTime: string
+  pullRequest?: PullRequest
+}
+
+export function isBlameCommitInfo(value: unknown): value is BlameCommitInfo {
+  return isRecord(value)
+    && isString(value.hash)
+    && isString(value.subject)
+    && isString(value.body)
+    && isAuthor(value.author)
+    && isString(value.authorTime)
+    && (value.pullRequest === undefined || isPullRequest(value.pullRequest))
+}
+
+// BlameRange is a run of consecutive lines with one attribution. Start is
+// the 1-based first line of the shown text; OriginalLine is the 1-based line
+// the run starts at in the commit, 0 for uncommitted lines. Commit indexes
+// the response's commits, -1 for uncommitted lines.
+export interface BlameRange {
+  start: number
+  count: number
+  kind: BlameKind
+  commit: number
+  originalLine: number
+}
+
+export function isBlameRange(value: unknown): value is BlameRange {
+  return isRecord(value)
+    && isNumber(value.start)
+    && isNumber(value.count)
+    && isBlameKind(value.kind)
+    && isNumber(value.commit)
+    && isNumber(value.originalLine)
+    && (value.kind !== "uncommitted" || value.commit === -1)
+    && (value.kind !== "uncommitted" || value.originalLine === 0)
+}
+
+// BlameResponse is GET /api/blame: who last changed each line of a file in
+// the working tree or, with at, a commit (decision 0139). Ranges cover lines
+// 1 to LineCount in order without gaps.
+export interface BlameResponse {
+  // repository is false for a folder project; ranges are then empty.
+  repository: boolean
+  path: string
+  // commit is the commit blamed: HEAD for the working tree (unborn: ""),
+  // or at.
+  commit: string
+  lineCount: number
+  ranges: BlameRange[]
+  commits: BlameCommitInfo[]
+  // truncated reports that the walk stopped on its commit or time cap,
+  // leaving boundary ranges.
+  truncated: boolean
+}
+
+export function isBlameResponse(value: unknown): value is BlameResponse {
+  return isRecord(value)
+    && isBoolean(value.repository)
+    && isString(value.path)
+    && isString(value.commit)
+    && isNumber(value.lineCount)
+    && isArrayOf(value.ranges, isBlameRange)
+    && isArrayOf(value.commits, isBlameCommitInfo)
+    && isBoolean(value.truncated)
+}

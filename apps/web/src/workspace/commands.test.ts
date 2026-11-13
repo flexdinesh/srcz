@@ -12,6 +12,10 @@ test("typing welcome finds the Welcome tab and its startup setting", () => {
   assert.deepEqual(matchCommands(commands, "welcome").map((match) => match.command.id), ["settings.showWelcome", "help.welcome"])
 })
 
+test("typing blame finds the line blame command and its setting", () => {
+  assert.deepEqual(matchCommands(commands, "blame").map((match) => match.command.id), ["settings.inlineBlame", "sourceControl.showLineBlame"])
+})
+
 test("the palette offers notification settings only where they exist", () => {
   const ids = (list: readonly Command[]) => list.map((command) => command.id)
   assert.deepEqual(availableCommands(true), commands)

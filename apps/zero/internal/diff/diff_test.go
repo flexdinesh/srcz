@@ -236,3 +236,34 @@ func TestCountCountsLinesAsNumstat(t *testing.T) {
 		}
 	}
 }
+
+func TestMatchesListsSharedRowsInOrder(t *testing.T) {
+	tests := []struct {
+		name     string
+		old, new string
+		want     []Match
+	}{
+		{name: "both empty"},
+		{name: "identical", old: "a\nb\n", new: "a\nb\n", want: []Match{{Old: 0, New: 0, Lines: 2}}},
+		{name: "added file", old: "", new: "a\n"},
+		{name: "edit between", old: "a\nb\nc\n", new: "a\nB\nc\nd\n", want: []Match{{0, 0, 1}, {2, 2, 1}}},
+		{name: "insert at start", old: "a\nb\n", new: "x\na\nb\n", want: []Match{{0, 1, 2}}},
+		{name: "missing final newline differs", old: "a\nb", new: "a\nb\n", want: []Match{{0, 0, 1}}},
+		{name: "lone carriage returns end rows", old: "a\rb\r\nc", new: "a\rB\r\nc", want: []Match{{0, 0, 1}, {2, 2, 1}}},
+	}
+	for _, tc := range tests {
+		if got := Matches([]byte(tc.old), []byte(tc.new)); !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("%s: Matches = %+v, want %+v", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestRowsCountsRowsAsEditorsShowThem(t *testing.T) {
+	for content, want := range map[string]int{
+		"": 0, "a": 1, "a\n": 1, "a\nb": 2, "a\n\n": 2, "a\r\nb\r\n": 2, "a\rb": 2, "a\r": 1, "\r\n\r": 2,
+	} {
+		if got := Rows([]byte(content)); got != want {
+			t.Errorf("Rows(%q) = %d, want %d", content, got, want)
+		}
+	}
+}

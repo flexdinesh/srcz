@@ -263,6 +263,13 @@ export function mockFixtureName(method: string, rawURL: string): MockFixture | u
       return mockUnknownBase(url.searchParams) ?? { name: "branch-stack.json", status: 200 }
     case "/compare-stats":
       return mockCompareStats(url.searchParams)
+    // One blame: navigation/greet.go, in the working tree or at the mock commit.
+    case "/blame": {
+      const at = url.searchParams.get("at")
+      return url.searchParams.get("path") === "navigation/greet.go" && (at === null || at === mockCommit)
+        ? { name: "blame.json", status: 200 }
+        : notFound
+    }
     // One walkthrough reads in full; the other is gone.
     case "/walkthroughs":
       return { name: "walkthroughs.json", status: 200 }

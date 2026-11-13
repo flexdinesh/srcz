@@ -57,9 +57,13 @@ const (
 	branchesFailure          = "Couldn't read git branches: "
 )
 
-// SourceControl reads a project's changes, diffs, history, branches, and
-// compare stats. Every operation opens the repository again.
-type SourceControl struct{ *state }
+// SourceControl reads a project's changes, diffs, history, branches,
+// compare stats, and blames. Every operation opens the repository again;
+// blames keeps recent commit blames.
+type SourceControl struct {
+	*state
+	blames *blameCache
+}
 
 // Changes lists the working tree's changes since HEAD; a folder project has
 // none.
