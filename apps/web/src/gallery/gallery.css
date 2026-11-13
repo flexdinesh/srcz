@@ -82,3 +82,14 @@
 .gallery-slider {
   width: 16rem;
 }
+
+.gallery-hover-trigger {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+
+.gallery-hover-text {
+  max-width: 24rem;
+  margin: 0 0 var(--space-2);
+}

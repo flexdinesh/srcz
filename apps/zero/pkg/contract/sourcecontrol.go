@@ -295,3 +295,68 @@ type CompareStatsResponse struct {
 	// BudgetExceeded reports that the read budget left files uncounted.
 	BudgetExceeded bool `json:"budgetExceeded"`
 }
+
+// BlameKind is what a blame range's lines are credited to (decision 0139).
+type BlameKind string
+
+const (
+	// BlameCommit: the commit that last changed the lines.
+	BlameCommit BlameKind = "commit"
+	// BlameUncommitted: the working tree's lines that differ from HEAD.
+	BlameUncommitted BlameKind = "uncommitted"
+	// BlameBoundary: lines older than the walk reached; the commit is where
+	// their history was cut off (git blame's boundary).
+	BlameBoundary BlameKind = "boundary"
+)
+
+// PullRequest is the GitHub pull request a commit came from, read from its
+// message or the merge that brought it in.
+type PullRequest struct {
+	Number int    `json:"number"`
+	URL    string `json:"url"`
+}
+
+// BlameCommitInfo is a commit blame credits lines to. Body is capped at 4 KiB.
+type BlameCommitInfo struct {
+	Hash    string `json:"hash"`
+	Subject string `json:"subject"`
+	// Body is the message after the subject line, "" when there is none.
+	Body   string `json:"body"`
+	Author Author `json:"author"`
+	// AuthorTime is RFC 3339 with the author's offset.
+	AuthorTime  string       `json:"authorTime"`
+	PullRequest *PullRequest `json:"pullRequest,omitempty"`
+}
+
+// BlameRange is a run of consecutive lines with one attribution. Start is
+// the 1-based first line of the shown text; OriginalLine is the 1-based line
+// the run starts at in the commit, 0 for uncommitted lines. Commit indexes
+// the response's commits, -1 for uncommitted lines.
+//
+//contract:rule kind == "uncommitted" => commit == -1
+//contract:rule kind == "uncommitted" => originalLine == 0
+type BlameRange struct {
+	Start        int       `json:"start"`
+	Count        int       `json:"count"`
+	Kind         BlameKind `json:"kind"`
+	Commit       int       `json:"commit"`
+	OriginalLine int       `json:"originalLine"`
+}
+
+// BlameResponse is GET /api/blame: who last changed each line of a file in
+// the working tree or, with at, a commit (decision 0139). Ranges cover lines
+// 1 to LineCount in order without gaps.
+type BlameResponse struct {
+	// Repository is false for a folder project; ranges are then empty.
+	Repository bool   `json:"repository"`
+	Path       string `json:"path"`
+	// Commit is the commit blamed: HEAD for the working tree (unborn: ""),
+	// or at.
+	Commit    string            `json:"commit"`
+	LineCount int               `json:"lineCount"`
+	Ranges    []BlameRange      `json:"ranges"`
+	Commits   []BlameCommitInfo `json:"commits"`
+	// Truncated reports that the walk stopped on its commit or time cap,
+	// leaving boundary ranges.
+	Truncated bool `json:"truncated"`
+}

@@ -9,7 +9,7 @@ import type { DocumentView } from "./document-view.ts"
 import { FormattedDocument } from "./FormattedDocument.tsx"
 import { handleImageKey, ImageDocument } from "./ImageDocument.tsx"
 import {
-  SourceDocument, type LineSelection, type SourceAnnotation, type SourceChanges, type SourceComments, type SourceNavigation,
+  SourceDocument, type LineSelection, type SourceAnnotation, type SourceBlame, type SourceChanges, type SourceComments, type SourceNavigation,
 } from "./SourceDocument.tsx"
 import type { PageData } from "@zero/contracts"
 import { projectUrl } from "../../api/project-url.ts"
@@ -32,6 +32,8 @@ interface DocumentPaneProps {
   sourceChanges?: SourceChanges
   // sourceComments are feedback threads and the comment composer in Source.
   sourceComments?: SourceComments
+  // sourceBlame shows the active line's blame in Source.
+  sourceBlame?: SourceBlame
   hasData: boolean
   image: ImageViewer
   isLoading: boolean
@@ -53,7 +55,7 @@ function fileName(path: string): string {
 
 export function DocumentPane({
   diff, diffShown = true, empty, hasData, image, isLoading, lineSelection, loadError, main, navigate, onChooseProject, page, retry, sourceAnnotation,
-  sourceChanges, sourceComments, sourceNavigation, view, walkthrough, welcome,
+  sourceBlame, sourceChanges, sourceComments, sourceNavigation, view, walkthrough, welcome,
 }: DocumentPaneProps) {
   const showDiff = Boolean(diff) && diffShown && !loadError && !page.projectUnavailable && !page.error
   const viewKind = loadError || page.error ? "none" : showDiff ? "diff" : walkthrough ? "walkthrough" : welcome ? "welcome" : view.kind
@@ -100,8 +102,8 @@ export function DocumentPane({
         </div>
       ) : (
         <PageView image={image} lineSelection={lineSelection} navigate={navigate} page={page}
-          sourceAnnotation={sourceAnnotation} sourceChanges={sourceChanges} sourceComments={sourceComments} sourceNavigation={sourceNavigation}
-          view={view} />
+          sourceAnnotation={sourceAnnotation} sourceBlame={sourceBlame} sourceChanges={sourceChanges} sourceComments={sourceComments}
+          sourceNavigation={sourceNavigation} view={view} />
       )}
     </main>
   )
@@ -113,6 +115,7 @@ interface PageViewProps {
   navigate(href: string): void
   page: PageData
   sourceAnnotation?: SourceAnnotation
+  sourceBlame?: SourceBlame
   sourceChanges?: SourceChanges
   sourceComments?: SourceComments
   sourceNavigation?: SourceNavigation
@@ -120,7 +123,9 @@ interface PageViewProps {
 }
 
 // PageView is the page's file in its chosen view.
-function PageView({ image, lineSelection, navigate, page, sourceAnnotation, sourceChanges, sourceComments, sourceNavigation, view }: PageViewProps) {
+function PageView({
+  image, lineSelection, navigate, page, sourceAnnotation, sourceBlame, sourceChanges, sourceComments, sourceNavigation, view,
+}: PageViewProps) {
   const label = page.documentType?.label ?? "File"
   // The server declares the highlight language and the size limit.
   const language = page.highlightDisabled ? null : page.documentType?.language ?? null
@@ -156,7 +161,7 @@ function PageView({ image, lineSelection, navigate, page, sourceAnnotation, sour
           {view.formatError && <FormatErrorNotice reason={view.formatError} />}
           <SourceDocument key={page.selected} source={page.source} language={language} label={`${label} source`}
             selection={lineSelection} navigation={sourceNavigation} annotation={sourceAnnotation} changes={sourceChanges}
-            comments={page.at ? undefined : sourceComments} />
+            comments={page.at ? undefined : sourceComments} blame={sourceBlame} />
         </div>
       ) : null
 }

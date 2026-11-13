@@ -412,6 +412,27 @@ func TestInspectNamesRepositoryByOriginURL(t *testing.T) {
 	}
 }
 
+func TestOriginURLReadsTheSharedConfig(t *testing.T) {
+	root := canonicalTemp(t)
+	main := filepath.Join(root, "main")
+	makeRepo(t, main)
+	writeFile(t, filepath.Join(main, ".git", "config"), "[remote \"upstream\"]\n\turl = git@github.com:other/fork.git\n[remote \"origin\"]\n\turl = \"git@github.com:owner/zero.git\"\n")
+	feature := linkWorktree(t, main, "feature", filepath.Join(root, "wt-feature"))
+	for _, dir := range []string{main, feature} {
+		if got := OriginURL(dir); got != "git@github.com:owner/zero.git" {
+			t.Errorf("OriginURL(%s) = %q", dir, got)
+		}
+	}
+	solo := filepath.Join(root, "solo")
+	makeRepo(t, solo)
+	if got := OriginURL(solo); got != "" {
+		t.Errorf("OriginURL(no origin) = %q", got)
+	}
+	if got := OriginURL(filepath.Join(root, "missing")); got != "" {
+		t.Errorf("OriginURL(folder) = %q", got)
+	}
+}
+
 func TestDiscoverSkipsUnavailableRootsAndKeepsOthers(t *testing.T) {
 	parent := canonicalTemp(t)
 	missing, file, kept := filepath.Join(parent, "missing"), filepath.Join(parent, "file"), filepath.Join(parent, "kept")

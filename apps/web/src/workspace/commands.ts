@@ -18,6 +18,7 @@ export type CommandAction =
   | { kind: "walkthrough-present" }
   | { kind: "open-welcome" }
   | { kind: "show-file-history" }
+  | { kind: "show-line-blame" }
 
 export interface Command {
   id: string
@@ -39,7 +40,8 @@ export interface CommandMatch {
 // acts on the name last clicked in Source, and history (decision 0131); then
 // walkthrough stepping, which
 // acts on the walkthrough last opened; then Source Control's file history,
-// which acts on the working-tree file in view; then Help.
+// which acts on the working-tree file in view, and line blame, which acts on
+// Source's active line; then Help.
 export const commands: readonly Command[] = [
   { id: "preferences.openSettings", category: "Preferences", title: "Open Settings", action: { kind: "open-settings" } },
   { id: "preferences.colorTheme", category: "Preferences", title: "Color Theme", action: { kind: "select-color-theme" } },
@@ -59,6 +61,7 @@ export const commands: readonly Command[] = [
   { id: "walkthrough.present", category: "Walkthrough", title: "Present", action: { kind: "walkthrough-present" } },
   { id: "walkthrough.exit", category: "Walkthrough", title: "Close Walkthrough", action: { kind: "walkthrough-exit" } },
   { id: "sourceControl.showFileHistory", category: "Source Control", title: "Show File History", action: { kind: "show-file-history" } },
+  { id: "sourceControl.showLineBlame", category: "Source Control", title: "Show Line Blame", action: { kind: "show-line-blame" } },
   { id: "help.welcome", category: "Help", title: "Welcome", action: { kind: "open-welcome" } },
 ]
 

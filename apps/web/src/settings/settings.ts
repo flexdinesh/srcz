@@ -6,6 +6,7 @@ export interface Settings {
   fontSize: number
   languageServers: LanguageServerSetting
   showWelcome: ShowWelcomeSetting
+  inlineBlame: InlineBlameSetting
   notifyCommits: NotifySetting
   notifyBranches: NotifySetting
   notifyEdits: NotifySetting
@@ -39,6 +40,19 @@ export function isShowWelcomeSetting(value: unknown): value is ShowWelcomeSettin
   return value === "off" || value === "on"
 }
 
+// InlineBlameSetting shows who last changed Source's active line after its
+// text (decision 0139).
+export type InlineBlameSetting = "off" | "on"
+
+export const inlineBlameOptions: readonly { label: string; value: InlineBlameSetting }[] = [
+  { label: "Off", value: "off" },
+  { label: "On", value: "on" },
+]
+
+export function isInlineBlameSetting(value: unknown): value is InlineBlameSetting {
+  return value === "off" || value === "on"
+}
+
 // LanguageServerSetting opts code navigation into installed language
 // servers. Off by default: servers cost hundreds of MB while running.
 export type LanguageServerSetting = "off" | "on"
@@ -61,6 +75,7 @@ const storedKeys: readonly SettingKey[] = [
   "fontSize",
   "languageServers",
   "showWelcome",
+  "inlineBlame",
   "notifyCommits",
   "notifyBranches",
   "notifyEdits",
@@ -78,6 +93,7 @@ export const defaultSettings: Settings = {
   fontSize: DEFAULT_FONT_SIZE,
   languageServers: "on",
   showWelcome: "on",
+  inlineBlame: "on",
   notifyCommits: "on",
   notifyBranches: "on",
   notifyEdits: "off",
@@ -142,6 +158,14 @@ export const settingDefinitions: readonly SettingDefinition[] = [
     title: "Show Welcome on Startup",
     description: "Open the Welcome tab when a project opens with no tabs to restore. Off opens the project picker on first launch instead.",
     options: showWelcomeOptions,
+  },
+  {
+    id: "inlineBlame",
+    kind: "select",
+    category: "Source Control",
+    title: "Inline Blame",
+    description: "Show who last changed the active line in Source, and when, after its text. Hover or tap it for details.",
+    options: inlineBlameOptions,
   },
   {
     id: "notifyCommits",
@@ -222,6 +246,9 @@ export function parseSettings(raw: string | null): Settings {
   const showWelcome = "showWelcome" in stored && isShowWelcomeSetting(stored.showWelcome)
     ? stored.showWelcome
     : defaultSettings.showWelcome
+  const inlineBlame = "inlineBlame" in stored && isInlineBlameSetting(stored.inlineBlame)
+    ? stored.inlineBlame
+    : defaultSettings.inlineBlame
   const notifyCommits = "notifyCommits" in stored && isNotifySetting(stored.notifyCommits)
     ? stored.notifyCommits
     : defaultSettings.notifyCommits
@@ -237,7 +264,7 @@ export function parseSettings(raw: string | null): Settings {
   const notifyFeedback = "notifyFeedback" in stored && isNotifySetting(stored.notifyFeedback)
     ? stored.notifyFeedback
     : defaultSettings.notifyFeedback
-  return { fontSize: fontSize ?? DEFAULT_FONT_SIZE, languageServers, showWelcome, notifyCommits, notifyBranches, notifyEdits, notifyWalkthroughs, notifyFeedback }
+  return { fontSize: fontSize ?? DEFAULT_FONT_SIZE, languageServers, showWelcome, inlineBlame, notifyCommits, notifyBranches, notifyEdits, notifyWalkthroughs, notifyFeedback }
 }
 
 export function modifiedSettings(settings: Settings): SettingKey[] {

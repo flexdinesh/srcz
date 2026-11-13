@@ -106,7 +106,7 @@ func New(config Config) (*App, error) {
 		Projects:      &Projects{state: shared},
 		Documents:     &Documents{state: shared},
 		Events:        &Events{state: shared, notices: &walkthroughs.notices, feedback: &reviews.notices},
-		SourceControl: &SourceControl{state: shared},
+		SourceControl: &SourceControl{state: shared, blames: newBlameCache()},
 		Navigation:    &Navigation{state: shared, servers: config.LanguageServers},
 		Metrics:       &Metrics{},
 		Walkthroughs:  walkthroughs,

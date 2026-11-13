@@ -808,6 +808,7 @@ func TestEveryAPIFixtureDecodesStrictly(t *testing.T) {
 		{"range-files.json", func() any { return &contract.RangeFilesResponse{} }},
 		{"refs.json", func() any { return &contract.RefsResponse{} }},
 		{"compare-stats*.json", func() any { return &contract.CompareStatsResponse{} }},
+		{"blame*.json", func() any { return &contract.BlameResponse{} }},
 		{"projects.json", func() any { return &contract.ProjectsResponse{} }},
 		{"directories.json", func() any { return &contract.DirectoriesResponse{} }},
 		{"navigation-status.json", func() any { return &contract.NavigationStatus{} }},

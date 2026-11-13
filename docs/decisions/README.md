@@ -140,3 +140,4 @@ rewriting history; update `Status` on the old record.
 | [0136](0136-installs-stop-the-running-daemon.md) | Installs stop the running daemon | Accepted; extends 0061, 0101, 0134 |
 | [0137](0137-review-selection-is-the-chosen-file.md) | Review selection is the chosen file | Accepted; supersedes 0135's file in view and the scroll-following selection of 0035 and 0040; amends 0051, 0117 |
 | [0138](0138-jetbrains-mono-and-tree-folder-icons.md) | JetBrains Mono, no ligatures, and folder icons in trees | Accepted; supersedes 0130's Plex Mono face; restores 0104's wordmark; amends 0102's tree |
+| [0139](0139-inline-blame.md) | Inline blame on the active line | Accepted; extends 0008, 0083, 0112, 0114, 0115 |

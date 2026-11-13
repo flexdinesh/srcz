@@ -146,6 +146,15 @@ func (a *App) serveBranchStack(w http.ResponseWriter, r *http.Request, query url
 	writeResult(w, response, err)
 }
 
+// serveBlame blames a file in the working tree or, with at, at a commit
+// (decision 0139).
+func (a *App) serveBlame(w http.ResponseWriter, r *http.Request, query url.Values) {
+	response, err := a.app.SourceControl.Blame(r.Context(), contract.BlameRequest{
+		Project: query.Get("project"), Path: query.Get("path"), At: query.Get("at"),
+	})
+	writeResult(w, response, err)
+}
+
 func (a *App) serveRangeFiles(w http.ResponseWriter, r *http.Request, query url.Values) {
 	response, err := a.app.SourceControl.RangeFiles(r.Context(), query.Get("project"), query.Get("from"), query.Get("to"))
 	writeResult(w, response, err)

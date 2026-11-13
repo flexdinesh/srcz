@@ -32,7 +32,7 @@ test("font size accepts whole pixel values within range", () => {
 })
 
 test("stored settings keep valid values and default the rest", () => {
-  const defaults = { fontSize: DEFAULT_FONT_SIZE, languageServers: "on", showWelcome: "on", notifyCommits: "on", notifyBranches: "on", notifyEdits: "off", notifyWalkthroughs: "on", notifyFeedback: "on" }
+  const defaults = { fontSize: DEFAULT_FONT_SIZE, languageServers: "on", showWelcome: "on", inlineBlame: "on", notifyCommits: "on", notifyBranches: "on", notifyEdits: "off", notifyWalkthroughs: "on", notifyFeedback: "on" }
   assert.deepEqual(parseSettings(null), defaults)
   assert.deepEqual(parseSettings("not json"), defaults)
   assert.deepEqual(parseSettings("[]"), defaults)
@@ -43,6 +43,8 @@ test("stored settings keep valid values and default the rest", () => {
   assert.deepEqual(parseSettings('{"languageServers":true}'), defaults)
   assert.deepEqual(parseSettings('{"showWelcome":"off"}'), { ...defaults, showWelcome: "off" })
   assert.deepEqual(parseSettings('{"showWelcome":false}'), defaults)
+  assert.deepEqual(parseSettings('{"inlineBlame":"off"}'), { ...defaults, inlineBlame: "off" })
+  assert.deepEqual(parseSettings('{"inlineBlame":"maybe"}'), defaults)
   assert.deepEqual(parseSettings('{"notifyEdits":"on","notifyCommits":"off"}'), { ...defaults, notifyEdits: "on", notifyCommits: "off" })
   assert.deepEqual(parseSettings('{"notifyBranches":"off","notifyWalkthroughs":"off"}'), { ...defaults, notifyBranches: "off", notifyWalkthroughs: "off" })
   assert.deepEqual(parseSettings('{"notifyFeedback":"off"}'), { ...defaults, notifyFeedback: "off" })
@@ -57,6 +59,7 @@ test("only values differing from defaults count as modified", () => {
   assert.deepEqual(modifiedSettings({ ...defaults, fontSize: 15 }), ["fontSize"])
   assert.deepEqual(modifiedSettings({ ...defaults, languageServers: "off" }), ["languageServers"])
   assert.deepEqual(modifiedSettings({ ...defaults, showWelcome: "off" }), ["showWelcome"])
+  assert.deepEqual(modifiedSettings({ ...defaults, inlineBlame: "off" }), ["inlineBlame"])
 })
 
 test("ui scale is relative to the default font size", () => {
@@ -74,8 +77,9 @@ test("notification settings exist only where notifications do", () => {
 })
 
 test("setting search matches every term across category, title, and description", () => {
-  assert.deepEqual(matchSettings("").map((definition) => definition.id), ["theme", "fontSize", "languageServers", "showWelcome"])
+  assert.deepEqual(matchSettings("").map((definition) => definition.id), ["theme", "fontSize", "languageServers", "showWelcome", "inlineBlame"])
   assert.deepEqual(matchSettings("welcome startup").map((definition) => definition.id), ["showWelcome"])
+  assert.deepEqual(matchSettings("blame").map((definition) => definition.id), ["inlineBlame"])
   assert.deepEqual(matchSettings("gopls").map((definition) => definition.id), ["languageServers"])
   assert.deepEqual(matchSettings("font").map((definition) => definition.id), ["fontSize"])
   assert.deepEqual(matchSettings("APPEARANCE size").map((definition) => definition.id), ["fontSize"])

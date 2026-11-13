@@ -129,6 +129,10 @@ func (c *Client) CompareStats(ctx context.Context, request contract.CompareStats
 	return call(ctx, func() (contract.CompareStatsResponse, error) { return c.app.SourceControl.CompareStats(ctx, request) })
 }
 
+func (c *Client) Blame(ctx context.Context, request contract.BlameRequest) (contract.BlameResponse, error) {
+	return call(ctx, func() (contract.BlameResponse, error) { return c.app.SourceControl.Blame(ctx, request) })
+}
+
 func (c *Client) NavigationStatus(ctx context.Context, request contract.NavigationStatusRequest) (contract.NavigationStatus, error) {
 	return call(ctx, func() (contract.NavigationStatus, error) { return c.app.Navigation.Status(request) })
 }

@@ -149,6 +149,7 @@ func (a *App) newRoutes() *http.ServeMux {
 	api("/api/range-files", func(w http.ResponseWriter, r *http.Request, query url.Values) { a.serveRangeFiles(w, r, query) })
 	api("/api/refs", func(w http.ResponseWriter, _ *http.Request, query url.Values) { a.serveRefs(w, query) })
 	api("/api/compare-stats", func(w http.ResponseWriter, r *http.Request, query url.Values) { a.serveCompareStats(w, r, query) })
+	api("/api/blame", func(w http.ResponseWriter, r *http.Request, query url.Values) { a.serveBlame(w, r, query) })
 
 	// Walkthroughs (decision 0047).
 	api("/api/walkthroughs", func(w http.ResponseWriter, _ *http.Request, query url.Values) {

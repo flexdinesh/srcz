@@ -41,6 +41,7 @@ func TestAPIFixturesSatisfyGeneratedContracts(t *testing.T) {
 		"refs.json":              "RefsResponse",
 		"branch-stack.json":      "StackResponse",
 		"compare-stats*.json":    "CompareStatsResponse",
+		"blame*.json":            "BlameResponse",
 		"metrics*.json":          "ProcessMetrics",
 		"navigation-status.json": "NavigationStatus",
 		"definition.json":        "NavigationResult",

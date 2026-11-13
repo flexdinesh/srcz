@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises"
 import test from "node:test"
 
 import {
-  isBranchFilesResponse, isChangesResponse, isCommitFilesResponse, isCommitsResponse, isCompareStatsResponse, isDiffResponse,
+  isBlameResponse, isBranchFilesResponse, isChangesResponse, isCommitFilesResponse, isCommitsResponse, isCompareStatsResponse, isDiffResponse,
   isDirectoriesResponse, isErrorResponse, isFeedback, isFeedbackSummary, isFormatResult, isNavigationResult, isNavigationStatus, isPageData, isProcessMetrics,
   isProjectsResponse, isRangeFilesResponse, isRefsResponse, isSearchDocumentsResponse, isStackResponse, isWalkthrough,
   isWalkthroughSummary, type DiffResponse, type PageData,
@@ -12,6 +12,7 @@ import { feedbackUnavailableCode } from "./feedback-data.ts"
 import { unknownBaseCode, unknownHeadCode } from "./source-control-messages.ts"
 import { isRecord } from "./http.ts"
 import { isLiveChange, isLiveStatus } from "./events-contract.ts"
+import { splitSourceLines } from "../lib/line-selection.ts"
 
 async function fixture(name: string): Promise<unknown> {
   const source = await readFile(
@@ -45,6 +46,22 @@ test("frontend API fixtures satisfy runtime contracts", async () => {
   assert.equal(isNavigationResult(await fixture("error-not-found.json")), false)
   assert.equal(isNavigationStatus(await fixture("navigation-status.json")), true)
   assert.equal(isNavigationStatus(await fixture("definition.json")), false)
+})
+
+// The dev mock blames navigation/greet.go: the fixture must blame its text.
+test("the blame fixture covers page-go.json's lines", async () => {
+  const blame = await fixture("blame.json")
+  assert.ok(isBlameResponse(blame))
+  const go = await page("page-go.json")
+  assert.equal(blame.path, go.selected)
+  assert.equal(blame.lineCount, splitSourceLines(go.source).length)
+  assert.equal(isBlameResponse(await fixture("blame-not-repo.json")), true)
+  let next = 1
+  for (const range of blame.ranges) {
+    assert.equal(range.start, next)
+    next += range.count
+  }
+  assert.equal(next, blame.lineCount + 1)
 })
 
 async function page(name: string): Promise<PageData> {

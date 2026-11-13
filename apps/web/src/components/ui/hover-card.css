@@ -1,0 +1,37 @@
+/* The trigger carries no chrome of its own: the feature styles it as the
+   text it sits in. Only focus is shared. */
+.ui-hover-card-trigger {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+}
+
+.ui-hover-card-trigger:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+
+.ui-hover-card-positioner {
+  z-index: var(--z-popover);
+}
+
+/* The overlay surface (.ui-popover in dialog-shell.css) with room to read. */
+.ui-hover-card {
+  width: max-content;
+  max-width: min(28rem, calc(100vw - var(--space-4)));
+  padding: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-label);
+  line-height: var(--text-sm--line-height);
+  outline: none;
+  transition: opacity var(--duration-fast) ease-out;
+}
+
+.ui-hover-card[data-starting-style],
+.ui-hover-card[data-ending-style] {
+  opacity: 0;
+}

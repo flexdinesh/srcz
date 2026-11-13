@@ -90,6 +90,14 @@ type CommitsRequest struct {
 	Path    string
 }
 
+// BlameRequest blames one file (decision 0139): Path, as the document's,
+// in the working tree or, with At (a full hash), at that commit.
+type BlameRequest struct {
+	Project string
+	Path    string
+	At      string
+}
+
 // BranchFilesRequest lists a branch's net changes: Base or else the default
 // base branch against Head or else HEAD; with Uncommitted, HEAD's against
 // the working tree (decision 0051), which allows no Head.

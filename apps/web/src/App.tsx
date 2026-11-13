@@ -124,6 +124,7 @@ import { routeFeedback, type ThreadRoute } from "./features/feedback/feedback-mo
 import { useFeedbackView } from "./features/feedback/use-feedback-view.ts"
 import { useReviewFeedback } from "./features/feedback/use-review-feedback.tsx"
 import { useSourceFeedback } from "./features/feedback/use-source-feedback.tsx"
+import { useSourceBlame } from "./features/blame/use-source-blame.tsx"
 
 // routeTab is the tab a route shows: a review, a document (a snapshot with
 // at), a walkthrough's own tab, or Welcome, else none.
@@ -248,9 +249,11 @@ export function App({ project }: AppProps) {
   const walkthroughCommands = useRef({ move: (_direction: 1 | -1) => {}, close: () => {}, present: () => {} })
   const openWelcomeCommand = useRef(() => {})
   const fileHistoryCommand = useRef(() => {})
+  const lineBlameCommand = useRef(() => {})
   const runCommand = useCallback((action: CommandAction) => {
     if (action.kind === "open-welcome") openWelcomeCommand.current()
     else if (action.kind === "show-file-history") fileHistoryCommand.current()
+    else if (action.kind === "show-line-blame") lineBlameCommand.current()
     else if (action.kind === "walkthrough-step") walkthroughCommands.current.move(action.direction)
     else if (action.kind === "walkthrough-exit") walkthroughCommands.current.close()
     else if (action.kind === "walkthrough-present") walkthroughCommands.current.present()
@@ -713,6 +716,14 @@ export function App({ project }: AppProps) {
       openReview(workingCompare, true, page.selected, { start: line, side: "additions", end: line, endSide: "additions" })
     },
   } : undefined, [changeMarkers, openReview, page.selected])
+  // Source shows the active line's blame; the palette opens its card
+  // (decision 0139).
+  const inlineBlame = useSourceBlame({
+    project, page, enabled: settings.inlineBlame === "on" && showSource && documentMode === "source", gitVersion, openReview, showFileHistory,
+  })
+  useLayoutEffect(() => {
+    lineBlameCommand.current = () => { inlineBlame.showCard() }
+  })
   const selectedLines = showSource && lineRange ? clampLineRange(lineRange, splitSourceLines(page.source).length) : null
 
   const switchProject = useCallback((next: string) => {
@@ -969,6 +980,7 @@ export function App({ project }: AppProps) {
             empty={<EmptyWorkspace state={empty} viewName={sidebarViewName(sidebar.view)}
               onAction={runEmptyAction} onWelcome={openWelcome} />}
             sourceAnnotation={sourceAnnotation}
+            sourceBlame={inlineBlame.blame}
             sourceChanges={sourceChanges}
             sourceComments={sourceComments}
             hasData={hasData}
