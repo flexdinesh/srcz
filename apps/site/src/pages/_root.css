@@ -692,6 +692,92 @@ html body article[data-v-content] > .sz-section-label + .sz-cards {
   }
 }
 
+/* Docs home feature index (`FeatureIndex.tsx`, decision 0144): rows on
+   hairlines under the same section labels, lighter than the cards above. */
+
+html body article[data-v-content] > .sz-section-label + .sz-features {
+  margin-top: 0.75rem;
+}
+
+html body article[data-v-content] > .sz-section-label:has(+ .sz-features) {
+  margin-top: 2rem;
+}
+
+html body article[data-v-content] > h2 + .sz-section-label:has(+ .sz-features) {
+  margin-top: 1.25rem;
+}
+
+.sz-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1.75rem;
+}
+
+.sz-feature {
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+  padding: 0.625rem 0 0.75rem;
+  border-top: 1px solid var(--sz-hairline);
+  color: var(--sz-muted);
+  text-decoration: none;
+}
+
+.sz-feature-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sz-text);
+  transition: color 120ms;
+}
+
+.sz-feature-title svg {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: none;
+  stroke: var(--sz-muted);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 120ms;
+}
+
+a.sz-feature:hover .sz-feature-title {
+  color: var(--sz-accent-hover);
+}
+
+a.sz-feature:hover .sz-feature-title svg {
+  stroke: var(--sz-accent-hover);
+}
+
+a.sz-feature:focus-visible {
+  outline: 2px solid var(--sz-accent);
+  outline-offset: 2px;
+}
+
+.sz-feature-text {
+  font-size: 0.84375rem;
+  line-height: 1.5;
+}
+
+.sz-feature-text p {
+  margin: 0;
+}
+
+.sz-feature-text code {
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .sz-features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* 404 (`404.tsx`): a label, the heading, two ways on, and the search shortcut. */
 
 .sz-nf {
