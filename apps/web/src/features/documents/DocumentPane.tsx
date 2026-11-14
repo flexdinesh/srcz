@@ -13,6 +13,8 @@ import {
 } from "./SourceDocument.tsx"
 import type { PageData } from "@zero/contracts"
 import { projectUrl } from "../../api/project-url.ts"
+import { FolderProblem } from "../projects/FolderProblem.tsx"
+import { isFolderProblem } from "../projects/folder-problem.ts"
 import type { ImageViewer } from "./use-image-viewer.ts"
 
 interface DocumentPaneProps {
@@ -42,6 +44,9 @@ interface DocumentPaneProps {
   main: RefObject<HTMLElement | null>
   navigate(href: string): void
   onChooseProject(): void
+  // onLeaveProject lands on the next served project, after this project's
+  // root stopped being served.
+  onLeaveProject(): void
   page: PageData
   retry(): void
   // sourceNavigation is set when Source supports code navigation.
@@ -54,7 +59,7 @@ function fileName(path: string): string {
 }
 
 export function DocumentPane({
-  diff, diffShown = true, empty, hasData, image, isLoading, lineSelection, loadError, main, navigate, onChooseProject, page, retry, sourceAnnotation,
+  diff, diffShown = true, empty, hasData, image, isLoading, lineSelection, loadError, main, navigate, onChooseProject, onLeaveProject, page, retry, sourceAnnotation,
   sourceBlame, sourceChanges, sourceComments, sourceNavigation, view, walkthrough, welcome,
 }: DocumentPaneProps) {
   const showDiff = Boolean(diff) && diffShown && !loadError && !page.projectUnavailable && !page.error
@@ -86,6 +91,9 @@ export function DocumentPane({
           <p>The project <code>{page.project}</code> is unavailable. It may have been moved or deleted.</p>
           <Button type="button" variant="outline" onClick={onChooseProject}>Choose another project</Button>
         </div>
+      ) : page.error && isFolderProblem(page.errorCode) ? (
+        <FolderProblem project={page.project} roots={page.roots} message={page.error} code={page.errorCode ?? ""}
+          onChooseProject={onChooseProject} onStopped={onLeaveProject} />
       ) : page.error ? (
         <div className="error" role="alert">{page.error}</div>
       ) : walkthrough ? (

@@ -274,7 +274,7 @@ func (d *Documents) SearchDocuments(projectID string) (contract.SearchDocumentsR
 	}
 	index, err := d.scan(project.Root)
 	if err != nil {
-		return contract.SearchDocumentsResponse{}, fail(contract.KindInternal, err.Error())
+		return contract.SearchDocumentsResponse{}, scanError(project.Root, err)
 	}
 	response := contract.SearchDocumentsResponse{
 		Documents: make([]contract.SearchDocument, 0, len(index.Files)),
@@ -382,6 +382,7 @@ func (d *Documents) Page(request contract.PageRequest) (contract.PageData, error
 	checkout := projects.Inspect(project.Root)
 	index, err := d.scan(project.Root)
 	if err != nil {
+		failure := scanError(project.Root, err)
 		return contract.PageData{
 			Roots:       roots,
 			SessionKey:  d.sessionKey(roots),
@@ -392,9 +393,10 @@ func (d *Documents) Page(request contract.PageRequest) (contract.PageData, error
 			Branch:      checkout.Branch,
 			Worktrees:   checkout.Worktrees,
 			Tree:        []contract.TreeNode{},
-			Error:       err.Error(),
+			Error:       failure.Message,
+			ErrorCode:   failure.Code,
 			Warnings:    []string{},
-		}, fail(contract.KindInternal, err.Error())
+		}, failure
 	}
 	data := contract.PageData{
 		Roots:       roots,

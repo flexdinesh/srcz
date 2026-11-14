@@ -9,6 +9,7 @@ const sessionKey = "/work\n/home"
 const projects: ProjectsResponse = {
   sessionKey,
   presence: false,
+  manageRoots: false,
   roots: [{ path: "/work", name: "work", isRepo: false }, { path: "/home", name: "home", isRepo: false }],
   projects: [
     { id: "/work", name: "work", path: "/work", kind: "folder", group: "", root: "/work", branch: "", repository: "", available: true },

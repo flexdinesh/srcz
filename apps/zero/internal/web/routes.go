@@ -82,7 +82,8 @@ func (p HostPolicy) Guard(next http.Handler) http.Handler {
 type apiHandler func(w http.ResponseWriter, r *http.Request, query url.Values)
 
 // newRoutes lists every endpoint. All are GET but publishing and deleting
-// walkthroughs and writing feedback; JSON endpoints are never cached.
+// walkthroughs, writing feedback, and changing served folders; JSON
+// endpoints are never cached.
 func (a *App) newRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
 	api := func(path string, handler apiHandler) {
@@ -194,6 +195,10 @@ func (a *App) newRoutes() *http.ServeMux {
 	write("POST /api/feedback-messages", a.servePostFeedbackMessage)
 	write("DELETE /api/feedback-threads", func(w http.ResponseWriter, r *http.Request) { a.serveDeleteFeedback(w, r, true) })
 	write("DELETE /api/feedback", func(w http.ResponseWriter, r *http.Request) { a.serveDeleteFeedback(w, r, false) })
+
+	// Served folders (decision 0146).
+	write("POST /api/roots", a.serveOpenRoot)
+	write("DELETE /api/roots", a.serveRemoveRoot)
 
 	// Live updates (decision 0050).
 	mux.HandleFunc("GET /api/events", a.serveEvents)

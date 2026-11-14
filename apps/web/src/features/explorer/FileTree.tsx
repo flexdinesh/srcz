@@ -340,6 +340,7 @@ function Explorer({ gitStatus, hasData, onFindFile, onNavigate, onOpenProjects, 
       </div>
       {!hasData ? <p className="muted">Loading files…</p>
         : page.projectUnavailable ? <p className="muted">{page.project ? "Project unavailable." : "No folder is open."}</p>
+        : page.error ? <p className="muted">{page.errorCode === "privacyBlocked" || page.errorCode === "folderUnreadable" ? "Can't read this folder." : "Files unavailable."}</p>
         : page.empty ? <p className="muted">No files found.</p>
         : paths.length === 0 ? <p className="muted explorer-empty">
           No files match <code>{filter.applied}</code>

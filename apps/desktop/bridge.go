@@ -34,7 +34,6 @@ const preloadScript = `(() => {
   window.zeroDesktop = Object.freeze(location.host === "` + proxy.Host + `" ? {
     version: 2,
     ...window_,
-    openFolder() { void call("OpenFolder").catch(() => undefined) },
     revealPath(project, path) { return call("RevealPath", project, path) },
   } : { version: 2, ...window_ })
 })()`
@@ -112,20 +111,6 @@ func (b *bridgeService) SetAppearance(ctx context.Context, value any) error {
 		return errRefused
 	}
 	b.host.setAppearance(hostOf(mygo.CallerPage(ctx).URL()), window, source)
-	return nil
-}
-
-// OpenFolder asks for a directory and opens it as a project.
-func (b *bridgeService) OpenFolder(ctx context.Context) error {
-	window, ok := callerWindow(ctx, isLocal)
-	if !ok {
-		return errRefused
-	}
-	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: window, Title: "Open a folder in zero", Directory: true})
-	if err != nil || len(paths) == 0 {
-		return err
-	}
-	b.host.openAndLoad(paths[0])
 	return nil
 }
 
@@ -212,7 +197,7 @@ func (h *host) menu() *mygo.Menu {
 	return mygo.NewMenu([]*mygo.MenuItem{
 		{Role: mygo.RoleAppMenu},
 		{Label: "File", Submenu: []*mygo.MenuItem{
-			{Label: "Open Folder…", Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { go h.chooseFolder() }},
+			{Label: "Open Folder…", Accelerator: "CmdOrCtrl+O", Click: func(_ *mygo.MenuItem, window *mygo.Window) { go h.chooseFolder(window) }},
 			mygo.Separator(),
 			{Role: mygo.RoleQuit},
 		}},
@@ -286,9 +271,18 @@ func (h *host) closeTab(window *mygo.Window) {
 	}
 }
 
-func (h *host) chooseFolder() {
-	paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: h.frontWindow(), Title: "Open a folder in zero", Directory: true})
-	if err == nil && len(paths) > 0 {
-		h.openAndLoad(paths[0])
+// chooseFolder asks the window's page to browse for a folder (decision
+// 0146): the server browses its own disk, so local and remote windows work
+// alike. With no window open, the local one opens.
+func (h *host) chooseFolder(window *mygo.Window) {
+	if window == nil {
+		window = h.frontWindow()
 	}
+	if window == nil {
+		h.load(proxy.Origin + "/")
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, _ = window.Page().EvalContext(ctx, `return window.dispatchEvent(new Event("zero:open-folder", { cancelable: true }))`)
 }

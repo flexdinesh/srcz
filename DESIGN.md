@@ -467,13 +467,21 @@ picker is a quick pick on the content-palette frame with two modes:
   worktrees nest under their main worktree. Worktrees outside the served root
   stay listed but `aria-disabled`, with a muted “Outside <root>” note. Folders
   opened by hand follow under “Opened folders”, each with a hover Forget action
-  (always visible on mobile) except the current one. The current project shows
+  (always visible on mobile) except the current one. Where the server manages
+  roots (decision 0146), served folders carry a hover Stop serving action
+  (folder-minus icon) in the same place, and a served folder zero cannot read
+  stays listed, disabled, with a warning-colored “Blocked by macOS” or “Can't
+  read” note whose title holds the reason. The current project shows
   an accent “Current” check. Typing filters to ranked flat matches; `/` or
-  **Open folder…** enters Browse.
-- **Browse**: the served root is a muted fixed prefix before the path input.
+  **Open folder…** enters Browse, offered only where a folder can be opened.
+- **Browse**: where the server manages roots, the input holds an absolute
+  path starting at `~/`, and opening a folder serves it first (“Opening
+  <folder>…” in the status line, the server's reason on failure). Otherwise the
+  served root is a muted fixed prefix before the path input.
   The first row opens the typed folder; child folders follow, repositories with
-  a muted `git` label. Tab completes, Enter on a folder descends, Backspace on a
-  trailing slash goes up a level and on an empty path returns to Projects.
+  a muted `git` label, unreadable folders with the warning note. Tab completes,
+  Enter on a folder descends, Backspace on a trailing slash goes up a level and
+  on an empty path returns to Projects.
 
 Rows are 32px picker rows (44px mobile) with 14px icons (folder, repository,
 worktree, opened folder); paths truncate from the start so the deepest folders
@@ -483,7 +491,12 @@ folders. Escape or the backdrop closes the picker and restores focus. Choosing
 a project keeps the current workspace visible until the new project loads, then
 starts fresh: tree filter, search index, and format results reset, and the
 project's remembered tabs return. A project that no longer resolves shows
-“The project <id> is unavailable…” with a Choose another project action.
+“The project <id> is unavailable…” with a Choose another project action. A
+project folder zero cannot read shows the server's reason with outline
+actions Stop serving <folder> (where roots are managed) and Choose another
+project, plus, in a local macOS desktop window, an accent Open Privacy Settings
+link with a 12px arrow-up-right icon; the explorer reads “Can't read this
+folder.”
 
 ### Tabs and view mode
 

@@ -236,3 +236,9 @@ type FeedbackDeleteRequest struct {
 	ID      string
 	Thread  int
 }
+
+// RootRequest is the body of POST /api/roots: serve Path, an absolute
+// directory on the server's host (decision 0146).
+type RootRequest struct {
+	Path string `json:"path"`
+}

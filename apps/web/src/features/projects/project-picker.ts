@@ -1,4 +1,4 @@
-import type { Directory, Project, ProjectKind, ProjectsResponse } from "@zero/contracts"
+import type { Directory, Project, ProjectKind, ProjectsResponse, Root } from "@zero/contracts"
 
 // Pure list logic for the project picker; ProjectPicker.tsx only renders it.
 
@@ -27,6 +27,11 @@ export interface ProjectRow {
   current: boolean
   disabled: boolean
   note: string
+  // servedRoot is the served root the row stands for, which Stop serving
+  // removes; "" for rows inside a root (decision 0146).
+  servedRoot: string
+  // problem explains why zero cannot read the row's root; "" when it can.
+  problem: string
 }
 
 export interface BrowseActionRow {
@@ -46,6 +51,10 @@ export interface DirectoryRow {
   name: string
   path: string
   isProject: boolean
+  // problem explains why zero cannot read the folder, note in short; both
+  // "" when it can.
+  problem: string
+  note: string
 }
 
 export type PickerRow = ProjectRow | BrowseActionRow | OpenFolderRow | DirectoryRow
@@ -167,6 +176,8 @@ function projectRow(project: Project, roots: readonly string[], current: string,
     current: project.available && project.id === current,
     disabled: !project.available,
     note: project.available ? "" : unavailableNote,
+    servedRoot: roots.includes(project.path) ? project.path : "",
+    problem: "",
   }
 }
 
@@ -187,7 +198,52 @@ function groupRow(group: Group, roots: readonly string[], remembered: readonly s
     current: group.members.some((member) => member.available && member.id === current),
     disabled: target === undefined,
     note: target ? "" : unavailableNote,
+    servedRoot: roots.includes(group.path) ? group.path : "",
+    problem: "",
   }
+}
+
+// problemNote is a short note for a folder zero cannot read; the row's title
+// carries the server's full explanation.
+export function problemNote(code: string | undefined): string {
+  return code === "privacyBlocked" ? "Blocked by macOS" : "Can't read"
+}
+
+// problemRow lists a served root zero cannot read, which discovery leaves
+// out, so it can be explained and stopped (decision 0146).
+function problemRow(root: Root): ProjectRow {
+  return {
+    kind: "project",
+    key: `root:${root.path}`,
+    id: "",
+    name: root.name,
+    path: root.path,
+    location: "",
+    branch: "",
+    projectKind: root.isRepo ? "repo" : "folder",
+    group: "",
+    worktrees: 0,
+    repository: "",
+    current: false,
+    disabled: true,
+    note: problemNote(root.problemCode),
+    servedRoot: root.path,
+    problem: root.problem ?? "",
+  }
+}
+
+// browseOffered reports whether Open folder… has somewhere to go: anywhere
+// on a host whose server manages roots, else a readable served folder that
+// is not a repository (repositories open whole).
+export function browseOffered(response: ProjectsResponse): boolean {
+  return response.manageRoots || response.roots.some((root) => !root.isRepo && !root.problem)
+}
+
+// visibleWarnings drops discovery warnings about roots the list already
+// explains.
+export function visibleWarnings(response: ProjectsResponse): string[] {
+  const explained = response.roots.filter((root) => root.problem).map((root) => root.path)
+  return response.warnings.filter((warning) => !explained.some((root) => warning.startsWith(`${root}:`)))
 }
 
 // currentGroup is the repository group of the current project, if any.
@@ -238,8 +294,10 @@ export function projectSections(response: ProjectsResponse, remembered: readonly
       current: id === current,
       disabled: false,
       note: "",
+      servedRoot: "",
+      problem: "",
     }))
-  const browse: PickerSection = { title: "", rows: [{ kind: "browse", key: "browse" }] }
+  const browse: PickerSection = { title: "", rows: browseOffered(response) ? [{ kind: "browse", key: "browse" }] : [] }
 
   if (query.trim()) {
     const matches = response.projects.flatMap((project) => {
@@ -260,6 +318,9 @@ export function projectSections(response: ProjectsResponse, remembered: readonly
   }
 
   const sections = response.roots.map((root): PickerSection => ({ title: roots.length > 1 ? root.name : "Projects", rows: [] }))
+  response.roots.forEach((root, index) => {
+    if (root.problem) sections[index]?.rows.push(problemRow(root))
+  })
   const emitted = new Set<string>()
   for (const project of response.projects) {
     const repository = project.group ? repositories.get(project.group) : undefined
@@ -280,7 +341,8 @@ export function projectSections(response: ProjectsResponse, remembered: readonly
   ].filter((section) => section.rows.length > 0)
 }
 
-function withSlash(path: string): string {
+// withSlash is a folder as a browse input.
+export function withSlash(path: string): string {
   return path.endsWith("/") ? path : `${path}/`
 }
 
@@ -312,9 +374,11 @@ export function parentInput(input: string, roots: readonly string[]): string {
 
 // browseRows offers the listed folder itself, then its children matching the
 // partial name; folder "" lists the served roots. Repositories are listed to
-// open whole, not to browse.
-export function browseRows(folder: string, partial: string, directories: readonly Directory[]): PickerSection[] {
+// open whole, not to browse. hideDotted leaves out folders whose names start
+// with a dot unless the partial name does, as a shell completes them.
+export function browseRows(folder: string, partial: string, directories: readonly Directory[], hideDotted = false): PickerSection[] {
   const children = directories
+    .filter((directory) => !hideDotted || partial.startsWith(".") || !directory.name.startsWith("."))
     .flatMap((directory) => {
       const score = matchScore(partial, directory.name, directory.name)
       return score === null ? [] : [{ score, directory }]
@@ -326,6 +390,8 @@ export function browseRows(folder: string, partial: string, directories: readonl
       name: directory.name,
       path: directory.path,
       isProject: directory.isProject,
+      problem: directory.problem ?? "",
+      note: directory.problem ? problemNote(directory.problemCode) : "",
     }))
   const sections: PickerSection[] = [
     { title: "", rows: folder ? [{ kind: "open", key: `open:${folder}`, path: folder }] : [] },
@@ -334,11 +400,28 @@ export function browseRows(folder: string, partial: string, directories: readonl
   return sections.filter((section) => section.rows.length > 0)
 }
 
-// offersOpenFolder: with no served folder there is no project to list or
-// folder to browse, so the desktop app's Open folder… takes the list's
-// place. Browsers cannot open folders and keep the list.
-export function offersOpenFolder(response: ProjectsResponse, canOpenFolder: boolean): boolean {
-  return canOpenFolder && response.roots.length === 0
+// splitHostInput reads an absolute folder path on a host whose server
+// manages roots (decision 0146): the folder whose children are listed, and
+// the partial child name after the last slash. Input without a slash lists
+// nothing yet (folder "").
+export function splitHostInput(input: string): { folder: string; partial: string } {
+  const slash = input.lastIndexOf("/")
+  if (slash < 0) return { folder: "", partial: input }
+  return { folder: slash === 0 ? "/" : input.slice(0, slash), partial: input.slice(slash + 1) }
+}
+
+// hostParentInput is the browse input one folder up from a folder input
+// ending in a slash; "/" has no parent.
+export function hostParentInput(input: string): string {
+  const folder = input.replace(/\/+$/, "")
+  if (!folder) return "/"
+  return withSlash(folder.slice(0, folder.lastIndexOf("/")) || "/")
+}
+
+// offersOpenFolder: with no served folder there is no project to list, so
+// Open folder… takes the list's place where the server can open one.
+export function offersOpenFolder(response: ProjectsResponse): boolean {
+  return response.manageRoots && response.roots.length === 0
 }
 
 export function selectableRows(sections: readonly PickerSection[]): PickerRow[] {

@@ -195,8 +195,23 @@
   opacity: 1;
 }
 
-.project-option-row.drillable .project-option {
+.project-option-row.drillable .project-option,
+.project-option-row:has(.project-stop) .project-option {
   padding-right: 2rem;
+}
+
+/* Stop serving (decision 0146) sits before a repository's worktree chevron. */
+.project-option-row.drillable .project-stop {
+  right: 1.75rem;
+}
+
+.project-option-row.drillable:has(.project-stop) .project-option {
+  padding-right: 3.5rem;
+}
+
+/* A folder zero cannot read; its title holds the server's explanation. */
+.project-option-meta.project-option-problem {
+  color: var(--color-warning);
 }
 
 .project-option-branch {
@@ -229,4 +244,50 @@
   .project-option-row.drillable .project-option {
     padding-right: 3rem;
   }
+
+  .project-option-row.drillable .project-stop {
+    right: 2.5rem;
+  }
+
+  .project-option-row.drillable:has(.project-stop) .project-option {
+    padding-right: 5rem;
+  }
+}
+
+/* A project folder zero cannot read (decision 0146): the reason, then the
+   ways out, on the error notice's own colors. */
+.folder-problem p {
+  margin: 0;
+}
+
+.folder-problem-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.folder-problem-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: inherit;
+  font-size: var(--text-label);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.folder-problem-link svg {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+}
+
+.folder-problem-link:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.folder-problem .folder-problem-failure {
+  margin-top: var(--space-2);
 }

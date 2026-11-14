@@ -119,15 +119,9 @@ type DaemonPathRequest struct {
 	Path string `json:"path"`
 }
 
-// DaemonOpenResult is POST /_daemon/open's answer: the root serving the
-// path, whether it was added, the roots it replaced (inside it), and the
-// project that shows the path.
-type DaemonOpenResult struct {
-	Root     string   `json:"root"`
-	Added    bool     `json:"added"`
-	Replaced []string `json:"replaced"`
-	Project  string   `json:"project"`
-}
+// DaemonOpenResult is POST /_daemon/open's answer, the same shape as POST
+// /api/roots's.
+type DaemonOpenResult = OpenedRoot
 
 // DaemonStatusEvent is the control stream's first event.
 type DaemonStatusEvent struct {

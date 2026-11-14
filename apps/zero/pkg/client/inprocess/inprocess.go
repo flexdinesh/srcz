@@ -41,6 +41,14 @@ func (c *Client) Directories(ctx context.Context, path string) (contract.Directo
 	return call(ctx, func() (contract.DirectoriesResponse, error) { return c.app.Projects.Directories(path) })
 }
 
+func (c *Client) OpenRoot(ctx context.Context, path string) (contract.OpenedRoot, error) {
+	return call(ctx, func() (contract.OpenedRoot, error) { return c.app.Projects.OpenRoot(path) })
+}
+
+func (c *Client) RemoveRoot(ctx context.Context, root string) (contract.RemovedRoot, error) {
+	return call(ctx, func() (contract.RemovedRoot, error) { return c.app.Projects.RemoveRoot(root) })
+}
+
 func (c *Client) Page(ctx context.Context, request contract.PageRequest) (contract.PageData, error) {
 	if err := ctx.Err(); err != nil {
 		return contract.PageData{}, err

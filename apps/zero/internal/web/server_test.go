@@ -811,6 +811,8 @@ func TestEveryAPIFixtureDecodesStrictly(t *testing.T) {
 		{"blame*.json", func() any { return &contract.BlameResponse{} }},
 		{"projects.json", func() any { return &contract.ProjectsResponse{} }},
 		{"directories.json", func() any { return &contract.DirectoriesResponse{} }},
+		{"roots-opened.json", func() any { return &contract.OpenedRoot{} }},
+		{"roots-removed.json", func() any { return &contract.RemovedRoot{} }},
 		{"navigation-status.json", func() any { return &contract.NavigationStatus{} }},
 		{"definition.json", func() any { return &contract.NavigationResult{} }},
 		{"references.json", func() any { return &contract.NavigationResult{} }},

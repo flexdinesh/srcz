@@ -6,15 +6,11 @@ import (
 	"mime"
 	"net/http"
 	"os"
-	"path/filepath"
-	"slices"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/flexdinesh/zero/internal/app"
-	"github.com/flexdinesh/zero/internal/files"
-	"github.com/flexdinesh/zero/internal/projects"
 	"github.com/flexdinesh/zero/pkg/contract"
 )
 
@@ -78,30 +74,22 @@ type errorResponse = contract.ErrorResponse
 
 // Controller owns the daemon control operations and serves them as
 // /_daemon/* (Handler); in-process clients call its typed operations
-// directly (pkg/client). Adds and saves serialize under mu; a save writes the
-// served roots plus the roots skipped at load, so an unmounted drive is not
-// forgotten. Control streams end when done closes.
+// directly (pkg/client). Roots serializes adds and saves. Control streams
+// end when done closes.
 type Controller struct {
-	mu        sync.Mutex
-	roots     *projects.RootSet
-	skipped   []string
-	rootsFile string
-	status    Status
-	stop      func()
-	done      <-chan struct{}
-	notices   WalkthroughNotices
-	feedback  FeedbackNotices
-	remote    RemoteControl
+	roots    *Roots
+	status   Status
+	stop     func()
+	done     <-chan struct{}
+	notices  WalkthroughNotices
+	feedback FeedbackNotices
+	remote   RemoteControl
 }
 
 // ControllerConfig configures NewController.
 type ControllerConfig struct {
-	// Roots is the served root set, required.
-	Roots *projects.RootSet
-	// Skipped are saved roots skipped at start; saves keep them.
-	Skipped []string
-	// RootsFile receives the roots after each add.
-	RootsFile string
+	// Roots are the served roots and their file, required.
+	Roots *Roots
 	// Status is the daemon's status; Roots is filled from Roots per call.
 	Status Status
 	// Stop asks the daemon to stop; nil does nothing.
@@ -122,7 +110,7 @@ func NewController(config ControllerConfig) *Controller {
 	if stop == nil {
 		stop = func() {}
 	}
-	return &Controller{roots: config.Roots, skipped: config.Skipped, rootsFile: config.RootsFile, status: config.Status, stop: stop, done: config.Done, notices: config.Notices, feedback: config.Feedback, remote: config.Remote}
+	return &Controller{roots: config.Roots, status: config.Status, stop: stop, done: config.Done, notices: config.Notices, feedback: config.Feedback, remote: config.Remote}
 }
 
 func pid() int { return os.Getpid() }
@@ -210,15 +198,13 @@ func answerRemote(w http.ResponseWriter) func(contract.DaemonRemote, error) {
 // Status is the daemon's status with the current roots.
 func (c *Controller) Status() Status {
 	status := c.status
-	status.Roots = nonNil(c.roots.List())
+	status.Roots = nonNil(c.roots.Set().List())
 	return status
 }
 
 // Roots returns the served roots and the saved roots skipped at start.
 func (c *Controller) Roots() contract.DaemonRoots {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return rootsResponse{Roots: nonNil(c.roots.List()), Skipped: nonNil(slices.Clone(c.skipped))}
+	return c.roots.List()
 }
 
 // decodeRequest reads a strict JSON body of at most maxControlRequest into
@@ -243,27 +229,15 @@ func (c *Controller) addRoot(w http.ResponseWriter, r *http.Request) {
 	if !decodeRequest(w, r, &request, `{"path": "/absolute/path"}`) {
 		return
 	}
-	if !filepath.IsAbs(request.Path) {
-		writeJSON(w, http.StatusBadRequest, errorResponse{Error: "Root path must be absolute.", Code: "invalidRoot"})
-		return
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	root, added, err := c.roots.Add(request.Path)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, errorResponse{Error: err.Error(), Code: "invalidRoot"})
-		return
-	}
-	if !added {
+	switch {
+	case err != nil:
+		writeError(w, err)
+	case !added:
 		writeJSON(w, http.StatusOK, addRootResponse{Root: root})
-		return
+	default:
+		writeJSON(w, http.StatusCreated, addRootResponse{Root: root, Added: true})
 	}
-	c.skipped = slices.DeleteFunc(c.skipped, func(skipped string) bool { return skipped == root })
-	if err := SaveRoots(c.rootsFile, append(c.roots.List(), c.skipped...)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, errorResponse{Error: "The root is served until the daemon stops but was not saved: " + err.Error(), Code: "rootsNotSaved"})
-		return
-	}
-	writeJSON(w, http.StatusCreated, addRootResponse{Root: root, Added: true})
 }
 
 // serveOpen answers POST /_daemon/open (Open): 201 when the path became a
@@ -285,33 +259,11 @@ func (c *Controller) serveOpen(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, status, result)
 }
 
-// Open serves a path, an absolute directory: within a served root nothing
-// changes; otherwise the path becomes a root, replacing the roots inside it,
-// and is saved. It returns the project that shows the path.
+// Open serves a path, an absolute directory zero can read: within a served
+// root nothing changes; otherwise the path becomes a root, replacing the
+// roots inside it, and is saved. It returns the project that shows the path.
 func (c *Controller) Open(path string) (OpenResult, error) {
-	if !filepath.IsAbs(path) {
-		return OpenResult{}, &app.Error{Kind: contract.KindInvalid, Code: contract.CodeInvalidRoot, Message: "Path must be absolute."}
-	}
-	c.mu.Lock()
-	root, added, replaced, err := c.roots.Cover(path)
-	if err != nil {
-		c.mu.Unlock()
-		return OpenResult{}, &app.Error{Kind: contract.KindInvalid, Code: contract.CodeInvalidRoot, Message: err.Error()}
-	}
-	if added {
-		c.skipped = slices.DeleteFunc(c.skipped, func(skipped string) bool { return files.Within(root, skipped) })
-		if err := SaveRoots(c.rootsFile, append(c.roots.List(), c.skipped...)); err != nil {
-			c.mu.Unlock()
-			return OpenResult{}, &app.Error{Kind: contract.KindInternal, Code: contract.CodeRootsNotSaved, Message: "The root is served until the daemon stops but was not saved: " + err.Error()}
-		}
-	}
-	roots := c.roots.List()
-	c.mu.Unlock()
-	project, err := projects.ProjectFor(roots, filepath.Clean(path))
-	if err != nil {
-		return OpenResult{}, &app.Error{Kind: contract.KindNotFound, Code: contract.CodeProjectUnavailable, Message: "No project shows " + path + ": " + err.Error()}
-	}
-	return OpenResult{Root: root, Added: added, Replaced: nonNil(replaced), Project: project}, nil
+	return c.roots.Open(path)
 }
 
 // announce tells control streams that a walkthrough was published to the

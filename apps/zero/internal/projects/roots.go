@@ -94,3 +94,17 @@ func (s *RootSet) Cover(path string) (root string, added bool, replaced []string
 	s.roots = roots
 	return dir, true, replaced, nil
 }
+
+// Remove stops serving root, which must be one of the roots exactly, and
+// reports whether it was one.
+func (s *RootSet) Remove(root string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i, other := range s.roots {
+		if other == root {
+			s.roots = append(s.roots[:i:i], s.roots[i+1:]...)
+			return true
+		}
+	}
+	return false
+}

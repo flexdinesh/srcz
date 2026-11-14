@@ -84,6 +84,17 @@ Zero serves in a browser instead, as `zero browser` does, when:
 (an SSH session, or Linux without a display), `zero [path]` tells you to use
 `--remote` ([Remote hosts](/docs/remote)).
 
+## Open a folder
+
+**File › Open Folder…** (**Cmd+O** on macOS, **Ctrl+O** on Linux) opens the
+project picker's folder browser, in local and remote windows alike
+([Open and stop serving folders](/docs/usage#open-and-stop-serving-folders)).
+
+On macOS the daemon, not the app, reads your files, so macOS may block it
+from folders such as Downloads or Documents. Zero then refuses the folder and
+names the binary to allow in **System Settings › Privacy & Security › Full
+Disk Access**; **Open Privacy Settings** goes there.
+
 ## Tabs
 
 **Cmd+W** on macOS or **Ctrl+W** on Linux closes the active tab. Closing the

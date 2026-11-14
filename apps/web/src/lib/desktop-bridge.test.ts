@@ -3,14 +3,10 @@ import test from "node:test"
 
 import { desktopBridge, readDesktopBridge, type NativeMenuItem } from "./desktop-bridge.ts"
 
-test("a version 1 bridge opens folders through the exposed function", () => {
-  const calls: unknown[] = []
-  const exposed = { version: 1, openFolder(this: unknown) { calls.push(this) } }
-  const bridge = readDesktopBridge(exposed)
+test("a version 1 bridge is read; folders open in the page, not through it (decision 0146)", () => {
+  const bridge = readDesktopBridge({ version: 1, openFolder() {} })
   assert.equal(bridge?.version, 1)
-  const open = bridge?.openFolder
-  open?.()
-  assert.deepEqual(calls, [exposed])
+  assert.equal(bridge !== null && "openFolder" in bridge, false)
 })
 
 test("showAppMenu passes the point through when exposed and is null otherwise", () => {
@@ -108,12 +104,10 @@ test("each later method is feature-detected: a version 1 bridge or non-functions
 test("a remote window's bridge has its window's methods and nothing of this machine", () => {
   const remote = readDesktopBridge({ version: 2, closeWindow() {}, showAppMenu() {}, showContextMenu: () => Promise.resolve(null) })
   assert.notEqual(remote, null)
-  assert.equal(remote?.openFolder, null)
   assert.equal(remote?.revealPath, null)
   assert.equal(typeof remote?.closeWindow, "function")
   assert.equal(typeof remote?.showAppMenu, "function")
   assert.equal(typeof remote?.showContextMenu, "function")
-  assert.equal(readDesktopBridge({ version: 1, openFolder: "open" })?.openFolder, null)
 })
 
 test("invalid versions and non-objects are no bridge", () => {

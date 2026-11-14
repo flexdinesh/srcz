@@ -330,6 +330,9 @@ func TestWebViewApp(t *testing.T) {
 		if got := app.eval(`return window.zeroDesktop.version`); got != float64(2) {
 			t.Errorf("bridge version = %v", got)
 		}
+		if got := app.eval(`return typeof window.zeroDesktop.openFolder`); got != "undefined" {
+			t.Errorf("typeof openFolder = %v; the page browses for folders itself (decision 0146)", got)
+		}
 		if got := app.eval(`return typeof window.zeroDesktop.setAppearance`); got != "function" {
 			t.Errorf("setAppearance = %v", got)
 		}
@@ -570,6 +573,18 @@ func TestWebViewApp(t *testing.T) {
 		app.eval(`[...document.querySelectorAll("button")].find((button) => button.textContent === "Open a folder").click(); return true`)
 		app.waitEval("the picker's Open Folder", `return document.body.innerText.includes("No projects yet.")`)
 		app.capture("no-folder-picker.png")
+		// The picker browses the daemon's disk from home (decision 0146).
+		browsing := `const input = document.querySelector("dialog[open] input"); return input !== null && input.value.startsWith("/") && input.value.endsWith("/")`
+		app.eval(`[...document.querySelectorAll("button")].find((button) => button.textContent === "Open folder…").click(); return true`)
+		app.waitEval("Browse at home", browsing)
+		app.capture("no-folder-browse.png")
+		// File › Open Folder… asks the page for the same Browse.
+		app.eval(`document.querySelector("dialog[open]").close(); return true`)
+		app.waitEval("the picker closed", `return document.querySelector("dialog[open]") === null`)
+		if output, err := exec.Command("xdotool", "key", "--clearmodifiers", "ctrl+o").CombinedOutput(); err != nil {
+			t.Fatalf("xdotool: %v\n%s", err, output)
+		}
+		app.waitEval("Browse from the menu", browsing)
 	})
 
 	t.Run("close shortcut closes the active tab, then the empty window", func(t *testing.T) {
@@ -773,7 +788,7 @@ func TestWebViewApp(t *testing.T) {
 		if got := app.eval(`const b = window.zeroDesktop; return [b.version, typeof b.closeWindow, typeof b.showContextMenu, typeof b.showAppMenu, typeof b.openFolder, typeof b.revealPath]`); fmt.Sprint(got) != "[2 function function function undefined undefined]" {
 			t.Errorf("remote bridge = %v", got)
 		}
-		for _, method := range []string{`"Bridge.RevealPath", ` + strconv.Quote(w.project) + `, "README.md"`, `"Bridge.OpenFolder"`} {
+		for _, method := range []string{`"Bridge.RevealPath", ` + strconv.Quote(w.project) + `, "README.md"`} {
 			if got := app.eval(`try { await window.mygo.call(` + method + `); return "resolved" } catch { return "refused" }`); got != "refused" {
 				t.Errorf("a remote page called %s: %v", method, got)
 			}

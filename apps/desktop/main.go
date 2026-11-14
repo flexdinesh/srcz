@@ -312,7 +312,9 @@ func hostOf(raw string) string {
 
 // staysInApp reports navigation a connection's page may do on its own: its
 // origin. The app's other links route to their own windows; http(s) and mailto
-// open outside; the rest is denied (decision 0067).
+// open outside, and so does macOS's privacy settings link from the local
+// window, whose daemon reads this computer's files (decision 0146); the rest
+// is denied (decision 0067).
 func (h *host) staysInApp(connectionHost, raw string) bool {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -330,6 +332,10 @@ func (h *host) staysInApp(connectionHost, raw string) bool {
 		go h.openLink(raw)
 	case "http", "https", "mailto":
 		go func() { _ = mygo.Shell.OpenExternal(raw) }()
+	case "x-apple.systempreferences":
+		if connectionHost == proxy.Host && runtime.GOOS == "darwin" {
+			go func() { _ = mygo.Shell.OpenExternal(raw) }()
+		}
 	}
 	return false
 }

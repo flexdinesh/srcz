@@ -5,6 +5,7 @@ import {
   CornerDownLeftIcon,
   FolderGit2Icon,
   FolderIcon,
+  FolderMinusIcon,
   FolderOpenIcon,
   FolderSearchIcon,
   GitBranchIcon,
@@ -27,17 +28,21 @@ import {
   canDrill,
   currentGroup,
   groupName,
+  hostParentInput,
   offersOpenFolder,
   parentInput,
   projectSections,
   selectableRows,
   splitBrowseInput,
+  splitHostInput,
+  visibleWarnings,
+  within,
+  withSlash,
   type PickerRow,
   type PickerSection,
 } from "./project-picker.ts"
 import type { DirectoriesResponse, ProjectsResponse } from "@zero/contracts"
-import { fetchDirectories, fetchProjects, takeLandingPick } from "../../api/projects-data.ts"
-import { desktopBridge } from "../../lib/desktop-bridge.ts"
+import { fetchDirectories, fetchProjects, openRoot, removeRoot, takeLandingPick } from "../../api/projects-data.ts"
 import { useDelayedFlag } from "../../lib/use-delayed-flag.ts"
 import { forgetProject, readMemory, rememberedProjects, updateMemory } from "../../workspace/workspace-memory.ts"
 
@@ -49,6 +54,8 @@ type Load<T> =
 export interface PickerOpenOptions {
   // worktrees opens on the current project's repository worktrees.
   worktrees?: boolean
+  // browse opens on Open folder…'s folder browser (decision 0146).
+  browse?: boolean
 }
 
 interface ProjectPickerProps {
@@ -72,7 +79,9 @@ function errorMessage(error: unknown, fallback: string): string {
 
 // ProjectPicker is a quick pick: Projects lists served folders, discovered
 // repositories (each opening into its worktrees), and opened folders; Browse
-// walks folders under the served roots that are not inside a repository.
+// walks folders that are not inside a repository: anywhere on the host when
+// its server manages roots, opening one serves it (decision 0146), else
+// under the served roots.
 export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -92,20 +101,38 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
   const [directories, setDirectories] = useState<ReadonlyMap<string, Load<DirectoriesResponse>>>(() => new Map())
   const [memoryVersion, setMemoryVersion] = useState(0)
   const [activeKey, setActiveKey] = useState("")
+  // change is a served-folder change in flight or its failure.
+  const [change, setChange] = useState<{ kind: "busy"; text: string } | { kind: "error"; text: string } | null>(null)
+  const changeController = useRef<AbortController | null>(null)
 
-  const loadProjects = useCallback(() => {
+  // enterBrowse starts Browse: the host's home where the server manages
+  // roots, else the served roots.
+  const enterBrowse = useCallback((value: ProjectsResponse | null) => {
+    setMode("browse")
+    setPath(value?.manageRoots === true ? "" : browseStart(value?.roots.map((root) => root.path) ?? noRoots))
+    setActiveKey("")
+    setChange(null)
+    input.current?.focus()
+  }, [])
+
+  // loadProjects reads projects; browse enters Browse once they load
+  // (PickerOpenOptions.browse).
+  const loadProjects = useCallback((browse = false) => {
     controller.current?.abort()
     const next = new AbortController()
     controller.current = next
     setProjects((current) => ({ kind: "loading", previous: loaded(current) }))
     fetchProjects(next.signal).then(
-      (value) => setProjects({ kind: "ready", value }),
+      (value) => {
+        setProjects({ kind: "ready", value })
+        if (browse) enterBrowse(value)
+      },
       (error: unknown) => {
         if (isAbort(error)) return
         setProjects((current) => ({ kind: "error", message: errorMessage(error, "Couldn't list projects."), previous: loaded(current) }))
       },
     )
-  }, [])
+  }, [enterBrowse])
 
   const show = useCallback((options?: PickerOpenOptions) => {
     const element = dialog.current
@@ -120,17 +147,19 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
     setQuery("")
     setGroup("")
     setFollowCurrent(options?.worktrees === true)
+    setChange(null)
     setPath("")
     setActiveKey("")
     // Re-read memory: projects opened since mount changed it.
     setMemoryVersion((version) => version + 1)
     setOpen(true)
-    loadProjects()
+    loadProjects(options?.browse === true)
     input.current?.focus()
   }, [loadProjects])
 
   const close = useCallback(() => {
     controller.current?.abort()
+    changeController.current?.abort()
     if (dialog.current?.open) dialog.current.close()
     setOpen(false)
     returnFocus.current?.focus({ preventScroll: true })
@@ -155,7 +184,9 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
 
   const projectList = loaded(projects)
   const roots = useMemo(() => projectList?.roots.map((root) => root.path) ?? noRoots, [projectList])
-  const { folder, partial } = splitBrowseInput(path, roots)
+  // host browses anywhere on the server's host (decision 0146).
+  const host = projectList?.manageRoots === true
+  const { folder, partial } = host ? splitHostInput(path) : splitBrowseInput(path, roots)
   useEffect(() => {
     if (!open || mode !== "browse" || directoryCache.current.has(folder)) return
     const store = (load: Load<DirectoriesResponse>) => {
@@ -165,7 +196,13 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
     const abort = new AbortController()
     store({ kind: "loading", previous: null })
     fetchDirectories(folder, abort.signal).then(
-      (value) => store({ kind: "ready", value }),
+      (value) => {
+        // An empty host path lists the home folder: cache it under its path
+        // before storing, so typing it in finds the listing, then type it in.
+        if (host && folder === "") directoryCache.current.set(value.path, { kind: "ready", value })
+        store({ kind: "ready", value })
+        if (host && folder === "") setPath((current) => current === "" ? withSlash(value.path) : current)
+      },
       (error: unknown) => {
         if (isAbort(error)) {
           directoryCache.current.delete(folder)
@@ -175,19 +212,18 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
       },
     )
     return () => abort.abort()
-  }, [folder, mode, open])
+  }, [folder, host, mode, open])
 
   // Read on render so a forgotten folder (memoryVersion) disappears at once.
   const remembered = useMemo(() => memoryVersion >= 0 ? rememberedProjects(readMemory()) : [], [memoryVersion])
   const listedGroup = followCurrent ? projectList ? currentGroup(projectList, project) : "" : group
   const folderLoad = directories.get(folder) ?? null
-  const bridge = desktopBridge()
-  const openFolderOffered = mode === "projects" && projectList !== null && offersOpenFolder(projectList, bridge?.openFolder != null)
+  const openFolderOffered = mode === "projects" && projectList !== null && offersOpenFolder(projectList)
   const sections: PickerSection[] = useMemo(() => {
-    if (mode === "browse") return browseRows(folder, partial, loaded(folderLoad)?.directories ?? [])
+    if (mode === "browse") return browseRows(folder, partial, loaded(folderLoad)?.directories ?? [], host)
     if (openFolderOffered) return []
     return projectList ? projectSections(projectList, remembered, project, query, listedGroup) : []
-  }, [folder, folderLoad, listedGroup, mode, openFolderOffered, partial, project, projectList, query, remembered])
+  }, [folder, folderLoad, host, listedGroup, mode, openFolderOffered, partial, project, projectList, query, remembered])
   const rows = useMemo(() => selectableRows(sections), [sections])
   const active = rows.find((row) => row.key === activeKey) ?? rows[0]
   const scanning = useDelayedFlag(open && mode === "projects" && projects?.kind === "loading", 150)
@@ -203,17 +239,61 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
     if (id !== project) onOpen(id)
   }
 
-  function openFolder() {
-    close()
-    bridge?.openFolder?.()
+  // serveFolder asks the server to serve a folder on its host, then opens
+  // its project; a refusal stays in the picker (decision 0146).
+  function serveFolder(folderPath: string) {
+    changeController.current?.abort()
+    const abort = new AbortController()
+    changeController.current = abort
+    setChange({ kind: "busy", text: "Opening folder…" })
+    openRoot(folderPath, abort.signal).then(
+      (opened) => {
+        setChange(null)
+        close()
+        if (opened.project !== project) onOpen(opened.project)
+      },
+      (error: unknown) => {
+        if (isAbort(error)) return
+        setChange({ kind: "error", text: errorMessage(error, "Couldn't open the folder.") })
+        input.current?.focus()
+      },
+    )
   }
 
-  function startBrowse() {
-    setMode("browse")
-    setPath(browseStart(roots))
-    setActiveKey("")
-    input.current?.focus()
+  // stopServing stops serving a root. Leaving the current project's root
+  // lands on the next served project, or none (decision 0146).
+  function stopServing(root: string) {
+    changeController.current?.abort()
+    const abort = new AbortController()
+    changeController.current = abort
+    setChange({ kind: "busy", text: "Stopping…" })
+    removeRoot(root, abort.signal).then(
+      () => {
+        setChange(null)
+        if (within(project, root)) {
+          close()
+          onOpen("")
+          return
+        }
+        loadProjects()
+        input.current?.focus()
+      },
+      (error: unknown) => {
+        if (isAbort(error)) return
+        setChange({ kind: "error", text: errorMessage(error, "Couldn't stop serving the folder.") })
+        input.current?.focus()
+      },
+    )
   }
+
+  // openFolder opens a folder the browser chose: a host folder is served
+  // first; a folder under the roots opens as its project.
+  function openFolder(folderPath: string) {
+    if (host) serveFolder(folderPath)
+    else openProject(folderPath)
+  }
+
+  const startBrowse = useCallback(() => enterBrowse(projectList), [enterBrowse, projectList])
 
   // listGroup lists a repository's worktrees, or projects again for "".
   function listGroup(next: string) {
@@ -234,11 +314,11 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
         startBrowse()
         return
       case "open":
-        openProject(row.path)
+        openFolder(row.path)
         return
       case "directory":
         if (row.isProject) {
-          openProject(row.path)
+          openFolder(row.path)
           return
         }
         setPath(`${row.path}/`)
@@ -255,6 +335,7 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
 
   function changeInput(value: string) {
     setActiveKey("")
+    if (change?.kind === "error") setChange(null)
     if (mode === "projects") {
       if (!query && !listedGroup && (value === "/" || value === "./")) {
         startBrowse()
@@ -275,7 +356,7 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
       setActiveKey(rows[(index + step + rows.length) % rows.length]?.key ?? "")
     } else if (event.key === "Enter") {
       event.preventDefault()
-      if (!active && openFolderOffered) openFolder()
+      if (!active && openFolderOffered) startBrowse()
       else activate(active)
     } else if (event.key === "Escape") {
       event.preventDefault()
@@ -300,13 +381,15 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
         setActiveKey("")
       } else if (path.endsWith("/") && event.currentTarget.selectionStart === path.length) {
         event.preventDefault()
-        setPath(parentInput(path, roots))
+        setPath(host ? hostParentInput(path) : parentInput(path, roots))
         setActiveKey("")
       }
     }
   }
 
-  const status = mode === "projects"
+  const status = change
+    ? { tone: change.kind === "error" ? "error" : "muted", text: change.text }
+    : mode === "projects"
     ? projects?.kind === "error"
       ? { tone: "error", text: projects.message }
       : scanning
@@ -325,7 +408,7 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
           : null
   const listedName = listedGroup && projectList ? groupName(projectList, listedGroup) : ""
   const label = mode === "browse" ? "Folder path" : listedGroup ? `Switch ${listedName} worktree` : "Switch project"
-  const warnings = mode === "projects" ? projectList?.warnings ?? [] : []
+  const warnings = mode === "projects" && projectList ? visibleWarnings(projectList) : []
   const activeID = active ? `project-option-${active.key}` : undefined
 
   return (
@@ -370,10 +453,10 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
         {(status || warnings.length > 0) && (
           <div className={`search-status project-status${status?.tone === "error" ? " search-status-error" : ""}`} role="status" aria-live="polite">
             {status && <span>{status.text}</span>}
-            {status?.tone === "error" && mode === "projects" && (
-              <Button variant="outline" onClick={loadProjects}>Retry</Button>
+            {status?.tone === "error" && mode === "projects" && !change && (
+              <Button variant="outline" onClick={() => loadProjects()}>Retry</Button>
             )}
-            {status?.tone === "empty" && <Button variant="outline" onClick={openFolder}>Open folder…</Button>}
+            {status?.tone === "empty" && <Button variant="outline" onClick={startBrowse}>Open folder…</Button>}
             {!status && warnings.length > 0 && (
               <span title={warnings.join("\n")}>
                 {warnings.length === 1 ? "1 folder couldn't be read." : `${warnings.length} folders couldn't be read.`}
@@ -392,7 +475,8 @@ export function ProjectPicker({ project, registerOpen, onOpen }: ProjectPickerPr
                   onActivate={() => activate(row)}
                   onHover={() => setActiveKey(row.key)}
                   onDrill={canDrill(row) ? () => listGroup(row.group) : undefined}
-                  onForget={row.kind === "project" && row.projectKind === "opened" && !row.current ? () => forget(row.id) : undefined} />
+                  onForget={row.kind === "project" && row.projectKind === "opened" && !row.current ? () => forget(row.id) : undefined}
+                  onStopServing={host && row.kind === "project" && row.servedRoot && change?.kind !== "busy" ? () => stopServing(row.servedRoot) : undefined} />
               ))}
             </div>
           ))}
@@ -409,9 +493,10 @@ interface PickerOptionProps {
   onHover(): void
   onDrill?(): void
   onForget?(): void
+  onStopServing?(): void
 }
 
-function PickerOption({ row, active, onActivate, onHover, onDrill, onForget }: PickerOptionProps) {
+function PickerOption({ row, active, onActivate, onHover, onDrill, onForget, onStopServing }: PickerOptionProps) {
   const disabled = row.kind === "project" && row.disabled
   return (
     <div className={onDrill ? "project-option-row drillable" : "project-option-row"} data-key={row.key}>
@@ -438,6 +523,11 @@ function PickerOption({ row, active, onActivate, onHover, onDrill, onForget }: P
         <IconButton size="xs" className="project-forget" tabIndex={-1}
           label={`Forget ${row.kind === "project" ? row.path : ""}`} title="Remove from opened folders"
           icon={<XIcon aria-hidden="true" />} onClick={onForget} />
+      )}
+      {onStopServing && row.kind === "project" && (
+        <IconButton size="xs" className="project-forget project-stop" tabIndex={-1}
+          label={`Stop serving ${row.path}`} title="Stop serving this folder"
+          icon={<FolderMinusIcon aria-hidden="true" />} onClick={onStopServing} />
       )}
     </div>
   )
@@ -482,7 +572,9 @@ export function OptionText({ row }: { row: PickerRow }) {
       return <>
         <span className="project-option-name">{row.name}</span>
         <span className="project-option-grow" />
-        {row.isProject && <span className="project-option-meta">git · opens whole</span>}
+        {row.problem
+          ? <span className="project-option-meta project-option-problem" title={row.problem}>{row.note}</span>
+          : row.isProject && <span className="project-option-meta">git · opens whole</span>}
       </>
     case "project":
       return <>
@@ -493,7 +585,7 @@ export function OptionText({ row }: { row: PickerRow }) {
           ? row.location !== row.name && <OptionPath path={row.location} title={row.path} />
           : <span className="project-option-path" title={row.path}>served folder</span>}
         <span className="project-option-grow" />
-        {row.disabled && <span className="project-option-meta">{row.note}</span>}
+        {row.disabled && <span className={row.problem ? "project-option-meta project-option-problem" : "project-option-meta"} title={row.problem || undefined}>{row.note}</span>}
         {row.worktrees > 1 && <span className="project-option-meta">{row.worktrees} worktrees</span>}
         {row.current && <span className="project-option-current"><CheckIcon aria-hidden="true" />Current</span>}
       </>

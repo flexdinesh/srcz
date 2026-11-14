@@ -40,6 +40,9 @@ type Config struct {
 	SessionKey string
 	// Presence makes pages hold /api/presence while open.
 	Presence bool
+	// RootControl opens and stops serving roots for clients (decision
+	// 0146); nil serves Roots as they are.
+	RootControl app.RootControl
 }
 
 // Runtime is the composed web application.
@@ -54,7 +57,7 @@ type Runtime struct {
 // New builds the web app over document.Builtins(); language servers, the
 // watch hub, and the walkthrough service use web.New's defaults.
 func New(config Config) (*Runtime, error) {
-	app, err := web.New(web.Config{Roots: config.Roots, ScanDepth: config.ScanDepth, Depth: config.Depth, Types: document.Builtins(), OpenBrowser: config.OpenBrowser, SessionKey: config.SessionKey, Presence: config.Presence})
+	app, err := web.New(web.Config{Roots: config.Roots, ScanDepth: config.ScanDepth, Depth: config.Depth, Types: document.Builtins(), OpenBrowser: config.OpenBrowser, SessionKey: config.SessionKey, Presence: config.Presence, RootControl: config.RootControl})
 	if err != nil {
 		return nil, fmt.Errorf("create web interface: %w", err)
 	}
