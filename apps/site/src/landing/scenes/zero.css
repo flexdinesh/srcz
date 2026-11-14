@@ -1,0 +1,387 @@
+/*
+ * The landing scenes' look (decision 0141): the vendored Stageshow kit's tokens
+ * mapped to the landing's slate tokens, so every scene follows the page's light
+ * and dark themes, plus the faux zero app's chrome. Scoped under .zs.
+ */
+
+.zs .ss-stage {
+  --ss-canvas: var(--l-bg);
+  --ss-surface: var(--l-surface);
+  --ss-chrome: var(--l-chrome);
+  --ss-raised: var(--l-surface);
+  --ss-well: transparent;
+  --ss-line: var(--l-border);
+  --ss-line-faint: var(--l-surface-2);
+  --ss-text: var(--l-text-2);
+  --ss-text-strong: var(--l-text);
+  --ss-text-faint: var(--l-muted);
+  --ss-icon: var(--l-muted);
+  --ss-icon-faint: var(--l-border);
+  --ss-accent: var(--l-accent);
+  --ss-accent-2: var(--l-accent);
+  --ss-accent-soft: var(--l-accent-subtle);
+  --ss-accent-text: var(--l-accent);
+  --ss-success: var(--l-add-mark);
+  --ss-success-text: var(--l-add-mark);
+  --ss-danger: var(--l-del-mark);
+  --ss-ink-1: light-dark(rgb(0 0 0 / 0.04), rgb(255 255 255 / 0.04));
+  --ss-ink-2: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.06));
+  --ss-ink-3: light-dark(rgb(0 0 0 / 0.08), rgb(255 255 255 / 0.08));
+  --ss-ink-4: light-dark(rgb(0 0 0 / 0.1), rgb(255 255 255 / 0.1));
+  --ss-ink-5: light-dark(rgb(0 0 0 / 0.15), rgb(255 255 255 / 0.15));
+  --ss-font: var(--l-mono);
+  --ss-mono: var(--l-mono);
+  --ss-radius-sm: 2px;
+  --ss-radius-md: 2px;
+  --ss-radius-lg: 3px;
+  --ss-radius-window: 10px;
+  --ss-shadow-hero:
+    0 0 0 1px light-dark(rgb(36 39 44 / 0.14), rgb(0 0 0 / 0.5)),
+    0 30px 60px -12px light-dark(rgb(36 45 70 / 0.22), rgb(0 0 0 / 0.5)),
+    0 18px 36px -18px light-dark(rgb(0 0 0 / 0.24), rgb(0 0 0 / 0.5));
+  --ss-shadow-satellite:
+    0 0 0 1px light-dark(rgb(36 39 44 / 0.16), rgb(0 0 0 / 0.55)),
+    0 14px 32px -8px light-dark(rgb(36 45 70 / 0.26), rgb(0 0 0 / 0.55)),
+    0 4px 10px -4px light-dark(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.4));
+  --ss-term-bg: light-dark(#1f2228, #1b1e23);
+
+  font-family: var(--l-mono);
+  font-variant-ligatures: none;
+  color: var(--l-text);
+}
+
+/* The window: the app's title band, then its workspace. */
+.zs .zs-window {
+  background: var(--l-surface);
+  box-shadow: var(--ss-shadow-hero);
+}
+
+.zs .zs-window > .ss-window__bar {
+  background: var(--l-chrome);
+  border-bottom: 1px solid var(--l-border);
+}
+
+.zs .zs-window .ss-window__title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--l-text-2);
+}
+
+.zs .zs-window > .ss-window__body {
+  flex: 1;
+  min-height: 0;
+  background: var(--l-surface);
+}
+
+.zs .zs-workspace {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.zs .zs-activity {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  width: 40px;
+  padding-top: 8px;
+  background: var(--l-chrome);
+  border-right: 1px solid var(--l-border);
+}
+
+.zs .zs-activity-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 32px;
+  color: var(--l-muted);
+}
+
+.zs .zs-activity-item svg {
+  width: 16px;
+  height: 16px;
+}
+
+.zs .zs-activity-item[data-active] {
+  color: var(--l-text);
+  box-shadow: inset 2px 0 0 var(--l-accent);
+}
+
+.zs .zs-activity-badge {
+  position: absolute;
+  right: 7px;
+  bottom: 4px;
+  min-width: 12px;
+  padding: 0 3px;
+  font-size: 9px;
+  line-height: 12px;
+  text-align: center;
+  color: var(--l-on-accent);
+  background: var(--l-accent);
+}
+
+.zs .zs-side {
+  flex: none;
+  width: 196px;
+  min-width: 0;
+  border-right: 1px solid var(--l-border);
+  background: var(--l-surface);
+}
+
+.zs .zs-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Tabs */
+.zs .zs-tabs {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  height: 32px;
+  background: var(--l-chrome);
+  border-bottom: 1px solid var(--l-border);
+}
+
+.zs .zs-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  color: var(--l-muted);
+  border-right: 1px solid var(--l-border);
+  white-space: nowrap;
+}
+
+.zs .zs-tab svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+}
+
+.zs .zs-tab[data-active] {
+  color: var(--l-text);
+  background: var(--l-surface);
+  box-shadow: inset 0 2px 0 var(--l-accent);
+  margin-bottom: -1px;
+}
+
+.zs .zs-tab .zs-tab-close {
+  width: 11px;
+  height: 11px;
+  color: var(--l-muted);
+}
+
+.zs .zs-tabs-trailing {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-right: 10px;
+}
+
+/* File bands and counts */
+.zs .zs-band {
+  will-change: transform;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 12px 0 8px;
+  font-size: 11.5px;
+  color: var(--l-text);
+  background: var(--l-chrome);
+  border-bottom: 1px solid var(--l-border);
+  white-space: nowrap;
+}
+
+.zs .zs-band-chevron {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--l-muted);
+}
+
+.zs .zs-ts {
+  flex: none;
+  padding: 0 2px;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 10px;
+  color: var(--l-on-accent);
+  background: var(--l-accent);
+}
+
+.zs .zs-band-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zs .zs-counts {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.zs .zs-add {
+  color: var(--l-add-mark);
+}
+
+.zs .zs-del {
+  color: var(--l-del-mark);
+}
+
+.zs .zs-band-status {
+  width: 10px;
+  font-weight: 650;
+  color: var(--l-number);
+}
+
+.zs .zs-band-status[data-status='A'] {
+  color: var(--l-add-mark);
+}
+
+.zs .zs-viewed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--l-muted);
+}
+
+.zs .zs-viewed svg {
+  width: 13px;
+  height: 13px;
+}
+
+.zs .zs-viewed[data-viewed] {
+  color: var(--l-text-2);
+}
+
+/* Diff and source lines */
+.zs .zs-lines {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.zs .zs-line {
+  display: grid;
+  grid-template-columns: 34px 34px minmax(0, 1fr);
+  align-items: center;
+  height: 22px;
+  font-size: 11.5px;
+  line-height: 22px;
+  color: var(--l-text);
+  white-space: pre;
+}
+
+.zs .zs-src {
+  grid-template-columns: 40px minmax(0, 1fr);
+}
+
+.zs .zs-ln {
+  padding-right: 10px;
+  text-align: right;
+  font-size: 10.5px;
+  color: var(--l-line-number);
+}
+
+.zs .zs-code {
+  padding-left: 14px;
+  overflow: hidden;
+}
+
+.zs .zs-line[data-kind='add'] {
+  background: var(--l-add);
+}
+
+.zs .zs-line[data-kind='del'] {
+  background: var(--l-del);
+}
+
+.zs .zs-line[data-kind='add'] .zs-code {
+  box-shadow: inset 2px 0 0 var(--l-add-mark);
+}
+
+.zs .zs-line[data-kind='del'] .zs-code {
+  box-shadow: inset 2px 0 0 var(--l-del-mark);
+}
+
+.zs .zs-line[data-kind='del'] .zs-code > * {
+  color: inherit;
+}
+
+.zs .zs-line[data-kind='del'] {
+  color: var(--l-del-text);
+}
+
+.zs .zs-line > .zs-ln {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.zs .zs-line[data-selected] > .zs-ln {
+  color: var(--l-on-accent);
+  background: var(--l-accent);
+}
+
+.zs .zs-line[data-selected] {
+  box-shadow: inset 0 0 0 1px var(--l-accent);
+}
+
+.zs .zs-src[data-highlight] {
+  background: var(--l-accent-subtle);
+}
+
+.zs .zs-kw {
+  color: var(--l-keyword);
+}
+
+.zs .zs-fn {
+  color: var(--l-function);
+}
+
+.zs .zs-str {
+  color: var(--l-string);
+}
+
+.zs .zs-num {
+  color: var(--l-number);
+}
+
+/* Status bar */
+.zs .zs-status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 14px;
+  height: 24px;
+  padding: 0 12px;
+  font-size: 10.5px;
+  color: var(--l-muted);
+  background: var(--l-chrome);
+  border-top: 1px solid var(--l-border);
+  white-space: nowrap;
+}
+
+/* Terminals keep the landing's mono and the app's dark slate. */
+.zs .ss-window[data-chrome='terminal'] {
+  --ss-term-path: #8fb4f0;
+  --ss-term-sigil: #8a919c;
+  --ss-term-ok: #8fc97a;
+  --ss-term-dim: #8a919c;
+}
+
+.zs .ss-term {
+  font-family: var(--l-mono);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.zs .ss-stage {
+  overflow: hidden;
+}

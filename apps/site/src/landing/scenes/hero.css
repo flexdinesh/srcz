@@ -1,0 +1,228 @@
+/* The hero scene: corner bleed, the window off the right and bottom edges. */
+
+.hs .hs-window {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  width: 780px;
+  height: 560px;
+}
+
+.hs .hs-rest {
+  position: absolute;
+  top: 150px;
+  left: 560px;
+}
+
+/* The thread: an editor zone under its line, in the app's narration treatment. */
+.hs .hs-thread {
+  margin: 6px 24px 8px 82px;
+  max-width: 440px;
+  padding: 10px 12px;
+  font-family: var(--l-sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--l-text);
+  background: var(--l-surface);
+  border: 1px solid var(--l-border);
+  box-shadow: inset 2px 0 0 var(--l-accent);
+}
+
+.hs .hs-thread-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  font-family: var(--l-mono);
+  font-size: 11px;
+}
+
+.hs .hs-thread-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 650;
+  color: var(--l-text);
+}
+
+.hs .hs-thread-status .ss-states {
+  width: 14px;
+  height: 14px;
+}
+
+.hs .hs-thread-status svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}
+
+.hs .hs-thread-status[data-resolved] svg {
+  color: var(--l-add-mark);
+}
+
+.hs .hs-thread-place {
+  color: var(--l-muted);
+}
+
+.hs .hs-message {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-bottom: 8px;
+}
+
+.hs .hs-author {
+  font-family: var(--l-mono);
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--l-text-2);
+}
+
+.hs .hs-agent {
+  color: var(--l-accent);
+}
+
+.hs .hs-time {
+  margin-left: 8px;
+  color: var(--l-muted);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hs .hs-time[data-show] {
+  opacity: 1;
+}
+
+.hs .hs-draft {
+  --ss-draft-pad-y: 3px;
+  line-height: 1.35;
+  --ss-draft-pad-x: 8px;
+  --ss-draft-ring: var(--l-accent);
+  --ss-draft-radius: 0px;
+}
+
+.hs .hs-event {
+  font-family: var(--l-mono);
+  font-size: 10.5px;
+  color: var(--l-muted);
+}
+
+.hs .hs-composer-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 2px;
+  font-family: var(--l-mono);
+  font-size: 10.5px;
+}
+
+.hs .hs-hint {
+  margin-right: auto;
+  color: var(--l-muted);
+}
+
+.hs .hs-button {
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--l-text-2);
+}
+
+.hs .hs-button-primary {
+  color: var(--l-on-accent);
+  background: var(--l-accent);
+}
+
+.hs .hs-folded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--l-text-2);
+}
+
+.hs .hs-folded svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: var(--l-add-mark);
+}
+
+/* The agent's shell comes forward over the lines below the thread. */
+.hs .hs-terminal {
+  position: absolute;
+  right: 40px;
+  bottom: 40px;
+  z-index: 10;
+  width: 404px;
+  height: 180px;
+  opacity: 0;
+  transform: translateY(24px);
+  will-change: transform;
+  transition: opacity 0.12s ease, transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.hs .hs-caret[data-off] {
+  visibility: hidden;
+}
+
+.hs .hs-terminal[data-show] {
+  opacity: 1;
+  transform: none;
+}
+
+.hs .hs-out {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+  color: #c9ced6;
+}
+
+.hs .hs-out-head {
+  color: #f1f1f3;
+}
+
+/* Compact: the column, without the activity bar's old-number column. */
+.hs .ss-stage[data-layout='compact'] .hs-window {
+  top: 16px;
+  left: 16px;
+  width: 400px;
+  height: 520px;
+}
+
+.hs .ss-stage[data-layout='compact'] .zs-activity {
+  display: none;
+}
+
+.hs .ss-stage[data-layout='compact'] .zs-line {
+  grid-template-columns: 0 40px minmax(0, 1fr);
+}
+
+.hs .ss-stage[data-layout='compact'] .zs-code {
+  padding-left: 10px;
+}
+
+.hs .ss-stage[data-layout='compact'] .hs-thread {
+  margin: 6px 58px 8px 16px;
+}
+
+.hs .ss-stage[data-layout='compact'] .zs-viewed {
+  display: none;
+}
+
+.hs .ss-stage[data-layout='compact'] .hs-terminal {
+  right: 16px;
+  bottom: 16px;
+  width: 326px;
+  height: 200px;
+}
+
+.hs .ss-stage[data-layout='compact'] .hs-rest {
+  top: 130px;
+  left: 300px;
+}
+
+.hs .ss-stage[data-layout='compact'] .hs-terminal .ss-term__line {
+  white-space: pre-wrap;
+}

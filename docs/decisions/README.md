@@ -109,7 +109,7 @@ rewriting history; update `Status` on the old record.
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130, restored by 0138 |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
-| [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105 |
+| [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105; panes and row list revised by 0141 |
 | [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |
 | [0108](0108-wider-mark-and-macos-squircle-icon.md) | Wider mark and macOS squircle icon | Accepted; revises 0104 |
 | [0109](0109-neutral-selection-fill.md) | Neutral selection fill | Accepted; revises 0033 |
@@ -142,3 +142,4 @@ rewriting history; update `Status` on the old record.
 | [0138](0138-jetbrains-mono-and-tree-folder-icons.md) | JetBrains Mono, no ligatures, and folder icons in trees | Accepted; supersedes 0130's Plex Mono face; restores 0104's wordmark; amends 0102's tree |
 | [0139](0139-inline-blame.md) | Inline blame on the active line | Accepted; extends 0008, 0083, 0112, 0114, 0115 |
 | [0140](0140-overlay-scrollbars.md) | Overlay scrollbars | Accepted; supersedes 0055's gutters, hover-only thumb, and native bars, and 0102's review gutter hairline |
+| [0141](0141-landing-scenes-and-feedback-row.md) | Landing scenes and the feedback row | Accepted; revises 0106's panes and row list |

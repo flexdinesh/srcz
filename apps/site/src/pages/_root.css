@@ -57,10 +57,11 @@
   font-variant-ligatures: none;
 }
 
-/* Vocs rounds through utility classes in many components, so one rule covers them. */
-*,
-::before,
-::after {
+/* Vocs rounds through utility classes in many components, so one rule covers them.
+   The landing's scenes keep their own radii: windows, lights, and the cursor (decision 0141). */
+:not(:where(.ss-stage *)),
+:not(:where(.ss-stage *))::before,
+:not(:where(.ss-stage *))::after {
   border-radius: 0 !important;
 }
 

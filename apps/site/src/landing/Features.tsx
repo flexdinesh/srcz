@@ -35,7 +35,8 @@ function FeatureCopy({ id }: { id: FeatureId }) {
           <h1>The code viewer for the agentic era.</h1>
           <p className="landing-lede">
             Browse files and review what agents change: diffs, commits, branches, and the walkthroughs agents
-            publish. Read-only and lean. Local, or a remote box served to your laptop.
+            publish. Comment on a line and the agent answers in the thread. Read-only and lean. Local, or a remote
+            box served to your laptop.
           </p>
           <InstallTabs />
           <Actions />
@@ -72,8 +73,9 @@ function FeatureCopy({ id }: { id: FeatureId }) {
         <>
           <h2>Agents walk you through their changes.</h2>
           <p className="landing-lede">
-            An agent publishes a guided tour of the files and diffs it touched. Each step opens its lines with the
-            note inline. Steps pinned to a commit never move; if code drifts, the step says so instead of guessing.
+            An agent publishes a guided tour of the files and diffs it touched. Each step opens its lines, with the
+            story in a panel above them. Steps pinned to a commit never move; if code drifts, the step says so
+            instead of guessing.
           </p>
           <pre className="landing-term">
             <span className="landing-prompt">$</span> zero walkthrough publish walkthrough.json
@@ -90,6 +92,21 @@ function FeatureCopy({ id }: { id: FeatureId }) {
             <DocLink href={links.walkthroughs}>Walkthroughs</DocLink>
             <DocLink href={links.agentSkill}>Agent skill</DocLink>
           </p>
+        </>
+      )
+    case 'feedback':
+      return (
+        <>
+          <h2>Tell the agent what to fix, on the line.</h2>
+          <p className="landing-lede">
+            Comment on diff lines, a whole file, or Source. The agent reads the open threads with the CLI, makes the
+            changes, and replies in each thread; replies appear beside the code as they land. Threads follow their
+            code across edits and stay on your machine.
+          </p>
+          <pre className="landing-term">
+            <span className="landing-prompt">$</span> zero feedback show
+          </pre>
+          <DocLink href={links.feedback}>Review feedback</DocLink>
         </>
       )
     case 'remote':
@@ -129,9 +146,10 @@ export function Features() {
             {feature.id === 'overview' ? null : <p className="landing-feature-label">{feature.label}</p>}
             <FeatureCopy id={feature.id} />
           </div>
-          <div className="landing-feature-visual">
+          <figure className="landing-feature-visual" aria-label={`${feature.label}: the app (synthetic demo)`}>
+            <figcaption className="landing-visual-note">synthetic demo</figcaption>
             <FeaturePane id={feature.id} />
-          </div>
+          </figure>
         </section>
       ))}
     </>

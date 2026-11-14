@@ -1,0 +1,269 @@
+/* The walkthroughs scene: corner bleed, the Walkthroughs view beside a step. */
+
+.ws .ws-window {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  width: 820px;
+  height: 500px;
+}
+
+.ws .zs-side {
+  width: 220px;
+}
+
+/* The Walkthroughs view */
+.ws .ws-view {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: var(--l-text);
+}
+
+.ws .ws-view-head {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  font-weight: 650;
+  border-bottom: 1px solid var(--l-border);
+}
+
+.ws .ws-view-head span {
+  margin-right: auto;
+}
+
+.ws .ws-view-head svg {
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}
+
+.ws .ws-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 8px;
+}
+
+.ws .ws-title {
+  font-family: var(--l-sans);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.ws .ws-meta {
+  font-size: 10px;
+  color: var(--l-muted);
+}
+
+.ws .ws-step {
+  display: grid;
+  grid-template-columns: 14px 14px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 5px 12px;
+}
+
+.ws .ws-step[data-current] {
+  background: var(--l-accent-subtle);
+  box-shadow: inset 0 0 0 1px var(--l-accent);
+}
+
+.ws .ws-step-n {
+  display: grid;
+  place-items: center;
+  height: 15px;
+  font-size: 10.5px;
+  color: var(--l-text-2);
+}
+
+.ws .ws-read {
+  width: 12px;
+  height: 12px;
+  color: var(--l-add-mark);
+}
+
+.ws .ws-step-icon,
+.ws svg.ws-step-icon {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 15px;
+  color: var(--l-muted);
+}
+
+.ws .ws-step-icon svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ws .ws-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ws .ws-step-title,
+.ws .ws-step-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws .ws-step-title {
+  font-family: var(--l-sans);
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.ws .ws-step-meta {
+  font-size: 10px;
+  line-height: 13px;
+  color: var(--l-muted);
+}
+
+/* The narration panel: one pane under the tabs, outside the code's scroll */
+.ws .ws-narration {
+  flex: none;
+  padding: 12px;
+  font-family: var(--l-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--l-text-2);
+  background: var(--l-surface-2);
+  border-bottom: 1px solid var(--l-border);
+}
+
+.ws .ws-narration-head,
+.ws .ws-progress,
+.ws .ws-body {
+  max-width: 352px;
+}
+
+.ws .ws-narration-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws .ws-narration-head svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}
+
+.ws .ws-count {
+  flex: none;
+  font-family: var(--l-mono);
+  font-size: 10px;
+  color: var(--l-muted);
+}
+
+.ws .ws-narration-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--l-text);
+  text-wrap: balance;
+}
+
+.ws .ws-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+.ws .ws-progress {
+  display: flex;
+  gap: 2px;
+  height: 2px;
+  margin-top: 8px;
+}
+
+.ws .ws-progress span {
+  flex: 1;
+  background: var(--l-border);
+}
+
+.ws .ws-progress span[data-state='visited'] {
+  background: var(--l-muted);
+}
+
+.ws .ws-progress span[data-state='current'] {
+  background: var(--l-accent);
+}
+
+.ws .ws-body {
+  margin-top: 8px;
+  color: var(--l-text);
+}
+
+.ws .ws-body code {
+  padding: 0 3px;
+  font-family: var(--l-mono);
+  font-size: 0.9em;
+  background: var(--l-surface);
+}
+
+/* The code: the step's lines lead, the rest steps back */
+.ws .ws-code .zs-src:not([data-highlight]) {
+  opacity: 0.5;
+}
+
+.ws .ws-marker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 12px;
+  font-family: var(--l-sans);
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--l-text-2);
+  background: var(--l-surface-2);
+  border-block: 1px solid var(--l-border);
+}
+
+.ws .ws-marker svg {
+  width: 12px;
+  height: 12px;
+  color: var(--l-accent);
+}
+
+/* Compact: the step alone, as the app shows it on a phone. */
+.ws .ss-stage[data-layout='compact'] .ws-window {
+  top: 16px;
+  left: 16px;
+  width: 326px;
+  height: 400px;
+}
+
+.ws .ss-stage[data-layout='compact'] .zs-side,
+.ws .ss-stage[data-layout='compact'] .zs-activity {
+  display: none;
+}
+
+.ws .ss-stage[data-layout='compact'] .ss-window__title {
+  visibility: hidden;
+}
+
+.ws .ss-stage[data-layout='compact'] .ws-narration-head,
+.ws .ss-stage[data-layout='compact'] .ws-progress,
+.ws .ss-stage[data-layout='compact'] .ws-body {
+  max-width: none;
+}
+
+.ws .ss-stage[data-layout='compact'] .zs-src {
+  grid-template-columns: 32px minmax(0, 1fr);
+  font-size: 10.5px;
+}
+
+.ws .zs-tabs-trailing svg {
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}

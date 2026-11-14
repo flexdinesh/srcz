@@ -1,0 +1,283 @@
+/* The feedback scene: corner bleed, the Feedback view beside the review. */
+
+.fs .fs-window {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  width: 820px;
+  height: 500px;
+}
+
+.fs .zs-side {
+  width: 252px;
+}
+
+/* The Feedback view */
+.fs .fs-view {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: var(--l-text);
+}
+
+.fs .fs-view-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 12px;
+  font-weight: 650;
+  border-bottom: 1px solid var(--l-border);
+}
+
+.fs .fs-view-head span {
+  margin-right: auto;
+}
+
+.fs .fs-view-head svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}
+
+.fs .fs-branch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.fs .fs-branch svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--l-muted);
+}
+
+.fs .fs-meta {
+  display: flex;
+  gap: 8px;
+  padding: 4px 12px 0;
+  font-size: 10.5px;
+  color: var(--l-muted);
+}
+
+.fs .fs-id {
+  color: var(--l-text-2);
+}
+
+.fs .fs-filter {
+  display: flex;
+  margin: 10px 12px 6px;
+  padding: 2px;
+  font-size: 10px;
+  background: var(--l-surface-2);
+}
+
+.fs .fs-filter span {
+  flex: none;
+  padding: 2px 6px;
+  color: var(--l-text-2);
+  white-space: nowrap;
+}
+
+.fs .fs-filter span[data-on] {
+  color: var(--l-text);
+  background: var(--l-surface);
+  box-shadow: 0 0 0 1px var(--l-border);
+}
+
+.fs .fs-group {
+  padding-top: 6px;
+}
+
+.fs .fs-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 10.5px;
+  color: var(--l-text-2);
+}
+
+.fs .fs-ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fs .fs-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) 6px;
+  gap: 8px;
+  align-items: start;
+  padding: 5px 12px 5px 20px;
+}
+
+.fs .fs-row[data-current] {
+  background: var(--l-accent-subtle);
+}
+
+.fs .fs-status {
+  display: grid;
+  place-items: center;
+  height: 15px;
+  color: var(--l-muted);
+}
+
+.fs .fs-status svg {
+  width: 12px;
+  height: 12px;
+}
+
+.fs .fs-status[data-status='resolved'] {
+  color: var(--l-add-mark);
+}
+
+.fs .fs-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fs .fs-row-title,
+.fs .fs-row-meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fs .fs-row-title {
+  font-family: var(--l-sans);
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.fs .fs-row-meta {
+  font-size: 10px;
+  line-height: 13px;
+  color: var(--l-muted);
+}
+
+.fs .fs-new {
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  background: var(--l-accent);
+}
+
+/* The thread zone, in the code after its line */
+.fs .fs-thread {
+  margin: 6px 0 8px 82px;
+  width: 272px;
+  padding: 10px 12px;
+  font-family: var(--l-sans);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--l-text);
+  background: var(--l-surface);
+  border: 1px solid var(--l-border);
+  box-shadow: inset 2px 0 0 var(--l-accent);
+}
+
+.fs .fs-thread-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  font-family: var(--l-mono);
+  font-size: 10.5px;
+}
+
+.fs .fs-thread-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 650;
+}
+
+.fs .fs-thread-status svg {
+  width: 12px;
+  height: 12px;
+  color: var(--l-muted);
+}
+
+.fs .fs-thread-place {
+  margin-right: auto;
+  color: var(--l-muted);
+}
+
+.fs .fs-thread-copy {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}
+
+.fs .fs-thread-action {
+  color: var(--l-text-2);
+}
+
+.fs .fs-message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 8px;
+}
+
+.fs .fs-author {
+  font-family: var(--l-mono);
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--l-text-2);
+}
+
+.fs .fs-author[data-author='agent'] {
+  color: var(--l-accent);
+}
+
+.fs .fs-time {
+  margin-left: 8px;
+  color: var(--l-muted);
+}
+
+.fs .fs-words code {
+  padding: 0 3px;
+  font-family: var(--l-mono);
+  font-size: 0.9em;
+  background: var(--l-surface-2);
+}
+
+.fs .fs-reply {
+  padding: 4px 8px;
+  font-family: var(--l-mono);
+  font-size: 10.5px;
+  color: var(--l-muted);
+  border: 1px solid var(--l-border);
+}
+
+/* Compact: the Feedback view alone, as the app shows it on a phone. */
+.fs .ss-stage[data-layout='compact'] .fs-window {
+  top: 16px;
+  left: 16px;
+  width: 326px;
+  height: 400px;
+}
+
+.fs .ss-stage[data-layout='compact'] .zs-main {
+  display: none;
+}
+
+.fs .ss-stage[data-layout='compact'] .zs-side {
+  flex: 1;
+  width: auto;
+  border-right: 0;
+}
+
+/* A narrow window drops its title: the Feedback view names itself. */
+.fs .ss-stage[data-layout='compact'] .ss-window__title {
+  visibility: hidden;
+}

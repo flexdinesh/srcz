@@ -1,0 +1,172 @@
+/* Remote: overlapping windows. The window is inset top, off the right and
+   bottom; the host's shell sits in front, its right edge on the sidebar line. */
+
+.rs .rs-window {
+  position: absolute;
+  top: 40px;
+  left: 164px;
+  width: 640px;
+  height: 480px;
+}
+
+.rs .rs-terminal {
+  position: absolute;
+  top: 244px;
+  left: 40px;
+  z-index: 2;
+  width: 360px;
+  height: 166px;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.07),
+    var(--ss-shadow-satellite);
+}
+
+.rs .rs-terminal .ss-term > div {
+  color: #c9ced6;
+}
+
+.rs .rs-terminal .rs-gap {
+  margin-top: 8px;
+  color: #8a919c;
+}
+
+.rs .rs-terminal .rs-connect {
+  color: #f1f1f3;
+}
+
+/* Explorer */
+.rs .rs-explorer {
+  display: flex;
+  flex-direction: column;
+  padding-top: 6px;
+}
+
+.rs .rs-explorer-head {
+  padding: 4px 12px 8px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--l-text-2);
+}
+
+.rs .rs-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  margin: 0 6px;
+  padding-right: 8px;
+  font-size: 11.5px;
+  color: var(--l-text);
+  white-space: nowrap;
+}
+
+.rs .rs-row[data-selected] {
+  background: var(--l-accent-subtle);
+  box-shadow: inset 0 0 0 1px var(--l-accent);
+}
+
+.rs .rs-chevron {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  color: var(--l-muted);
+}
+
+.rs .rs-chevron svg,
+.rs .rs-icon svg {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
+
+.rs .rs-icon {
+  flex: none;
+  color: var(--l-accent);
+}
+
+.rs .rs-icon[data-folder] {
+  color: var(--l-muted);
+}
+
+.rs .rs-filler {
+  gap: 8px;
+}
+
+/* README preview */
+.rs .rs-readme {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px;
+  font-family: var(--l-sans);
+  color: var(--l-text);
+}
+
+.rs .rs-h1 {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.rs .rs-p {
+  max-width: 270px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--l-text-2);
+}
+
+.rs .rs-h2 {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.rs .rs-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 3px 0;
+}
+
+.rs .rs-code {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px;
+  background: var(--l-surface-2);
+}
+
+/* Compact: the README alone, the shell across the foot. */
+.rs .ss-stage[data-layout='compact'] .rs-window {
+  top: 16px;
+  left: 16px;
+  width: 420px;
+  height: 420px;
+}
+
+.rs .ss-stage[data-layout='compact'] .zs-activity,
+.rs .ss-stage[data-layout='compact'] .zs-side {
+  display: none;
+}
+
+.rs .ss-stage[data-layout='compact'] .rs-readme {
+  padding: 16px;
+}
+
+.rs .ss-stage[data-layout='compact'] .rs-p {
+  max-width: 300px;
+}
+
+.rs .ss-stage[data-layout='compact'] .rs-terminal {
+  top: auto;
+  bottom: 16px;
+  left: 16px;
+  width: 326px;
+  height: 164px;
+}

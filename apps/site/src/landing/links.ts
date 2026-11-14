@@ -4,6 +4,7 @@ export const links = {
   browsing: '/docs/browsing',
   sourceControl: '/docs/browsing#source-control',
   walkthroughs: '/docs/walkthroughs',
+  feedback: '/docs/feedback',
   remote: '/docs/remote',
   desktop: '/docs/desktop',
   github: 'https://github.com/flexdinesh/zero',
