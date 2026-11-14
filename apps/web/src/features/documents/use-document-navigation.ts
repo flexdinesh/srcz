@@ -79,9 +79,10 @@ export function useDocumentNavigation(project: string, page: PageData, isLoading
   // reread loads the routed page again in place, keeping its scroll.
   const reread = useCallback(() => { void router.invalidate() }, [router])
 
-  const navigateToDocument = useCallback((path: string, at = "") => {
+  // hash is a fragment without "#", such as a line anchor ("L42").
+  const navigateToDocument = useCallback((path: string, at = "", hash = "") => {
     prepareDocumentNavigation()
-    void navigate({ to: "/view", search: at ? { project, path, at } : { project, path }, hash: "" })
+    void navigate({ to: "/view", search: at ? { project, path, at } : { project, path }, hash })
   }, [navigate, prepareDocumentNavigation, project])
 
   const navigateToHref = useCallback((href: string) => {

@@ -8,10 +8,23 @@ function filterField(page: Page) {
   return explorer(page).getByRole("textbox", { name: "Filter files by name" })
 }
 
-test("filename globs narrow the tree without closing tabs and intersect filename search", async ({ page }) => {
+function filterToggle(page: Page) {
+  return explorer(page).getByRole("button", { name: /^Filter files by name/ })
+}
+
+// The filter row starts hidden behind the header's funnel (decision 0145).
+async function showFilter(page: Page) {
+  await expect(filterField(page)).toBeHidden()
+  await filterToggle(page).click()
+  await expect(filterToggle(page)).toHaveAttribute("aria-pressed", "true")
+  await expect(filterField(page)).toBeFocused()
+}
+
+test("filename globs narrow the tree without closing tabs; Quick Open still finds every file", async ({ page }) => {
   await page.goto("/view?path=config%2Fsettings.json")
   const files = explorer(page)
   const filter = filterField(page)
+  await showFilter(page)
   await expect(filter).toHaveAttribute("placeholder", "Filter: *.md, *.go")
   await expect(files.locator(".filename-filter-count")).toBeEmpty()
   await filter.fill("*.YAML, *.yml")
@@ -25,11 +38,12 @@ test("filename globs narrow the tree without closing tabs and intersect filename
   await expect(page.getByRole("tab", { name: "settings.json" })).toHaveAttribute("aria-selected", "true")
 
   await files.getByRole("button", { name: "Search files" }).click()
-  const fileSearch = files.getByRole("textbox", { name: "Search…" })
-  await fileSearch.fill("settings")
-  await expect(files.getByRole("treeitem", { name: "documents.yml" })).toHaveCount(0)
-  await expect(files.getByRole("treeitem", { name: "settings.yaml" })).toBeVisible()
-  await fileSearch.press("Escape")
+  const quickOpen = page.getByRole("dialog", { name: "Go to file" })
+  await quickOpen.getByRole("combobox", { name: "Go to file" }).fill("settings")
+  await expect(quickOpen.getByRole("option", { name: /^settings\.json, config/ })).toBeVisible()
+  await quickOpen.getByRole("combobox", { name: "Go to file" }).press("Escape")
+  await expect(quickOpen).toBeHidden()
+  await expect(files.getByRole("treeitem", { name: "settings.json" })).toHaveCount(0)
 
   await page.locator(".status-bar").getByRole("button", { name: /^Find in files/ }).click()
   await page.getByRole("textbox", { name: "Search", exact: true }).fill("config-search-marker")
@@ -47,6 +61,7 @@ test("invalid globs keep the last valid filter and unmatched globs offer a clear
   await page.goto("/view?path=config%2Fsettings.json")
   const files = explorer(page)
   const filter = filterField(page)
+  await showFilter(page)
   await filter.fill("*.json")
   await expect(files.getByRole("treeitem", { name: "settings.json" })).toBeVisible()
   await expect(files.getByRole("treeitem", { name: "README.md" })).toHaveCount(0)
@@ -70,6 +85,7 @@ test("invalid globs keep the last valid filter and unmatched globs offer a clear
 test("collapse and expand all include filtered folders and the filter survives responsive remounts", async ({ page }) => {
   await page.goto("/view?path=guides%2Fgetting-started.md")
   const filter = filterField(page)
+  await showFilter(page)
   await filter.fill("*.json")
   await expect(page.getByRole("treeitem", { name: "guides", exact: true })).toHaveCount(0)
   await page.getByRole("treeitem", { name: "config", exact: true }).click()
@@ -98,4 +114,35 @@ test("collapse and expand all include filtered folders and the filter survives r
   await expect(drawer).toBeHidden()
   await expect(page.getByRole("tab", { name: "settings.yaml" })).toHaveAttribute("aria-selected", "true")
   await expect(page.getByRole("tab", { name: "getting-started.md" })).toBeVisible()
+})
+
+test("hiding the filter row keeps the filter and marks the funnel", async ({ page }) => {
+  await page.goto("/view?path=config%2Fsettings.json")
+  const files = explorer(page)
+  const filter = filterField(page)
+  const toggle = filterToggle(page)
+  await expect(toggle).toHaveAttribute("aria-pressed", "false")
+  await expect(toggle).not.toHaveAttribute("data-indicator")
+  await showFilter(page)
+  await filter.fill("*.json")
+  await expect(files.getByRole("treeitem", { name: "README.md" })).toHaveCount(0)
+
+  await toggle.click()
+  await expect(filter).toBeHidden()
+  await expect(toggle).toHaveAttribute("aria-pressed", "false")
+  await expect(toggle).toHaveAttribute("data-indicator", "true")
+  await expect(toggle).toHaveAttribute("title", "Filter files by name (filtering: *.json)")
+  await expect(files.getByRole("treeitem", { name: "README.md" })).toHaveCount(0)
+
+  await toggle.click()
+  await expect(filter).toBeFocused()
+  await expect(filter).toHaveValue("*.json")
+  await expect(toggle).not.toHaveAttribute("data-indicator")
+  await filter.press("Escape")
+  await expect(filter).toHaveValue("")
+  await expect(files.getByRole("treeitem", { name: "README.md" })).toBeVisible()
+  await filter.press("Escape")
+  await expect(filter).toBeHidden()
+  await expect(toggle).toBeFocused()
+  await expect(toggle).not.toHaveAttribute("data-indicator")
 })

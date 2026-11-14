@@ -1,7 +1,7 @@
 import type { FileTree as FileTreeModel, GitStatusEntry } from "@pierre/trees"
-import { FileTree as PierreFileTree, useFileTree, useFileTreeSearch } from "@pierre/trees/react"
-import { ChevronDownIcon, FoldVerticalIcon, GitBranchIcon, GitForkIcon, SearchIcon, UnfoldVerticalIcon, XIcon } from "lucide-react"
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
+import { FileTree as PierreFileTree, useFileTree } from "@pierre/trees/react"
+import { ChevronDownIcon, FoldVerticalIcon, FunnelIcon, GitBranchIcon, GitForkIcon, SearchIcon, UnfoldVerticalIcon, XIcon } from "lucide-react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
 
 import { FilenameFilter, useFilenameFilter, type FilenameFilterState } from "./FilenameFilter.tsx"
 import { countFiles, filterTreeByFilename } from "./filename-filter.ts"
@@ -18,11 +18,12 @@ import { desktopBridge } from "../../lib/desktop-bridge.ts"
 import { absolutePath, isTreeMenuAction, treeMenuItems, treeRowPath, type TreeMenuAction } from "./tree-menu.ts"
 import { TreeRowMenu } from "./TreeRowMenu.tsx"
 import { IconButton } from "../../components/ui/icon-button.tsx"
-import { TextField } from "../../components/ui/text-field.tsx"
 import { treeRowHeight } from "../../components/ui/tree-rows.ts"
 import { useSettings } from "../../settings/SettingsProvider.tsx"
 import { uiScale } from "../../settings/settings.ts"
 import { projectMemory, readMemory, rememberExpanded, restoreExpanded, updateMemory } from "../../workspace/workspace-memory.ts"
+
+const mac = typeof navigator !== "undefined" && navigator.platform.includes("Mac")
 
 function treePaths(nodes: readonly TreeNode[]): string[] {
   return nodes.flatMap((node) => node.isDir
@@ -39,8 +40,10 @@ interface FileTreeProps {
   // onOpenWorktrees lists the current repository's worktrees.
   onOpenWorktrees(): void
   page: PageData
-  // open reveals the Explorer; with search, it also opens file search.
-  registerOpen(open: ((search?: boolean) => void) | null): void
+  // open reveals the Explorer.
+  registerOpen(open: (() => void) | null): void
+  // onFindFile opens Quick Open (decision 0145).
+  onFindFile(): void
   // onReveal shows the Explorer view, opening the mobile drawer.
   onReveal(): void
   // onDismiss closes the mobile drawer after a file opens.
@@ -52,7 +55,6 @@ interface FileTreeProps {
 interface ExplorerState {
   model: FileTreeModel | null
   expanded: string[] | null
-  search: string | null
 }
 
 export function FileTree(props: FileTreeProps) {
@@ -62,29 +64,24 @@ export function FileTree(props: FileTreeProps) {
     projectMemory(readMemory(), props.page.project),
     new Set(treePaths(props.page.tree).filter((path) => path.endsWith("/"))),
   ))
-  const state = useRef<ExplorerState>({ model: null, expanded: rememberedExpanded ?? null, search: null })
+  const state = useRef<ExplorerState>({ model: null, expanded: rememberedExpanded ?? null })
   const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 48rem)").matches)
   const scale = uiScale(useSettings().settings)
   const [rowScale, setRowScale] = useState(scale)
   useLayoutEffect(() => { page.current = props.page }, [props.page])
-  // saveState keeps expansion and search across an Explorer remount.
+  // saveState keeps expansion across an Explorer remount.
   const saveState = useCallback(() => {
     const model = state.current.model
     if (!model) return
     const expanded = new Set(state.current.expanded)
-    // Filename search expands matches temporarily. Preserve the underlying
-    // folder state when a responsive or font-size change remounts the model.
-    if (!model.getSearchValue()) {
-      for (const path of treePaths(page.current.tree)) {
-        const item = model.getItem(path)
-        if (item && "isExpanded" in item) {
-          if (item.isExpanded()) expanded.add(path)
-          else expanded.delete(path)
-        }
+    for (const path of treePaths(page.current.tree)) {
+      const item = model.getItem(path)
+      if (item && "isExpanded" in item) {
+        if (item.isExpanded()) expanded.add(path)
+        else expanded.delete(path)
       }
     }
     state.current.expanded = [...expanded]
-    state.current.search = model.isSearchOpen() ? model.getSearchValue() : null
   }, [])
   // Pierre fixes row height at creation, so a font size change remounts it.
   useEffect(() => {
@@ -107,7 +104,7 @@ export function FileTree(props: FileTreeProps) {
     itemHeight={itemHeight} filter={filter} state={state} />
 }
 
-function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktrees, onReveal, onDismiss, onShowHistory, page, registerOpen, mobile, itemHeight, state, filter }: FileTreeProps & {
+function Explorer({ gitStatus, hasData, onFindFile, onNavigate, onOpenProjects, onOpenWorktrees, onReveal, onDismiss, onShowHistory, page, registerOpen, mobile, itemHeight, state, filter }: FileTreeProps & {
   mobile: boolean
   itemHeight: number
   filter: FilenameFilterState
@@ -126,8 +123,9 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
   // A snapshot (page.at) selects no working-tree file.
   const selectedFile = page.at ? "" : page.selected
   const previousSelected = useRef(selectedFile)
-  const searchInput = useRef<HTMLInputElement>(null)
-  const searchButton = useRef<HTMLButtonElement>(null)
+  const filterShelfId = useId()
+  const filterInput = useRef<HTMLInputElement>(null)
+  const filterButton = useRef<HTMLButtonElement>(null)
   const syncing = useRef(false)
   const current = useRef({ onNavigate, onDismiss, onShowHistory, page })
   // runMenuAction runs a row menu's action on a project-relative path.
@@ -164,13 +162,11 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
     } : {}),
     paths,
     initialExpandedPaths: state.current.expanded ?? openDirectoryPaths(page.tree),
-    initialSearchQuery: state.current.search,
     itemHeight,
     initialSelectedPaths: paths.includes(selectedFile) ? [selectedFile] : [],
     density: "compact",
     search: false,
     unsafeCSS: treeCSS,
-    fileTreeSearchMode: "hide-non-matches",
     icons: treeIcons,
     onSelectionChange(selected) {
       if (syncing.current) return
@@ -181,14 +177,7 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
       if (path !== current.current.page.selected || current.current.page.at) current.current.onNavigate(path)
     },
   })
-  const search = useFileTreeSearch(model)
-  // Pierre's hide-non-matches mode shows every row when nothing matches; show an empty state instead.
-  const searchUnmatched = search.isOpen && search.value.length > 0 && search.matchingPaths.length === 0
-  useLayoutEffect(() => {
-    if (search.isOpen) searchInput.current?.focus()
-  }, [search.isOpen])
   const syncExpandedPaths = useCallback(() => {
-    if (model.getSearchValue()) return
     for (const path of directoryPaths) {
       const item = model.getItem(path)
       if (item && "isExpanded" in item) {
@@ -222,23 +211,15 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
     const changed = paths.length !== previousPaths.current.length
       || paths.some((path, index) => path !== previousPaths.current[index])
     if (changed) {
-      if (!model.getSearchValue()) {
-        for (const path of previousPaths.current) {
-          const item = model.getItem(path)
-          if (item && "isExpanded" in item) {
-            if (item.isExpanded()) expandedPaths.current.add(path)
-            else expandedPaths.current.delete(path)
-          }
+      for (const path of previousPaths.current) {
+        const item = model.getItem(path)
+        if (item && "isExpanded" in item) {
+          if (item.isExpanded()) expandedPaths.current.add(path)
+          else expandedPaths.current.delete(path)
         }
       }
       state.current.expanded = [...expandedPaths.current]
-      const query = model.isSearchOpen() ? model.getSearchValue() : null
       model.resetPaths(paths, { initialExpandedPaths: state.current.expanded })
-      if (query) {
-        // Reset paths keeps the query but requires rebuilding its matches.
-        model.setSearch("")
-        model.setSearch(query)
-      }
       previousPaths.current = paths
     }
     for (const path of model.getSelectedPaths()) {
@@ -293,24 +274,22 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
   }
 
   useEffect(() => {
-    const open = (search = false) => {
-      onReveal()
-      if (search) model.openSearch()
-      if (search || model.isSearchOpen()) searchInput.current?.focus()
-    }
-    registerOpen(open)
-    const shortcut = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.altKey || event.shiftKey || !(event.metaKey || event.ctrlKey)) return
-      if (event.key.toLowerCase() !== "p" && event.key.toLowerCase() !== "k") return
-      event.preventDefault()
-      open(true)
-    }
-    document.addEventListener("keydown", shortcut)
-    return () => {
-      registerOpen(null)
-      document.removeEventListener("keydown", shortcut)
-    }
-  }, [model, onReveal, registerOpen])
+    registerOpen(onReveal)
+    return () => registerOpen(null)
+  }, [onReveal, registerOpen])
+
+  // The filename filter row shows on demand; hiding it keeps the filter
+  // applied, and the funnel's dot says so (decision 0145).
+  const filterActive = filter.matcher !== null
+  const toggleFilter = () => {
+    const shown = !filter.shown
+    filter.setShown(shown)
+    if (shown) requestAnimationFrame(() => filterInput.current?.focus())
+  }
+  const hideFilter = () => {
+    filter.setShown(false)
+    filterButton.current?.focus()
+  }
 
   // A linked worktree shows a colored fork; other checkouts show a branch.
   const projectName = page.repository || page.rootName || page.project
@@ -341,39 +320,23 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
               <span>{page.branch}</span>
             </span>
           ))}
-        <IconButton ref={searchButton} label="Search files" aria-expanded={search.isOpen} title="Search files (⌘K / Ctrl+K)"
-          icon={<SearchIcon aria-hidden="true" />}
-          onClick={() => { if (model.isSearchOpen()) model.closeSearch(); else model.openSearch() }} />
+        <IconButton label="Search files" aria-haspopup="dialog" aria-keyshortcuts="Control+P Meta+P"
+          title={`Search files (${mac ? "⌘P" : "Ctrl+P"})`}
+          icon={<SearchIcon aria-hidden="true" />} onClick={onFindFile} />
+        <IconButton ref={filterButton} label="Filter files by name" aria-pressed={filter.shown} aria-controls={filterShelfId}
+          indicator={filterActive && !filter.shown}
+          title={filterActive && !filter.shown ? `Filter files by name (filtering: ${filter.applied})` : "Filter files by name"}
+          disabled={!hasData || page.projectUnavailable}
+          icon={<FunnelIcon aria-hidden="true" />} onClick={toggleFilter} />
         <IconButton label={hasExpanded ? "Collapse all folders" : "Expand all folders"}
-          disabled={!hasData || directoryPaths.length === 0 || search.value.length > 0}
-          title={search.value.length > 0 ? "Clear filename search to collapse or expand folders" : hasExpanded ? "Collapse all folders" : "Expand all folders"}
+          disabled={!hasData || directoryPaths.length === 0}
           icon={hasExpanded ? <FoldVerticalIcon aria-hidden="true" /> : <UnfoldVerticalIcon aria-hidden="true" />}
           onClick={toggleDirectories} />
         {mobile && <IconButton label="Close files" icon={<XIcon aria-hidden="true" />} onClick={onDismiss} />}
       </div>
-      <div className="explorer-shelf">
-        {hasData && !page.projectUnavailable && <FilenameFilter filter={filter}
-          totalCount={totalCount} visibleCount={visibleCount} onFocusTree={focusFirstRow} />}
-        <div className="file-search" hidden={!search.isOpen}>
-          <TextField className="file-search-field" inputClassName="file-search-input" inputRef={searchInput}
-            aria-label="Search…" placeholder="Search…"
-            value={search.value} onChange={(event) => model.setSearch(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowDown") model.focusNextSearchMatch()
-              else if (event.key === "ArrowUp") model.focusPreviousSearchMatch()
-              else if (event.key === "Escape") {
-                model.closeSearch()
-                searchButton.current?.focus()
-              } else if (event.key === "Enter") {
-                const focused = model.getFocusedPath()
-                if (focused) model.getItem(focused)?.select()
-                model.closeSearch()
-                searchButton.current?.focus()
-              } else return
-              event.preventDefault()
-              event.stopPropagation()
-            }} />
-        </div>
+      <div className="explorer-shelf" id={filterShelfId} hidden={!filter.shown || !hasData || page.projectUnavailable}>
+        <FilenameFilter filter={filter} inputRef={filterInput}
+          totalCount={totalCount} visibleCount={visibleCount} onFocusTree={focusFirstRow} onHide={hideFilter} />
       </div>
       {!hasData ? <p className="muted">Loading files…</p>
         : page.projectUnavailable ? <p className="muted">{page.project ? "Project unavailable." : "No folder is open."}</p>
@@ -383,14 +346,7 @@ function Explorer({ gitStatus, hasData, onNavigate, onOpenProjects, onOpenWorktr
           <Button variant="outline" className="explorer-empty-action" onClick={filter.clear}>Clear filter</Button>
         </p>
         : <>
-          {searchUnmatched && <p className="muted explorer-empty">
-            No files match <code>{search.value}</code>
-            <Button variant="outline" className="explorer-empty-action" onClick={() => {
-              model.setSearch("")
-              searchInput.current?.focus()
-            }}>Clear search</Button>
-          </p>}
-          <PierreFileTree model={model} className="file-tree-host" aria-label="Files" hidden={searchUnmatched}
+          <PierreFileTree model={model} className="file-tree-host" aria-label="Files"
             renderContextMenu={rowMenu ? undefined : (item, context) => (
               <TreeRowMenu anchor={context.anchorElement} name={item.name}
                 items={treeMenuItems({ file: item.kind === "file", reveal: false })}

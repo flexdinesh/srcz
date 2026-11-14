@@ -6,7 +6,7 @@ const mac = typeof navigator !== "undefined" && navigator.platform.includes("Mac
 
 function actionLabel(action: EmptyWorkspaceAction, viewName: string): { label: string; shortcut?: string } {
   switch (action) {
-    case "find-file": return { label: "Find a file", shortcut: mac ? "⌘K" : "Ctrl+K" }
+    case "find-file": return { label: "Find a file", shortcut: mac ? "⌘P" : "Ctrl+P" }
     case "review-uncommitted": return { label: "Review uncommitted changes" }
     case "show-sidebar": return { label: "Show sidebar", shortcut: mac ? "⌘B" : "Ctrl+B" }
     case "show-view": return { label: `Open ${viewName}` }

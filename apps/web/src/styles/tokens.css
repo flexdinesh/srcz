@@ -169,6 +169,8 @@
   --icon-sm: 0.875rem;
   --icon-md: 1rem;
   --icon-lg: 1.125rem;
+  /* IconButton's state dot (decision 0145). */
+  --indicator-size: 0.375rem;
   --row-list: 1.5rem;
   --row-menu: 1.75rem;
   --row-pick: 2rem;

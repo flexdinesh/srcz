@@ -82,6 +82,7 @@ export default function UiGallery() {
           <IconButton label="Disabled" disabled icon={<RefreshCwIcon />} />
           <IconButton label="Comment on lines" size="xs" variant="gutter" icon={<MessageSquarePlusIcon />} />
           <IconButton label="Show details" size="xs" variant="bare" icon={<Chevron />} />
+          <IconButton label="Filter files by name (filtering)" indicator icon={<FilterIcon />} />
         </Row>
       </Section>
 

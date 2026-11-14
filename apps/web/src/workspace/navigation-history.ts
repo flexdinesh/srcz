@@ -71,6 +71,13 @@ export function projectOf(href: string): string {
   return searchValue(searchOf(href), "project")
 }
 
+// documentPathOf is the working-tree file a route opens, or "" for a
+// snapshot or a route without a file.
+export function documentPathOf(href: string): string {
+  const search = searchOf(href)
+  return searchValue(search, "at") ? "" : searchValue(search, "path")
+}
+
 // projectName names a project by its last path segment.
 export function projectName(project: string): string {
   return project.split("/").filter(Boolean).at(-1) ?? project

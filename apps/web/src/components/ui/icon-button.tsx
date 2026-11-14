@@ -20,6 +20,9 @@ export interface IconButtonProps extends NativeProps {
   variant?: IconButtonVariant
   // disabledReason keeps the control focusable but inert, and explains why.
   disabledReason?: string
+  // indicator marks a state the control's own face does not show, such as a
+  // filter applied while its row is hidden: a small accent dot.
+  indicator?: boolean
   ref?: Ref<HTMLButtonElement>
 }
 
@@ -29,7 +32,7 @@ export interface IconButtonProps extends NativeProps {
 // gutter variant is raised and bordered, for line gutters; the bare variant
 // marks hover with ink only, so it adds no fill over a hovered row.
 export function IconButton({
-  label, icon, title, size = "sm", tone = "default", variant = "plain", disabledReason, className, type = "button", onClick, ref, ...props
+  label, icon, title, size = "sm", tone = "default", variant = "plain", disabledReason, indicator, className, type = "button", onClick, ref, ...props
 }: IconButtonProps) {
   const inert = Boolean(disabledReason)
   return (
@@ -40,6 +43,7 @@ export function IconButton({
       data-size={size}
       data-tone={tone === "default" ? undefined : tone}
       data-variant={variant === "plain" ? undefined : variant}
+      data-indicator={indicator || undefined}
       aria-label={label}
       aria-disabled={inert || undefined}
       title={disabledReason || title || label}

@@ -1,5 +1,5 @@
 import { FunnelIcon, XIcon } from "lucide-react"
-import { useCallback, useEffect, useId, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react"
 
 import { parseFilenameFilter, type FilenameMatcher } from "./filename-filter.ts"
 
@@ -23,13 +23,17 @@ export interface FilenameFilterState {
   applied: string
   matcher: FilenameMatcher | null
   invalidPattern: string | null
+  // shown says whether the filter row is visible; hiding it keeps the filter.
+  shown: boolean
   setText(text: string): void
+  setShown(shown: boolean): void
   clear(): void
 }
 
 // Explorer-owned visibility filter. Owned above responsive remounts and never persisted.
 export function useFilenameFilter(): FilenameFilterState {
   const [text, setTextValue] = useState("")
+  const [shown, setShown] = useState(false)
   const [settled, setSettled] = useState(emptyFilter)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -54,21 +58,25 @@ export function useFilenameFilter(): FilenameFilterState {
     applied: settled.applied,
     matcher: settled.matcher,
     invalidPattern: settled.text === text ? settled.invalidPattern : null,
+    shown,
     setText,
+    setShown,
     clear,
   }
 }
 
 interface FilenameFilterProps {
   filter: FilenameFilterState
+  inputRef: RefObject<HTMLInputElement | null>
   totalCount: number
   visibleCount: number
   onFocusTree(): void
+  // onHide hides the row: Escape in an empty field.
+  onHide(): void
 }
 
-export function FilenameFilter({ filter, totalCount, visibleCount, onFocusTree }: FilenameFilterProps) {
+export function FilenameFilter({ filter, inputRef: input, totalCount, visibleCount, onFocusTree, onHide }: FilenameFilterProps) {
   const errorId = useId()
-  const input = useRef<HTMLInputElement>(null)
   const active = filter.matcher !== null
 
   return <div className="filename-filter">
@@ -80,7 +88,7 @@ export function FilenameFilter({ filter, totalCount, visibleCount, onFocusTree }
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           if (filter.text) filter.clear()
-          else input.current?.blur()
+          else onHide()
         } else if (event.key === "Enter" || event.key === "ArrowDown") {
           onFocusTree()
         } else return

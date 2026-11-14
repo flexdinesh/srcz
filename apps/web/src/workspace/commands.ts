@@ -8,6 +8,7 @@ export type CommandAction =
   | { kind: "open-settings" }
   | { kind: "select-color-theme" }
   | { kind: "open-setting"; setting: SettingId }
+  | { kind: "go-to-file" }
   | { kind: "go-to-definition" }
   | { kind: "find-references" }
   | { kind: "go-back" }
@@ -51,6 +52,7 @@ export const commands: readonly Command[] = [
     title: definition.title,
     action: { kind: "open-setting", setting: definition.id },
   })),
+  { id: "navigation.goToFile", category: "Navigation", title: "Go to File…", action: { kind: "go-to-file" }, shortcut: mac ? "⌘P" : "Ctrl+P" },
   { id: "navigation.goToDefinition", category: "Navigation", title: "Go to Definition", action: { kind: "go-to-definition" }, shortcut: "F12" },
   { id: "navigation.findReferences", category: "Navigation", title: "Find All References", action: { kind: "find-references" }, shortcut: "Shift+F12" },
   { id: "navigation.goBack", category: "Navigation", title: "Go Back", action: { kind: "go-back" }, shortcut: shortcutLabel(-1, mac) },

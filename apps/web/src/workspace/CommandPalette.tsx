@@ -19,14 +19,24 @@ function Highlighted({ text, ranges }: { text: string; ranges: readonly Highligh
   ))
 }
 
+export interface CommandPaletteOptions {
+  // query seeds the field, e.g. with what followed `>` in Quick Open.
+  query?: string
+  // returnFocus overrides where focus returns on Escape.
+  returnFocus?: HTMLElement | null
+}
+
 interface CommandPaletteProps {
-  registerOpen(open: (() => void) | null): void
+  registerOpen(open: ((options?: CommandPaletteOptions) => void) | null): void
   onRun(action: CommandAction): void
+  // onExitToFiles runs when Backspace erases the `>` prompt, as in VS Code.
+  onExitToFiles(returnFocus: HTMLElement | null): void
 }
 
 // CommandPalette lists commands like VS Code's: Ctrl/Cmd+Shift+P or F1 opens
-// it, typing filters, arrows move, Enter runs, Escape closes.
-export function CommandPalette({ registerOpen, onRun }: CommandPaletteProps) {
+// it, typing filters, arrows move, Enter runs, Escape closes, and Backspace
+// in an empty field returns to Quick Open.
+export function CommandPalette({ registerOpen, onRun, onExitToFiles }: CommandPaletteProps) {
   const { values } = useSettingValues()
   const dialog = useRef<HTMLDialogElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -37,10 +47,12 @@ export function CommandPalette({ registerOpen, onRun }: CommandPaletteProps) {
   const matches = matchCommands(availableCommands(notificationsAvailable()), query)
   const active = matches[Math.min(activeIndex, matches.length - 1)]
 
-  const show = useCallback(() => {
+  const show = useCallback((options?: CommandPaletteOptions) => {
     if (!dialog.current || dialog.current.open) return
-    returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    setQuery("")
+    returnFocus.current = options?.returnFocus !== undefined
+      ? options.returnFocus
+      : document.activeElement instanceof HTMLElement ? document.activeElement : null
+    setQuery(options?.query ?? "")
     setActiveIndex(0)
     dialog.current.showModal()
     input.current?.focus()
@@ -89,6 +101,11 @@ export function CommandPalette({ registerOpen, onRun }: CommandPaletteProps) {
     } else if (event.key === "Enter") {
       event.preventDefault()
       run(active?.command.action)
+    } else if (event.key === "Backspace" && query === "") {
+      event.preventDefault()
+      const target = returnFocus.current
+      close(false)
+      onExitToFiles(target)
     } else if (event.key === "Escape") {
       event.preventDefault()
       close(true)

@@ -343,7 +343,7 @@ One base size drives the whole scale: the Font Size setting (default 13px, 10–
 | Tabs (`--text-chrome`) | 12px | Monospace |
 | Preview prose | 14px / 1.6 desktop; 15px / 1.6 mobile | 400 weight, 75ch maximum |
 | Sidebar rows: Explorer, Search, Source Control, Walkthroughs, Feedback (`--text-list`) | 14px | `text-primary` names |
-| File names in lists: Explorer, Source Control changes and trees, review rail, Search files (`--text-file`) | 13px | Monospace, `text-primary` |
+| File names in lists: Explorer, Source Control changes and trees, review rail, Search files, Quick Open (`--text-file`) | 13px | Monospace, `text-primary` |
 | Supporting UI / search input / tables | 14px / 20px | Shared small text role |
 | Footer / metadata | 12px | Sans; footer line-height 1; counts, ages, folders beside names, stats, git status letters (600), kbd, toggle glyphs |
 | Source | 13px / 22px (= base) | Monospace, fixed line rows |
@@ -359,7 +359,7 @@ Tabs and explorer headers are 32px tall at every viewport width and share the wo
 
 At `max-width: 48rem`, the document pane fills the workspace edge to edge. The sidebar opens in a native modal drawer (`DialogShell` drawer: overlay surface), `min(85vw, 22rem)` wide, full height against the leading edge, activity bar (32px items) at its left edge, toolbar trigger (a project picker trigger sits beside it), close control, backdrop, and 32px tree/search rows. Tabs and explorer headers stay 32px; footer controls remain 44px. Fields grow to 44px touch height; their trailing actions to 32px. Prose becomes 16px with 24px vertical / 16px horizontal insets. Footer keeps a compact app section and flexible document section; filename truncates while Find in files and the Settings gear remain visible. Size/count, type label, image details, process details, and shortcut hints hide. Print removes all workspace chrome.
 
-Content palette (command palette, project picker, navigation results; `DialogShell` palette): 40rem wide, 12vh from top, transparent backdrop. The palette `TextField` is borderless and 40px tall (44px mobile), a step above its pick rows so the field leads the dialog, with a 14px input, 16px icon, and accent underline on focus; it never shrinks when results overflow. Rows are 32px picker rows (44px mobile). Mobile uses 8px outer gutters. File/path search stays in the explorer; content search is the Search view.
+Content palette (command palette, Quick Open, project picker, navigation results; `DialogShell` palette): 40rem wide, 12vh from top, transparent backdrop. The palette `TextField` is borderless and 40px tall (44px mobile), a step above its pick rows so the field leads the dialog, with a 14px input, 16px icon, and accent underline on focus; it never shrinks when results overflow. Rows are 32px picker rows (44px mobile). Mobile uses 8px outer gutters. File/path search is Quick Open; content search is the Search view.
 
 Spacing scale: 4, 8, 12, 16, 24, 32, 48px. Prose blocks use 12px margins; H1/H2 start with 32px above, H3/H4 with 24px. Wide code, tables, and diagrams scroll within their bounds.
 
@@ -394,7 +394,7 @@ Icons: 16px in header and panel actions, 14px in bars, fields, and toggles, 12px
 Every view composes these from `apps/web/src/components/ui/`; a missing capability is added to the primitive, never forked in a feature. Variants are data attributes; behavior stays in features.
 
 - **Button**: primary, outline, ghost, plain, destructive, link. md 28px default, sm 24, lg 32, `inline` for text-flow actions; 44px on narrow screens. 13px 500 label. Outline and ghost hover add the state layer; plain is ghost without hover or press layers, its pointer cursor the only hover cue (review file headers); disabled is 50% opacity. Actions such as Retry, Open File, and Clear filter are outline md.
-- **IconButton**: icon-only, required `label` (also the tooltip). xs 20px (12px glyph) in rows and tabs, sm 24px (16px) in headers, toolbars, and fields, md 28px (16px) in panels, `bar` fills its band (`--bar-size`, 14px glyph) in the status bar, activity bar, and toolbar. The `gutter` variant floats over code: `surface-raised`, a strong border, and the control shadow. The `bare` variant takes no hover or press fill, only the ink change, for toggles inside rows that carry their own hover fill (the commit details chevron). `disabledReason` keeps it focusable and explains why. With `aria-pressed`, the pressed state takes the selection tint. Dialogs raise targets to 44px on narrow screens.
+- **IconButton**: icon-only, required `label` (also the tooltip). xs 20px (12px glyph) in rows and tabs, sm 24px (16px) in headers, toolbars, and fields, md 28px (16px) in panels, `bar` fills its band (`--bar-size`, 14px glyph) in the status bar, activity bar, and toolbar. The `gutter` variant floats over code: `surface-raised`, a strong border, and the control shadow. The `bare` variant takes no hover or press fill, only the ink change, for toggles inside rows that carry their own hover fill (the commit details chevron). `disabledReason` keeps it focusable and explains why. With `aria-pressed`, the pressed state takes the selection tint. `indicator` draws a square accent dot (`--indicator-size`) at the top end, inset `--space-1` and ringed 1px in `workspace-chrome`, for state the button hides (an applied filter behind the explorer's funnel). Dialogs raise targets to 44px on narrow screens.
 - **ToggleButton**: independent on/off options (match case, Show modified). Pressed uses an accent border with the selection fill and ink. **ToggleGlyph** sets a letter face (`Aa`, `ab`, `.*`) as type in the UI face at 12px 500, hidden from assistive technology; the toggle's label names it.
 - **SegmentedControl**: mutually exclusive modes (Preview/Source, zoom, diff layout, Branch/All). `sm` (view headers): a translucent `--color-hover` track; the pressed item lifts onto `surface` with the control shadow. `md` (document toolbar): square segments fill the 32px strip like tabs, hover takes `--color-chrome-hover`, and the pressed one takes `surface` as the active tab does (decision 0046). Icon-only items are square.
 - **Slider**: one value on a 2px `border-strong` track whose filled part is `accent`, with a square 12px thumb on `surface-raised` (accent border on hover and drag, 1px accent focus ring); the hit area is 24px tall, 44px with an 18px thumb on narrow screens. Base UI's slider: arrows step, Page Up/Down step by ten, Home/End jump to the ends; `label` names it and `valueText` reads its value (decision 0116).
@@ -414,32 +414,35 @@ A 2.5rem column on `workspace-chrome` with a 1px right border and 40px-square ro
 
 ### Explorer
 
-Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons each followed by a two-tone folder icon (open or closed with the row, `text-muted` in every state, over its children's icons; `lib/tree-icons.ts`, decision 0138; Source Control's trees share it), square rows, semantic token overrides, 13px mono `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The project name sits above as a trigger for the project picker. Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. File/path search starts hidden; the search icon toggles it, Ctrl/Cmd+K opens it (Ctrl/Cmd+P alias), and Escape hides it. Mobile opens the drawer first. Preserve expansion/search across the breakpoint.
+Pierre compact tree: complete built-in colored file icons, native folder expansion chevrons each followed by a two-tone folder icon (open or closed with the row, `text-muted` in every state, over its children's icons; `lib/tree-icons.ts`, decision 0138; Source Control's trees share it), square rows, semantic token overrides, 13px mono `text-primary` names, 24px desktop / 32px narrow, both scaled by the Font Size setting. The header holds the project name (a trigger for the project picker), the branch, Search files (opens Quick Open; tooltip “Search files (⌘P)” / “Search files (Ctrl+P)”, `aria-haspopup` dialog), Filter files by name (funnel toggle), Collapse/Expand all, and Close (phones). Hover, selection, and focus use the shared state roles. Preserve editor keyboard selection, expansion, and Ctrl/Cmd-click semantics. The tree has no search of its own: file/path search is Quick Open (decision 0145). On phones Search files closes the drawer before the popup opens. Preserve expansion and the filter across the breakpoint.
 
 Below the header, a shelf on the same `workspace-chrome` band holds the explorer's
-query fields (4px top, 8px bottom, 12px sides, 4px between fields) and ends in a
+filename filter (4px top, 8px bottom, 12px sides, 4px between fields) and ends in a
 1px `border` divider above the tree, so fields read as part of the header rather
 than pressed against it. The Search view's form uses the same shelf; its 2px
 progress bar overlays the divider.
 
-The filename filter sits in the shelf, always visible, matching the
-filename search field's width and appearance: funnel icon, placeholder
+The filename filter's shelf row starts hidden and shows only while Filter files
+by name (funnel, `aria-pressed`, `aria-controls` the shelf) is pressed; showing
+it focuses the field. The field has a funnel icon, placeholder
 “Filter: *.md, *.go”, and, when active, a muted 12px “visible / total” count in a
 polite live region plus a clear action. It accepts comma-separated,
 case-insensitive base-name globs with Go `path.Match` semantics (`*`, `?`,
 `[...]`); empty shows all. Input applies after 150ms. An invalid glob marks the
 field `aria-invalid`, turns its border destructive, adds an “Invalid pattern”
 helper, and keeps the last valid filter. No matches show “No files match …” with
-a Clear filter action. Escape clears a value, otherwise blurs; Enter or ArrowDown
-focuses the first visible row. The filter is not persisted and changes tree
-visibility only: tabs, the active document, and expansion are preserved.
-Filename search intersects the filter; content search covers every served file.
+a Clear filter action. Escape clears a value; Escape in an empty field hides the
+row and focuses the funnel. Enter or ArrowDown focuses the first visible row.
+Hiding the row keeps the filter applied: the funnel then shows its `indicator`
+dot and its tooltip reads “Filter files by name (filtering: <globs>)”. The
+filter and its row are not persisted and change tree visibility only: tabs, the
+active document, and expansion are preserved. Quick Open and content search
+ignore the filter.
 
-Folder expansion is remembered per absolute project path in browser storage, including a fully collapsed tree. Restore only folders present in the fresh tree. Search and filename filters remain transient; changing them does not overwrite hidden folders' expansion.
+Folder expansion is remembered per absolute project path in browser storage, including a fully collapsed tree. Restore only folders present in the fresh tree. The filename filter remains transient; changing it does not overwrite hidden folders' expansion.
 
-Beside Search files, a compact action toggles Collapse all/Expand all, including
-folders hidden by the filename filter. It is disabled during a nonempty filename search,
-which expands matching ancestors. Directory chevrons are 12px within existing row targets.
+After the funnel, a compact action toggles Collapse all folders/Expand all folders,
+including folders hidden by the filename filter. Directory chevrons are 12px within existing row targets.
 
 Right-click or the context-menu keys on a row open its menu (decision 0114):
 Show File History (files only), Reveal in File Manager (desktop app only),
@@ -535,9 +538,21 @@ Opened at a setting (from the command palette), Settings clears its search, scro
 
 ### Command palette
 
-Ctrl/Cmd+Shift+P or F1 opens a VS Code-style command palette on the content-palette frame (40rem, 12vh from top, sized to its rows). The field shows a muted `>` prompt, “Type a command”, and an Esc hint. Rows are 32px picker rows (44px mobile), 13px: secondary category, a 12px chevron, then the primary title, e.g. “Settings › Font Size”, with the current value right-aligned in muted 12px (“13px”, “Auto”). Typed terms must each match the category or title; matches render in accent, 600 weight. Commands with a title word starting with the first term rank first. The first row is active; arrows wrap, hover activates, Enter or click runs, Escape or the backdrop closes and restores focus. No matches reads “No matching commands”. Each option is named “Category: Title, value”. First is “Preferences › Open Settings”, showing its shortcut (Ctrl+, / ⌘,) in place of a value; it opens Settings with search focused. “Preferences › Color Theme” follows, showing the current theme; then every setting as a command that opens Settings at that setting. “Source Control › Show File History” filters Commits to the working-tree file in view, or opens the empty filter row without one (decision 0114).
+Ctrl/Cmd+Shift+P or F1 opens a VS Code-style command palette on the content-palette frame (40rem, 12vh from top, sized to its rows). The field shows a muted `>` prompt, “Type a command”, and an Esc hint. Rows are 32px picker rows (44px mobile), 13px: secondary category, a 12px chevron, then the primary title, e.g. “Settings › Font Size”, with the current value right-aligned in muted 12px (“13px”, “Auto”). Typed terms must each match the category or title; matches render in accent, 600 weight. Commands with a title word starting with the first term rank first. The first row is active; arrows wrap, hover activates, Enter or click runs, Escape or the backdrop closes and restores focus. No matches reads “No matching commands”. Each option is named “Category: Title, value”. First is “Preferences › Open Settings”, showing its shortcut (Ctrl+, / ⌘,) in place of a value; it opens Settings with search focused. “Preferences › Color Theme” follows, showing the current theme; then every setting as a command that opens Settings at that setting. “Source Control › Show File History” filters Commits to the working-tree file in view, or opens the empty filter row without one (decision 0114). “Navigation › Go to File…” shows ⌘P / Ctrl+P and opens Quick Open. Backspace in the empty field closes the palette and opens Quick Open, as in VS Code, keeping the focus restore target.
 
 The Color Theme quick pick reuses the frame with the placeholder “Select Color Theme (Up/Down Keys to Preview)”: Auto, then lowercase “light themes” and “dark themes” separators, each A–Z. The current theme starts active. Arrows (wrapping) and typing preview the active theme live without storing it; no match restores the stored theme. Enter or click stores the theme and closes; Escape or the backdrop restores the stored theme and closes; focus returns. Hover does not move the active row, so pointer travel never flashes themes. No global shortcut: browsers reserve Ctrl/Cmd+T.
+
+### Quick Open
+
+Ctrl/Cmd+P (Ctrl/Cmd+K alias), Search files, Find a file, or “Navigation › Go to File…” opens a VS Code/Zed-style file popup on the content-palette frame (decision 0145). The palette `TextField` shows a 16px search icon, “Search files by name (append : to go to line)”, and an Esc `Kbd`. Opening never changes the sidebar; on phones the drawer closes first. Scope is every file in the page tree (within `--depth`, gitignored included); the explorer filename filter does not apply.
+
+Rows are 32px pick rows (44px mobile): the Pierre file icon, the base name in mono at `--text-file`, then the folder path in muted 12px; phones put the folder on a second line. Matched characters render in accent, 600 weight (selection ink on the active row). Each option is named “name, folder”, adding “, line N” for a line.
+
+An empty query lists a lowercase “recently opened” group: this project's working-tree files this window showed (the navigation-history log, decision 0131), most recent first, without the file on screen or files no longer in the tree. With none, the status reads “Type to search N files” (“No files in this project” when empty).
+
+Typing matches fuzzily: every space-separated term must match, case-insensitive. Per term, a contiguous hit in the base name (prefix, then word start, ranks higher) beats a contiguous hit elsewhere in the path, which beats in-order characters, placed right to left so they land in the base name (word starts, runs, and a run starting the base name score). Ties: shorter path, then path order. At most 100 rows, with “Showing 100 of N matches”; none reads “No matching files”.
+
+`path:line` (`app.tsx:42`; `:42:7` ignores the column) filters on the path and opens the file at `#L42`; rows show a muted “line 42”. A bare `:42` shows one row, “Go to line 42” (corner-down-right icon, the file name muted), for the text document on screen; without one the status reads “Open a text document to go to a line”. `>` as the first character closes Quick Open and opens the command palette with the rest of the text. The first row is active; arrows wrap, hover activates, Enter or click opens, Escape or the backdrop closes and restores focus.
 
 ### Content search
 
@@ -876,7 +891,7 @@ One prose system across documents. Tables: 14px, neutral headers, horizontal ove
 - Do reuse semantic CSS tokens and shared primitives across every theme.
 - Do retain 14px desktop / 15px mobile prose (at the 13px base), 75ch measure, and left alignment.
 - Do size new UI in rem so it follows the Font Size setting; reserve px for 1–2px borders and offsets.
-- Do keep file/path search (Explorer) separate from content search (Search view).
+- Do keep file/path search (Quick Open) separate from content search (Search view).
 - Do preserve keyboard focus, accessible labels, modal behavior, and reduced motion.
 - Do keep fonts, icons, and runtime assets local to the embedded Go distribution.
 - Do build UI from the primitives and tokens; extend a primitive rather than restyling it in a feature.
