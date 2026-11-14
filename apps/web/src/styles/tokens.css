@@ -9,16 +9,16 @@
   --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
-  --color-bg: light-dark(#fafafa, #272b32);
-  --color-canvas: light-dark(#e4e5e8, #1d2026);
-  --color-surface: light-dark(#fafafa, #272b32);
-  --color-surface-secondary: light-dark(#eceef0, #2e323b);
+  --color-bg: light-dark(#ffffff, #272b32);
+  --color-canvas: light-dark(#f4f5f7, #1d2026);
+  --color-surface: light-dark(#ffffff, #272b32);
+  --color-surface-secondary: light-dark(#f9fafb, #2e323b);
   --color-surface-raised: light-dark(#ffffff, #343944);
   --color-text-primary: light-dark(#24272c, #dce0e5);
   --color-text-secondary: light-dark(#4b515b, #b0b6c2);
   --color-text-muted: light-dark(#5e6571, #959ca9);
-  --color-border: light-dark(#c9ccd1, #3e444f);
-  --color-border-strong: light-dark(#aeb3bb, #5a616e);
+  --color-border: light-dark(#e3e5e9, #3e444f);
+  --color-border-strong: light-dark(#cbd0d6, #5a616e);
   --color-accent: light-dark(#325dc8, #74ade8);
   --color-accent-hover: light-dark(#2348ac, #a8cdf5);
   --color-accent-subtle: light-dark(#dbe5fa, #2f4563);

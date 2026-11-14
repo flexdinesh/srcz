@@ -29,9 +29,13 @@
 /* Zero Light and Dark are slate (decision 0102). Chrome is set directly
    rather than mixed toward the canvas; in Dark it matches the sidebar and the
    active tab drops to the darker document surface. Chrome hover moves toward
-   the active tone rather than past it in Light (decision 0044). */
+   the active tone rather than past it in Light (decision 0044). Light is Mist
+   (decision 0143): a white document and sidebar in whisper-slate chrome, with
+   recessed fills on the chrome tone, since the sidebar's tone barely reads on
+   white. */
 :root:is([data-theme="system"], [data-theme="light"], [data-theme="dark"]) {
-  --color-workspace-chrome: light-dark(#e4e5e8, #2e323b);
+  --color-workspace-chrome: light-dark(#f4f5f7, #2e323b);
+  --color-surface-recessed: light-dark(#f4f5f7, var(--color-surface-secondary));
   --color-chrome-hover: light-dark(color-mix(in srgb, var(--color-surface), var(--color-workspace-chrome)), var(--color-hover));
   --color-field-border: light-dark(#7a808a, color-mix(in srgb, var(--color-text-muted) 90%, var(--color-surface)));
 }

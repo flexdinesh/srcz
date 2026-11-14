@@ -22,11 +22,11 @@ article:has(> .landing) {
 }
 
 .landing {
-  --l-bg: light-dark(#fafafa, #272b32);
+  --l-bg: light-dark(#ffffff, #272b32);
   --l-surface: light-dark(#ffffff, #2e323b);
-  --l-surface-2: light-dark(#eceef0, #343944);
-  --l-chrome: light-dark(#e4e5e8, #2e323b);
-  --l-border: light-dark(#c9ccd1, #3e444f);
+  --l-surface-2: light-dark(#f4f5f7, #343944);
+  --l-chrome: light-dark(#f4f5f7, #2e323b);
+  --l-border: light-dark(#e3e5e9, #3e444f);
   --l-text: light-dark(#24272c, #dce0e5);
   --l-text-2: light-dark(#4b515b, #b0b6c2);
   --l-muted: light-dark(#5b616c, #a2a8b4);
@@ -36,8 +36,8 @@ article:has(> .landing) {
   --l-accent-subtle: light-dark(#dbe5fa, #2f4563);
   --l-on-accent: light-dark(#ffffff, #1d2026);
   --l-rail: light-dark(#b7c6ea, #3f5373);
-  --l-hatch: light-dark(#dfe2e8, #323741);
-  --l-dot: light-dark(#cdd2da, #3d434e);
+  --l-hatch: light-dark(#e6e8ed, #323741);
+  --l-dot: light-dark(#d6dae1, #3d434e);
   --l-tint-blue: light-dark(#b7c6ea, #3f5373);
   --l-tint-green: light-dark(#a9d3b7, #3d5a47);
   --l-tint-coral: light-dark(#efc3b6, #6a4339);
