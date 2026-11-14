@@ -98,11 +98,12 @@ Every file within `--depth` is served, whatever its type. `.git`,
 `node_modules`, and `vendor` folders are always skipped, and `.git` files are
 always hidden.
 
-The explorer's filename filter accepts comma-separated glob patterns in Go
-`path.Match` syntax (`*`, `?`, `[...]`), matched case-insensitively against
-each file's base name. It only changes tree visibility, preserving open
-documents. Global content search covers every served text file regardless of
-the tree filter. Markdown image dependencies remain available within the
+The explorer's filename filter (the funnel in its header) accepts
+comma-separated glob patterns in Go `path.Match` syntax (`*`, `?`, `[...]`),
+matched case-insensitively against each file's base name. It only changes tree
+visibility, preserving open documents. Go to File (Cmd/Ctrl+P) covers every
+file in the tree, and global content search every served text file, regardless
+of the tree filter. Markdown image dependencies remain available within the
 served root. Source Control lists and diffs every change and commit in the
 repository checkout, regardless of `--depth` and skipped folders.
 

@@ -146,3 +146,4 @@ rewriting history; update `Status` on the old record.
 | [0142](0142-sidebar-led-docs.md) | Sidebar-led docs | Accepted; supersedes 0105's docs frame and 0107's header, toggle placement, and outline; features list superseded by 0144 |
 | [0143](0143-mist-zero-light.md) | Mist, a white Zero Light | Accepted; supersedes 0102's Zero Light values |
 | [0144](0144-docs-home-feature-index.md) | Docs home feature index | Accepted; supersedes 0142's docs home features list |
+| [0145](0145-quick-open-file-popup.md) | Quick Open file popup | Accepted; amends 0006, 0014 |

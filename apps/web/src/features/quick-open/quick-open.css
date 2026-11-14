@@ -1,0 +1,86 @@
+/* Quick Open (decision 0145): file rows on the content palette, as the
+   Search view's file rows: the base name in mono, its folder muted. */
+.quick-open .search-shell {
+  min-height: 0;
+}
+
+.quick-open-results {
+  padding-top: var(--space-1);
+}
+
+.quick-open-option {
+  white-space: nowrap;
+}
+
+.quick-open-option .file-icon,
+.quick-open-icon {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: none;
+}
+
+.quick-open-icon {
+  color: var(--color-text-secondary);
+}
+
+.quick-open-label {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.quick-open-name {
+  max-width: 70%;
+  flex: none;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-file);
+  text-overflow: ellipsis;
+}
+
+.quick-open-title {
+  flex: none;
+  font-size: var(--text-label);
+}
+
+.quick-open-folder {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+}
+
+.quick-open-line {
+  flex: none;
+  margin-left: auto;
+  padding-left: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.quick-open-option mark {
+  color: var(--color-accent);
+  background: transparent;
+  font-weight: 600;
+}
+
+/* Accent drops below 4.5:1 on the selection tint; selection ink holds. */
+.quick-open-option[aria-selected="true"] mark {
+  color: var(--color-selected-text);
+}
+
+/* Phones: the folder takes a second line under the name. */
+@media (max-width: 48rem) {
+  .quick-open-label {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .quick-open-name {
+    max-width: none;
+  }
+}

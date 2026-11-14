@@ -48,13 +48,31 @@ stays visible; comment syntax inside code stays literal.
   activity bar (Cmd/Ctrl+Shift+E, Cmd/Ctrl+Shift+F, Cmd/Ctrl+Shift+G); click
   the active item or press Cmd/Ctrl+B to hide the sidebar.
 - Navigate files in a compact, resizable tree.
-- Filter file names and paths with Pierre Trees (Cmd/Ctrl+P; Cmd/Ctrl+K alias).
+- Find a file by name with Go to File (Cmd/Ctrl+P, or the search button in
+  the Explorer header); see below.
+- Narrow the tree with the filename filter: press the funnel in the Explorer
+  header to show it. Hiding it keeps the filter applied; the funnel then shows
+  a dot and its tooltip names the patterns.
 - Keep visited documents in a borderless editor-style tab bar. The active tab
   joins the document surface. Inactive close buttons appear on hover or keyboard
   focus; touch devices keep them visible. Right-click a tab to close it, other
   tabs, tabs to its right, or all tabs, or to show a file's history.
 - Right-click a file or folder in the Explorer to copy its full or relative
   path; a file's menu also has **Show File History**.
+
+### Go to file
+
+Cmd/Ctrl+P (Cmd/Ctrl+K also works) opens Go to File, as in VS Code and Zed.
+Type parts of a file name or path; every space-separated word must match, and
+matches in the file name rank first. With nothing typed it lists the files you
+opened recently in this window. It covers every file in the tree, ignoring the
+filename filter.
+
+- Append `:line` to open the file at a line (`app.tsx:42`); `:42` alone goes
+  to line 42 of the file on screen.
+- Type `>` first to switch to the command palette; Backspace in its empty field
+  switches back.
+- Arrows move, Enter opens, Escape closes.
 
 ### Back and forward
 
@@ -232,8 +250,8 @@ below `--depth` are not watched.
   and interface font size in Settings (gear in the status bar, Cmd/Ctrl+,); search, browse categories,
   or filter modified preferences. Changes apply immediately and save in the
   browser.
-- Run commands from a VS Code-style command palette (Cmd/Ctrl+Shift+P or F1);
-  each setting is a command that opens Settings at it. Preferences › Color
+- Run commands from a VS Code-style command palette (Cmd/Ctrl+Shift+P or F1,
+  or `>` in Go to File); each setting is a command that opens Settings at it. Preferences › Color
   Theme previews themes as you arrow through them; Enter keeps one, Escape
   restores yours.
 - The status bar shows document details; disclose process CPU/RAM from Ready.

@@ -72,7 +72,8 @@ import { WelcomeTab } from "./features/welcome/WelcomeTab.tsx"
 import type { WelcomeAction } from "./features/welcome/welcome-model.ts"
 import { SettingsDialog, type OpenSettings } from "./settings/SettingsDialog.tsx"
 import { ColorThemePicker } from "./workspace/ColorThemePicker.tsx"
-import { CommandPalette } from "./workspace/CommandPalette.tsx"
+import { CommandPalette, type CommandPaletteOptions } from "./workspace/CommandPalette.tsx"
+import { QuickOpen, type QuickOpenOptions } from "./features/quick-open/QuickOpen.tsx"
 import { navigationEligibility, type NavigationKind } from "./features/navigation/code-navigation.ts"
 import type { CommandAction } from "./workspace/commands.ts"
 import { NavigationDialog } from "./features/navigation/NavigationDialog.tsx"
@@ -208,10 +209,11 @@ export function App({ project }: AppProps) {
   const searchWelcome = useSearch({ strict: false, select: (search) => search.welcome === 1 })
   const welcomeRoute = !searchPath && !reviewRoute && !walkthroughRoute && searchWelcome
   const openSearch = useRef<() => void>(() => {})
-  const openFiles = useRef<(search?: boolean) => void>(() => {})
+  const openFiles = useRef<() => void>(() => {})
+  const openQuickOpen = useRef<(options?: QuickOpenOptions) => void>(() => {})
   const openProjects = useRef<(options?: PickerOpenOptions) => void>(() => {})
   const openSettings = useRef<OpenSettings>(() => {})
-  const openCommands = useRef<() => void>(() => {})
+  const openCommands = useRef<(options?: CommandPaletteOptions) => void>(() => {})
   const openColorTheme = useRef<() => void>(() => {})
   const openRecent = useRef<() => void>(() => {})
   const stepHunk = useRef<HunkStep>(() => {})
@@ -226,8 +228,19 @@ export function App({ project }: AppProps) {
   const registerHunkStep = useCallback((step: HunkStep | null) => {
     stepHunk.current = step ?? (() => {})
   }, [])
-  const registerFiles = useCallback((open: ((search?: boolean) => void) | null) => {
+  const registerFiles = useCallback((open: (() => void) | null) => {
     openFiles.current = open ?? (() => {})
+  }, [])
+  const registerQuickOpen = useCallback((open: ((options?: QuickOpenOptions) => void) | null) => {
+    openQuickOpen.current = open ?? (() => {})
+  }, [])
+  const findFile = useCallback(() => openQuickOpen.current(), [])
+  // `>` in Quick Open opens the palette; Backspace there comes back (decision 0145).
+  const showCommandsFrom = useCallback((query: string, returnFocus: HTMLElement | null) => {
+    openCommands.current({ query, returnFocus })
+  }, [])
+  const showFilesFrom = useCallback((returnFocus: HTMLElement | null) => {
+    openQuickOpen.current({ returnFocus })
   }, [])
   const registerProjects = useCallback((open: ((options?: PickerOpenOptions) => void) | null) => {
     openProjects.current = open ?? (() => {})
@@ -235,7 +248,7 @@ export function App({ project }: AppProps) {
   const registerSettings = useCallback((open: OpenSettings | null) => {
     openSettings.current = open ?? (() => {})
   }, [])
-  const registerCommands = useCallback((open: (() => void) | null) => {
+  const registerCommands = useCallback((open: ((options?: CommandPaletteOptions) => void) | null) => {
     openCommands.current = open ?? (() => {})
   }, [])
   const registerColorTheme = useCallback((open: (() => void) | null) => {
@@ -258,6 +271,7 @@ export function App({ project }: AppProps) {
     else if (action.kind === "walkthrough-step") walkthroughCommands.current.move(action.direction)
     else if (action.kind === "walkthrough-exit") walkthroughCommands.current.close()
     else if (action.kind === "walkthrough-present") walkthroughCommands.current.present()
+    else if (action.kind === "go-to-file") openQuickOpen.current()
     else if (action.kind === "go-to-definition") runNavigation.current("definition")
     else if (action.kind === "find-references") runNavigation.current("references")
     else if (action.kind === "go-back") historyStore.go(-1)
@@ -648,6 +662,18 @@ export function App({ project }: AppProps) {
     if (focusDocument) prepareDocumentNavigation()
     void navigate({ to: "/view", search: { project, path }, hash: lineAnchor({ start: match.line, end: match.line }) })
   }, [navigate, prepareDocumentNavigation, project])
+  // Quick Open finds every file in the tree; a line goes to the document on
+  // screen when it has text (decision 0145).
+  const quickOpenFiles = useMemo(() => filePaths(page.tree), [page.tree])
+  const lineTarget = searchPath && !reviewCompare && page.hasFile && !page.binary && !page.tooLarge
+    && page.documentType?.previewKind !== "image" ? page.selected : ""
+  const lineTargetAt = page.at
+  const openQuickOpenFile = useCallback((path: string, line: number | null) => {
+    navigateToDocument(path, "", line ? lineAnchor({ start: line, end: line }) : "")
+  }, [navigateToDocument])
+  const goToLine = useCallback((line: number) => {
+    if (lineTarget) navigateToDocument(lineTarget, lineTargetAt, lineAnchor({ start: line, end: line }))
+  }, [lineTarget, lineTargetAt, navigateToDocument])
   const search = useSearchSession({ documentPane: main, openMatch: openSearchMatch, project, registerOpen: registerSearch, reveal: revealSearch })
   // Live updates reread what each change touches (decision 0050).
   const liveDocument = routedPage?.hasFile && !routedPage.at ? routedPage.selected : ""
@@ -736,7 +762,7 @@ export function App({ project }: AppProps) {
   function runWelcomeAction(action: WelcomeAction) {
     switch (action) {
       case "open-project": chooseProject(); break
-      case "find-file": openFiles.current(true); break
+      case "find-file": openQuickOpen.current(); break
       case "show-commands": openCommands.current(); break
       case "find-in-files": openSearch.current(); break
       case "source-control": revealSidebar("source-control"); break
@@ -748,7 +774,7 @@ export function App({ project }: AppProps) {
     }
   }
   function runEmptyAction(action: EmptyWorkspaceAction) {
-    if (action === "find-file") openFiles.current(true)
+    if (action === "find-file") openQuickOpen.current()
     else if (action === "review-uncommitted") openReview(workingCompare, true)
     else revealSidebar(sidebar.view)
   }
@@ -892,6 +918,7 @@ export function App({ project }: AppProps) {
             hasData={hasData}
             onDismiss={sidebar.dismiss}
             onNavigate={navigateToDocument}
+            onFindFile={findFile}
             onOpenProjects={chooseProject}
             onOpenWorktrees={chooseWorktree}
             onReveal={revealExplorer}
@@ -1032,7 +1059,10 @@ export function App({ project }: AppProps) {
         onHome={openWelcome} />
       <ProjectPicker project={project} registerOpen={registerProjects} onOpen={switchProject} />
       <SettingsDialog registerOpen={registerSettings} notificationStatus={notificationStatus} />
-      <CommandPalette registerOpen={registerCommands} onRun={runCommand} />
+      <CommandPalette registerOpen={registerCommands} onRun={runCommand} onExitToFiles={showFilesFrom} />
+      <QuickOpen files={quickOpenFiles} log={historyLog} project={project} current={liveDocument} lineTarget={lineTarget}
+        registerOpen={registerQuickOpen} beforeShow={sidebar.dismiss} onOpen={openQuickOpenFile} onGoToLine={goToLine}
+        onCommands={showCommandsFrom} />
       <ColorThemePicker registerOpen={registerColorTheme} />
       <RecentLocations log={historyLog} project={project} registerOpen={registerRecent} onOpen={navigateToHref} />
       <NavigationDialog panel={codeNavigation.panel} onClose={closeNavigation} onOpen={openNavigationResult} />

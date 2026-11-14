@@ -41,6 +41,7 @@
 @import "./highlighting/syntax.css" layer(features);
 @import "./features/projects/projects.css" layer(features);
 @import "./workspace/quick-pick.css" layer(features);
+@import "./features/quick-open/quick-open.css" layer(features);
 @import "./features/documents/mermaid.css" layer(features);
 @import "./components/file-icon.css" layer(features);
 @import "./features/navigation/navigation-dialog.css" layer(features);

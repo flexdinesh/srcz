@@ -33,7 +33,7 @@ export function startEntries(mac: boolean, canOpenFolder: boolean): WelcomeEntry
   return [
     { action: "open-project", label: "Open project…", shortcut: mac ? "⌘O" : "Ctrl+O" },
     ...openFolder,
-    { action: "find-file", label: "Find a file", shortcut: mac ? "⌘K" : "Ctrl+K" },
+    { action: "find-file", label: "Find a file", shortcut: mac ? "⌘P" : "Ctrl+P" },
     { action: "show-commands", label: "Show all commands", shortcut: mac ? "⇧⌘P" : "Ctrl+Shift+P" },
   ]
 }
