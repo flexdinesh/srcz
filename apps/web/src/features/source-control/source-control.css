@@ -372,16 +372,16 @@
   min-width: 0;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
-  padding-block: var(--space-1);
 }
 
-/* The subject line ends on the branches the commit tips. */
+/* The subject line ends on the branches the commit tips. An 18px line keeps
+   the two-line row at 42px. */
 .commit-row-subject {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: var(--space-1);
+  line-height: 1.125rem;
 }
 
 .commit-row-meta {
@@ -425,8 +425,8 @@
 .commit-details {
   display: grid;
   justify-items: start;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2) var(--space-2) var(--space-5);
+  gap: 2px;
+  padding: 0 var(--space-2) var(--space-1) var(--space-5);
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }
