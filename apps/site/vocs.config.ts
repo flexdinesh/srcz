@@ -31,4 +31,8 @@ export default defineConfig({
     },
   ],
   topNav: [{ text: 'GitHub', link: 'https://github.com/flexdinesh/zero' }],
+  editLink: {
+    link: 'https://github.com/flexdinesh/zero/edit/main/apps/site/src/pages/:path',
+    text: 'Edit this page on GitHub',
+  },
 })

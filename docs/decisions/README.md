@@ -108,9 +108,9 @@ rewriting history; update `Status` on the old record.
 | [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130; review gutter hairline by 0140 |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130, restored by 0138 |
-| [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106 |
+| [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106; docs frame superseded by 0142 |
 | [0106](0106-feature-rows-landing.md) | Feature rows landing | Accepted; revises 0105; panes and row list revised by 0141 |
-| [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105 |
+| [0107](0107-docs-redesign.md) | Docs redesign | Accepted; extends 0105; header, toggle placement, and outline superseded by 0142 |
 | [0108](0108-wider-mark-and-macos-squircle-icon.md) | Wider mark and macOS squircle icon | Accepted; revises 0104 |
 | [0109](0109-neutral-selection-fill.md) | Neutral selection fill | Accepted; revises 0033 |
 | [0110](0110-compose-validation-runner.md) | Docker Compose validation runner | Accepted; supersedes Dagger execution in 0058, 0059, 0096 |
@@ -143,3 +143,4 @@ rewriting history; update `Status` on the old record.
 | [0139](0139-inline-blame.md) | Inline blame on the active line | Accepted; extends 0008, 0083, 0112, 0114, 0115 |
 | [0140](0140-overlay-scrollbars.md) | Overlay scrollbars | Accepted; supersedes 0055's gutters, hover-only thumb, and native bars, and 0102's review gutter hairline |
 | [0141](0141-landing-scenes-and-feedback-row.md) | Landing scenes and the feedback row | Accepted; revises 0106's panes and row list |
+| [0142](0142-sidebar-led-docs.md) | Sidebar-led docs | Accepted; supersedes 0105's docs frame and 0107's header, toggle placement, and outline |

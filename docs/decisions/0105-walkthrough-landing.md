@@ -1,6 +1,6 @@
 # 0105: Walkthrough landing and framed docs
 
-- Status: Accepted; landing structure superseded by [0106](0106-feature-rows-landing.md)
+- Status: Accepted; landing structure superseded by [0106](0106-feature-rows-landing.md); docs frame superseded by [0142](0142-sidebar-led-docs.md)
 - Date: 2026-11-08
 - Revises: [0074](0074-landing-page-and-cloudflare-pages.md)'s landing structure
 - Extends: [0102](0102-sharp-slate-panes.md)'s sharp slate language to the docs chrome

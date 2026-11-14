@@ -1,6 +1,9 @@
 ---
 showAskAi: false
+outline: false
 ---
+
+import { DocCard, DocCards } from '../../docs/DocCards'
 
 # Zero
 
@@ -8,12 +11,49 @@ Browse any file in a local directory: rendered Markdown, image previews,
 formatted JSON/YAML/HTML/CSS/JavaScript, and highlighted source for everything
 else.
 
+Install the CLI and the desktop app (macOS and Linux), then open a folder:
+
 ```sh
+curl -fsSL https://raw.githubusercontent.com/flexdinesh/zero/main/scripts/install.sh | sh
 zero .
 ```
 
 Zero is a single Go binary. It serves a local, read-only browser UI; original
 files stay unchanged.
+
+<div className="sz-section-label">Start</div>
+
+<DocCards columns={2}>
+  <DocCard title="Getting started" to="/docs/getting-started">
+    Install the CLI and the desktop app, then run it.
+  </DocCard>
+  <DocCard title="Usage" to="/docs/usage">
+    Directories, projects and worktrees, host and port, the daemon, and every option.
+  </DocCard>
+</DocCards>
+
+<div className="sz-section-label">Guides</div>
+
+<DocCards columns={3}>
+  <DocCard title="Desktop app" to="/docs/desktop">
+    The same UI in a window of its own, sharing one daemon with `zero .`
+  </DocCard>
+  <DocCard title="Remote hosts" to="/docs/remote">
+    Start Zero on another machine with `--remote`, then open it from your computer.
+  </DocCard>
+  <DocCard title="Browsing" to="/docs/browsing">
+    Views, explorer and tabs, search, Source Control, and live updates.
+  </DocCard>
+  <DocCard title="Code navigation" to="/docs/code-navigation">
+    Go to definition and find references through installed language servers.
+  </DocCard>
+  <DocCard title="Walkthroughs" to="/docs/walkthroughs">
+    Ordered tours of code that an agent writes for you, shown beside the code.
+  </DocCard>
+  <DocCard title="Review feedback" to="/docs/feedback">
+    Comment on code an agent wrote, then hand the threads back in one prompt.
+  </DocCard>
+</DocCards>
 
 ## Features
 
@@ -32,5 +72,3 @@ files stay unchanged.
 - Choose from 28 themes, including Omarchy's built-ins, with live preview, and
   an interface font size; run commands from a command palette
 - Render Mermaid diagrams as themed SVG
-
-Start with [Getting started](/docs/getting-started).

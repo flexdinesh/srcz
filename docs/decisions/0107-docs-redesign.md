@@ -1,6 +1,6 @@
 # 0107: Docs redesign
 
-- Status: Accepted
+- Status: Accepted; header, toggle placement, and outline superseded by [0142](0142-sidebar-led-docs.md)
 - Date: 2026-11-08
 - Extends: [0105](0105-walkthrough-landing.md)'s framed docs chrome
 

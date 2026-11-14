@@ -1,8 +1,8 @@
 ---
 version: 1
 slug: "apps-site-src-pages-index-mdx"
-primary_target: "apps/site/src/pages/index.mdx"
-related_targets: ["apps/site/src/landing/Landing.tsx","apps/site/src/pages/_root.css"]
+primary_target: "src/pages/index.mdx"
+related_targets: ["src/landing/Landing.tsx","src/pages/_root.css"]
 ---
 
 # Landing (`/`)

@@ -1,11 +1,13 @@
 /*
- * The docs site takes the app's sharp slate language (decision 0102), the
- * landing's frame (decision 0105), and the landing's nav and footer (decision
- * 0107): a 44px header on one hairline, hatched gutters past the content,
- * blue-tinted rails, mono navigation labels, code blocks as small app panes, and
- * a text-only outline. Vocs loads this file on every page, after its own
- * styles. Its ramp runs dark to light: gray2 and gray14 are the page, gray6 and
- * gray12 borders and text.
+ * The docs take the app's sharp slate language (decision 0102) in a
+ * sidebar-led layout (decision 0142): one full-height sidebar holds the logo,
+ * search, navigation, GitHub, and theme; a 56px content bar holds the
+ * breadcrumb and the edit link; the article and its outline sit on one page
+ * color with hairlines between the panes. Code, tables, and the pager are small
+ * app panes. Vocs loads this file on every page, after its own styles. Its ramp
+ * runs dark to light: gray2 and gray14 are the page, gray6 and gray12 borders
+ * and text. The `vocs@2.10.3` patch places the sidebar's search and footer, the
+ * breadcrumb, and the edit link.
  */
 
 /* JetBrains Mono, bundled: the one mono face of the app, site, and brand
@@ -27,7 +29,8 @@
   --vocs-color-gray12: #dce0e5;
   --vocs-color-gray13: #eceef0;
   --vocs-color-gray14: #ffffff;
-  --vocs-spacing-topNav: 2.75rem;
+  --vocs-spacing-topNav: 3.25rem;
+  --vocs-spacing-content-px: 1rem;
 
   --sz-bg: light-dark(#ffffff, #272b32);
   --sz-side: light-dark(#f6f7f9, #2b2f37);
@@ -35,14 +38,14 @@
   --sz-surface: light-dark(#ffffff, #2e323b);
   --sz-surface-2: light-dark(#eceef0, #343944);
   --sz-border: light-dark(#c9ccd1, #3e444f);
+  --sz-hairline: light-dark(#dfe2e6, #3a404b);
+  --sz-hover: light-dark(rgb(36 39 44 / 6%), rgb(220 224 229 / 7%));
   --sz-text: light-dark(#24272c, #dce0e5);
   --sz-text-2: light-dark(#4b515b, #b0b6c2);
   --sz-muted: light-dark(#5b616c, #a2a8b4);
   --sz-accent: light-dark(#325dc8, #74ade8);
   --sz-accent-hover: light-dark(#2348ac, #a8cdf5);
   --sz-accent-subtle: light-dark(#dbe5fa, #2f4563);
-  --sz-rail: light-dark(#b7c6ea, #3f5373);
-  --sz-hatch: light-dark(#dfe2e8, #323741);
   --sz-tint-blue: light-dark(#b7c6ea, #3f5373);
   --sz-tint-green: light-dark(#a9d3b7, #3d5a47);
   --sz-tint-coral: light-dark(#efc3b6, #6a4339);
@@ -51,10 +54,26 @@
   --sz-wash-coral: light-dark(#fcf1ee, #3d302d);
   --sz-mark: light-dark(#f2502e, #ff6b4a);
   --sz-mark-ink: light-dark(#2b2d33, #ffffff);
+  --sz-scrim: light-dark(rgb(20 24 30 / 28%), rgb(0 0 0 / 50%));
+  --sz-shadow: 0 1.5rem 4rem rgb(15 18 23 / 22%);
   --sz-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --vocs-font-family-mono: var(--sz-mono);
   /* Code shows the characters typed: no ligatures (decision 0138). */
   font-variant-ligatures: none;
+}
+
+/* Desktop: the sidebar is anchored to the left edge, not centered with the
+   content, so every gutter Vocs derives collapses to the sidebar's width. */
+@media (min-width: 1080px) {
+  :root {
+    --vocs-spacing-topNav: 3.5rem;
+    --vocs-spacing-sidebar: 17.5rem;
+    --vocs-spacing-sidebar-px: 0.875rem;
+    --vocs-spacing-gutter: var(--vocs-spacing-sidebar);
+    --vocs-spacing-logo: var(--vocs-spacing-sidebar);
+    --vocs-spacing-content-px: 2.5rem;
+    --vocs-spacing-content: calc(45rem + var(--vocs-spacing-content-px) * 2);
+  }
 }
 
 /* Vocs rounds through utility classes in many components, so one rule covers them.
@@ -73,61 +92,25 @@ html body {
   background: var(--sz-bg);
 }
 
-/* Frame: the surface is hatched; the content column sits on it between rails. */
-
-html [data-v-gutter-left],
-html [data-v-gutter-top] {
-  background: var(--sz-bg);
-}
-
-html [data-v-gutter-left] {
-  border-right: 1px solid var(--sz-rail);
-}
-
-html [data-v-sidebar-container],
-html [data-v-sidebar-curtain] {
-  background: var(--sz-side);
-  mask: none;
-}
+/* One page color: no surface panel, no frame. */
 
 html [data-v-surface-bg] {
-  border-color: var(--sz-border);
-  border-left: 0;
-  background:
-    repeating-linear-gradient(135deg, var(--sz-hatch) 0 1px, transparent 1px 7px),
-    var(--sz-bg);
+  display: none;
 }
 
-html article[data-v-content] {
-  min-height: calc(100vh - var(--vocs-spacing-topNav));
-  background: var(--sz-bg);
-  border-right: 1px solid var(--sz-rail);
-}
-
-@media (min-width: 1376px) {
-  html [data-v-gutter-right] {
-    height: calc(100vh - var(--vocs-spacing-topNav));
-    background: var(--sz-bg);
-    border-left: 1px solid var(--sz-border);
-    border-right: 1px solid var(--sz-rail);
-  }
-}
-
-/* Header: the landing's nav, one bar on one hairline across logo and content. */
-
-html [data-v-gutter-logo],
-html [data-v-gutter-top] {
-  height: var(--vocs-spacing-topNav);
-  background: var(--sz-bg);
-  border-bottom: 1px solid var(--sz-border);
-}
+/* Sidebar: logo row, search, navigation, then GitHub and the theme. */
 
 html [data-v-gutter-logo] {
-  border-right: 1px solid var(--sz-rail);
+  height: var(--vocs-spacing-topNav);
+  background: var(--sz-bg);
+  border-right: 1px solid var(--sz-hairline);
+  border-bottom: 1px solid var(--sz-hairline);
 }
 
 html [data-v-gutter-logo] > [data-v-logo] {
-  padding-block: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1.25rem;
 }
 
 /* The mark is 20px tall, as on the landing; the outlined wordmark scales with it. */
@@ -136,47 +119,40 @@ html [data-v-logo-image] {
   max-height: 1.4375rem;
 }
 
-html [data-v-gutter-top] {
+html [data-v-gutter-left] {
+  background: var(--sz-bg);
+  border-right: 1px solid var(--sz-hairline);
+}
+
+html [data-v-sidebar-container] {
+  padding-bottom: 0;
+}
+
+html [data-v-sidebar-curtain] {
+  display: none;
+}
+
+html [data-v-sidebar-search] {
+  padding: 1rem 0 0.75rem;
+}
+
+html [data-v-sidebar-container] > [data-v-sidebar] {
+  padding-top: 0.5rem;
+}
+
+html [data-v-sidebar-footer] {
+  position: sticky;
+  bottom: 0;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-inline: calc(var(--vocs-spacing-sidebar-px) * -1);
+  padding: 0.75rem var(--vocs-spacing-sidebar-px) 0.75rem 1.25rem;
+  border-top: 1px solid var(--sz-hairline);
+  background: var(--sz-bg);
 }
 
-@media (min-width: 1024px) {
-  html [data-v-gutter-top] {
-    padding-inline: 3rem 1rem;
-  }
-}
-
-html [data-v-gutter-top-left] {
-  height: auto;
-  padding-block: 0;
-  align-items: center;
-}
-
-html [data-v-gutter-top-left] > div:has(> button) {
-  height: 1.75rem;
-}
-
-html [data-v-gutter-top-left] button[aria-haspopup='dialog'] {
-  border: 1px solid var(--sz-border);
-  background: var(--sz-surface);
-  font-family: var(--sz-mono);
-  font-size: 0.75rem;
-  color: var(--sz-muted);
-}
-
-html [data-v-gutter-top-left] button[aria-haspopup='dialog'] > div:last-child > * {
-  border: 1px solid var(--sz-border);
-  background: var(--sz-surface-2);
-  font-family: var(--sz-mono);
-}
-
-html [data-v-gutter-top-right] {
-  align-items: center;
-  gap: 1.25rem;
-  height: 100%;
-}
-
-html [data-v-gutter-top-right] nav a {
+html [data-v-sidebar-footer] nav a {
   padding: 0;
   border: 0;
   font-family: var(--sz-mono);
@@ -185,51 +161,75 @@ html [data-v-gutter-top-right] nav a {
   color: var(--sz-text-2);
 }
 
-html [data-v-gutter-top-right] nav a:hover {
+html [data-v-sidebar-footer] nav a:hover {
   color: var(--sz-text);
 }
 
-html [data-v-gutter-top-right] nav a svg {
+html [data-v-sidebar-footer] nav a svg {
   display: none;
 }
 
+/* Search fields: square mono boxes, in the sidebar and the tablet bar. */
+
+html [data-v-sidebar-search] button[aria-haspopup='dialog'],
+html [data-v-gutter-top-left] button[aria-haspopup='dialog'] {
+  height: 2rem;
+  border: 1px solid var(--sz-border);
+  background: var(--sz-surface);
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  color: var(--sz-muted);
+}
+
+html [data-v-sidebar-search] button[aria-haspopup='dialog'] > div:last-child > *,
+html [data-v-gutter-top-left] button[aria-haspopup='dialog'] > div:last-child > * {
+  border: 1px solid var(--sz-border);
+  background: var(--sz-side);
+  font-family: var(--sz-mono);
+}
+
 /* Theme: Vocs' light, dark, and system radios as square cells on one hairline. */
-html [data-v-gutter-top-right] [role='radiogroup'] {
+
+html [role='radiogroup']:has(> [role='radio']) {
   gap: 0;
   padding: 0;
   border: 1px solid var(--sz-border);
   background: transparent;
 }
 
-html [data-v-gutter-top-right] [role='radio'] {
+html [role='radiogroup'] > [role='radio'] {
   width: 1.75rem;
   height: 1.625rem;
   border: 0;
   color: var(--sz-muted);
 }
 
-html [data-v-gutter-top-right] [role='radio'] + [role='radio'] {
+html [role='radiogroup'] > [role='radio'] + [role='radio'] {
   border-left: 1px solid var(--sz-border);
 }
 
-html [data-v-gutter-top-right] [role='radio']:hover {
+html [role='radiogroup'] > [role='radio']:hover {
   color: var(--sz-text);
 }
 
-html [data-v-gutter-top-right] [role='radio'][data-checked] {
+html [role='radiogroup'] > [role='radio'][data-checked] {
   border-color: var(--sz-border);
   background: var(--sz-accent-subtle);
   color: var(--sz-accent-hover);
 }
 
-html [data-v-gutter-top-right] [role='radio'] svg {
+html [role='radiogroup'] > [role='radio'] svg {
   width: 0.875rem;
   height: 0.875rem;
 }
 
-/* Navigation: mono labels, compact rows, the app's selection. */
+/* Navigation: mono section labels over 14px sans rows, like the app's sidebar.
+   The current page takes the accent wash. */
 
-html [data-v-sidebar-section] > :first-child {
+html [data-v-sidebar-section-header] {
+  height: 1.75rem;
+  margin-inline: 0;
+  padding-inline: 0.625rem;
   font-family: var(--sz-mono);
   font-size: 0.6875rem;
   font-weight: 600;
@@ -238,27 +238,166 @@ html [data-v-sidebar-section] > :first-child {
   color: var(--sz-muted);
 }
 
-html [data-v-sidebar-item] {
-  font-family: var(--sz-mono);
-  font-size: 0.8125rem;
-  font-weight: 400;
+html [data-v-sidebar-section] + [data-v-sidebar-section] {
+  margin-top: 0.75rem;
 }
 
-html [data-v-sidebar-item][data-active='true'] {
+html [data-v-sidebar-item] {
+  margin: 0;
+  padding: 0.3125rem 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--sz-text-2);
+}
+
+html [data-v-sidebar-item][data-link]:hover {
+  background: var(--sz-hover);
+  color: var(--sz-text);
+}
+
+html [data-v-sidebar-item][data-active='true'],
+html [data-v-sidebar-item][data-active='true']:hover {
   background: var(--sz-accent-subtle);
-  box-shadow: inset 0 0 0 1px var(--sz-accent);
   color: var(--sz-accent-hover) !important;
+  font-weight: 500;
+}
+
+/* Content bar (desktop): the breadcrumb, then the edit link, on one hairline. */
+
+html [data-v-gutter-top] {
+  height: var(--vocs-spacing-topNav);
+  align-items: center;
+  background: var(--sz-bg);
+  border-bottom: 1px solid var(--sz-hairline);
+}
+
+html [data-v-gutter-top-left] {
+  height: 100%;
+  padding-block: 0;
+  align-items: center;
+}
+
+html [data-v-gutter-top-left] > div:has(> button) {
+  height: 2rem;
+}
+
+html [data-v-breadcrumb] ol {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  color: var(--sz-muted);
+}
+
+html [data-v-breadcrumb] li + li::before {
+  content: '/';
+  margin-right: 0.5rem;
+  color: var(--sz-border);
+}
+
+html [data-v-breadcrumb] li[aria-current='page'] {
+  color: var(--sz-accent);
+}
+
+html [data-v-gutter-top-right] {
+  align-items: center;
+  height: 100%;
+}
+
+html [data-v-gutter-top-right] [data-v-edit-link],
+html [data-v-content-footer] [data-v-edit-link],
+html [data-v-last-updated] {
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  color: var(--sz-muted);
+}
+
+html [data-v-gutter-top-right] [data-v-edit-link] {
+  color: var(--sz-text-2);
+}
+
+html [data-v-gutter-top-right] [data-v-edit-link]:hover,
+html [data-v-content-footer] [data-v-edit-link]:hover {
+  color: var(--sz-text);
+}
+
+html [data-v-gutter-top-right] [data-v-edit-link] svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+html [data-v-content-footer] [data-v-edit-link] svg {
+  display: none;
+}
+
+@media (min-width: 1080px) {
+  html [data-v-sidebar] > [data-v-gutter-top] {
+    padding-inline: var(--vocs-spacing-content-px);
+  }
+
+  html [data-v-top-search],
+  html [data-v-breadcrumb='content'] {
+    display: none;
+  }
+
+  /* The article and its footer center in the space the sidebar and outline leave. */
+  html [data-v-sidebar] [data-v-content],
+  html [data-v-sidebar] [data-v-footer] {
+    margin-inline: auto;
+  }
+
+  /* Vocs' tablet outline bar sits under the content bar with no side edge. */
+  html [data-v-outline-mobile] {
+    border-left: 0;
+    border-top: 0;
+  }
+}
+
+@media (min-width: 1376px) {
+  html [data-v-sidebar] > [data-v-main]:has(> [data-v-gutter-right]) {
+    padding-right: var(--vocs-spacing-gutter);
+  }
+}
+
+/* Pages without an outline (the docs home) take a wider column. */
+@media (min-width: 1080px) {
+  html [data-v-sidebar] > [data-v-main]:not(:has(> [data-v-gutter-right])) > [data-v-content],
+  html [data-v-sidebar] > [data-v-main]:not(:has(> [data-v-gutter-right])) > [data-v-footer] {
+    max-width: calc(63.25rem + var(--vocs-spacing-content-px) * 2);
+  }
+}
+
+@media (max-width: 1079px) {
+  html [data-v-breadcrumb='bar'] {
+    display: none;
+  }
+
+  html [data-v-gutter-top] {
+    padding-left: 1rem;
+  }
+
+  html [data-v-breadcrumb='content'] {
+    margin-bottom: 0.75rem;
+  }
 }
 
 /*
- * Outline: text only. A muted mono label over 22px mono rows; no track or
- * indicator. Only the current section turns accent: Vocs also marks its
- * ancestors active, and those keep the row color. Vocs indents rows 12px plus
- * 16px per level; shifting the list left keeps the 16px steps from the edge.
+ * Outline: a muted mono label over 13px rows on a 1px track; the current
+ * section's accent bar slides along it. The column is the sidebar's width.
  */
 
+html [data-v-gutter-right] {
+  padding-left: 1.5rem;
+  padding-right: 2rem;
+}
+
 html [data-v-outline-nav] {
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 html [data-v-outline-nav] > :first-child {
@@ -275,34 +414,71 @@ html [data-v-outline-nav] > :first-child svg {
   display: none;
 }
 
+html [data-v-outline-mobile] {
+  background: var(--sz-bg);
+  border-color: var(--sz-hairline);
+}
+
 html [data-v-outline-mobile] button {
   font-family: var(--sz-mono);
   font-size: 0.75rem;
+  color: var(--sz-text-2);
 }
 
-html [data-v-outline-items] {
-  margin-left: -0.75rem;
-  border-left: 0 !important;
+@media (min-width: 1376px) {
+  html [data-v-outline-items] {
+    border-left-width: 1px !important;
+    border-color: var(--sz-hairline);
+  }
 }
 
 html [data-v-outline-indicator] {
-  display: none;
+  left: -1px;
+  width: 2px;
+  background: var(--sz-accent);
 }
 
 html [data-v-outline-item] a {
-  padding-block: 0;
-  font-family: var(--sz-mono);
-  font-size: 0.75rem;
-  line-height: 1.375rem;
-  color: var(--sz-text-2);
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  padding-block: 0.25rem;
+  color: var(--sz-muted);
 }
 
 html [data-v-outline-item] a:hover {
   color: var(--sz-text);
 }
 
-html [data-v-outline-item][data-active='true']:not(:has(~ [data-active='true'])) a {
+html [data-v-outline-item][data-active='true']:not(:has(~ [data-active='true'])) > a {
   color: var(--sz-accent);
+}
+
+/* Article: no rules under the H1 or above each H2; the first paragraph is the lede. */
+
+html article[data-v-content] {
+  background: var(--sz-bg);
+}
+
+html article[data-v-content] > h1 {
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+html article[data-v-content] > h1 + p {
+  margin-top: 0.875rem;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--sz-text-2);
+}
+
+html article[data-v-content] > h2 {
+  padding-top: 0;
+  border-top: 0;
+  margin-top: 3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /*
@@ -396,6 +572,332 @@ html article[data-v-content] :not(pre) > code:not(.landing code) {
   background: var(--sz-surface-2);
 }
 
+/* Tables: panes flush with the prose, with the code band as their header. */
+
+html article[data-v-content] [data-v-table-wrapper] {
+  margin-inline: 0;
+  border: 0;
+}
+
+html article[data-v-content] [data-v-table-wrapper] table {
+  width: 100%;
+  border: 1px solid var(--sz-border);
+  border-collapse: collapse;
+}
+
+html article[data-v-content] [data-v-table-wrapper] th {
+  height: 1.75rem;
+  padding: 0 0.875rem;
+  border-bottom: 1px solid var(--sz-border);
+  background: var(--sz-side);
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+  text-align: left;
+}
+
+html article[data-v-content] [data-v-table-wrapper] td {
+  padding: 0.5rem 0.875rem;
+  border-color: var(--sz-hairline);
+}
+
+/* Docs home: mono section labels over page cards on shared hairlines (`DocCards.tsx`). */
+
+html body article[data-v-content] > .sz-section-label {
+  margin-top: 2.75rem;
+  margin-bottom: 0;
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+}
+
+html body article[data-v-content] > .sz-section-label + .sz-cards {
+  margin-top: 0.875rem;
+}
+
+.sz-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--sz-border);
+  border-left: 1px solid var(--sz-border);
+}
+
+.sz-cards[data-columns='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sz-card {
+  display: grid;
+  align-content: start;
+  gap: 0.375rem;
+  padding: 1rem 1.125rem 1.125rem;
+  border-right: 1px solid var(--sz-border);
+  border-bottom: 1px solid var(--sz-border);
+  color: var(--sz-text-2);
+  text-decoration: none;
+  transition: background-color 120ms;
+}
+
+.sz-card:hover {
+  background: var(--sz-side);
+}
+
+.sz-card:focus-visible {
+  outline: 2px solid var(--sz-accent);
+  outline-offset: -2px;
+}
+
+.sz-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sz-text);
+}
+
+.sz-card-title svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: none;
+  stroke: var(--sz-muted);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sz-card-text {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.sz-card-text p {
+  margin: 0;
+}
+
+.sz-card-text code {
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .sz-cards,
+  .sz-cards[data-columns='3'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 404 (`404.tsx`): a label, the heading, two ways on, and the search shortcut. */
+
+.sz-nf {
+  padding: 10vh 0 4rem;
+}
+
+/* No edit link or pager for a page that is not there. */
+article[data-v-content]:has(> .sz-nf) > [data-v-content-footer] {
+  display: none;
+}
+
+.sz-nf-code {
+  font-family: var(--sz-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  color: var(--sz-accent);
+}
+
+.sz-nf h1 {
+  margin-top: 0.75rem;
+  font-size: 2.25rem;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: var(--sz-text);
+}
+
+.sz-nf p {
+  margin-top: 0.875rem;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--sz-text-2);
+}
+
+.sz-nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 1.5rem;
+}
+
+.sz-button {
+  display: inline-flex;
+  align-items: center;
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--sz-border);
+  background: var(--sz-surface);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sz-text);
+  text-decoration: none;
+  transition: background-color 120ms, border-color 120ms;
+}
+
+.sz-button:hover {
+  border-color: var(--sz-muted);
+}
+
+.sz-button-primary {
+  border-color: var(--sz-accent);
+  background: var(--sz-accent);
+  color: light-dark(#ffffff, #1d2026);
+}
+
+.sz-button-primary:hover {
+  border-color: var(--sz-accent-hover);
+  background: var(--sz-accent-hover);
+}
+
+.sz-button:focus-visible {
+  outline: 2px solid var(--sz-accent);
+  outline-offset: 1px;
+}
+
+.sz-nf p.sz-nf-hint {
+  margin-top: 1.75rem;
+  font-family: var(--sz-mono);
+  font-size: 0.75rem;
+  color: var(--sz-muted);
+}
+
+.sz-nf kbd {
+  padding: 0.0625rem 0.3125rem;
+  border: 1px solid var(--sz-border);
+  background: var(--sz-side);
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+}
+
+@media (max-width: 767px) {
+  .sz-button {
+    height: 2.75rem;
+  }
+}
+
+/* Search dialog: a 640px pane under a light scrim, a 52px query row, results
+   with a mono trail and the selected row in the accent wash, and a hint footer. */
+
+[role='presentation'][data-open]:has(~ [role='dialog'] #search-results) {
+  background: var(--sz-scrim);
+  backdrop-filter: none;
+}
+
+[role='dialog']:has(#search-results) {
+  top: 12vh;
+  width: min(40rem, calc(100vw - 2rem));
+  border: 1px solid var(--sz-border);
+  background: var(--sz-bg);
+  box-shadow: var(--sz-shadow);
+}
+
+[role='dialog']:has(#search-results) > div:has(> [role='combobox']) {
+  flex: none;
+  height: 3.25rem;
+  padding-block: 0;
+  border-color: var(--sz-hairline);
+}
+
+[role='dialog'] [role='combobox'] {
+  font-size: 1rem;
+}
+
+#search-results > [role='option'] {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+#search-results > [role='option'][data-selected='true'] {
+  background: var(--sz-accent-subtle);
+}
+
+#search-results > [role='option'][data-selected='true'] svg {
+  color: var(--sz-accent);
+}
+
+#search-results [role='option'] .vocs\:text-xs {
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: var(--sz-muted);
+}
+
+#search-results [role='option'] .vocs\:line-clamp-2 {
+  font-size: 0.8125rem;
+  color: var(--sz-text-2);
+}
+
+#search-results mark {
+  background: transparent;
+  color: var(--sz-accent);
+  font-weight: 600;
+}
+
+[role='dialog']:has(#search-results) > div:has(kbd) {
+  border-color: var(--sz-hairline);
+  background: var(--sz-side);
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  color: var(--sz-muted);
+}
+
+[role='dialog']:has(#search-results) kbd {
+  background: var(--sz-bg);
+  border-color: var(--sz-border);
+  font-family: var(--sz-mono);
+}
+
+@media (max-width: 639px) {
+  [role='dialog']:has(#search-results) {
+    top: 0.75rem;
+  }
+}
+
+/* Phone drawer: from the left like the desktop sidebar, under the same scrim,
+   with 44px rows. */
+
+[role='presentation'][data-open]:has(~ [data-v-mobile-nav]) {
+  background: var(--sz-scrim);
+  backdrop-filter: none;
+}
+
+html [data-v-mobile-nav] {
+  left: 0;
+  right: auto;
+  width: min(20rem, calc(100vw - 3rem));
+  border-left: 0;
+  border-right: 1px solid var(--sz-hairline);
+  background: var(--sz-bg);
+  box-shadow: var(--sz-shadow);
+}
+
+html [data-v-mobile-nav][data-starting-style],
+html [data-v-mobile-nav][data-ending-style] {
+  translate: -100% 0;
+}
+
+html [data-v-mobile-nav] [data-v-sidebar-item] {
+  min-height: 2.75rem;
+  align-items: center;
+}
+
+html [data-v-mobile-nav] [data-v-sidebar-section-header] {
+  height: 2.75rem;
+}
+
 /* Callouts: a tinted wash and border per kind, the brand coral for warnings. */
 
 html [data-v-callout] {
@@ -420,6 +922,83 @@ html [data-v-callout] li {
   color: var(--sz-text-2);
 }
 
+/* Page foot: the edit link and Last updated in mono, then the pager as two panes. */
+
+html [data-v-content-footer] {
+  margin-top: 3.5rem;
+}
+
+html [data-v-content-footer] > div:last-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+html [data-v-pagination] {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--sz-border);
+}
+
+html [data-v-pagination] > a {
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+  border: 0;
+  transition: background-color 120ms;
+}
+
+html [data-v-pagination] > a:hover {
+  background: var(--sz-side);
+}
+
+html [data-v-pagination] > a:only-child {
+  grid-column: 2;
+}
+
+html [data-v-pagination] > a + a {
+  border-left: 1px solid var(--sz-border);
+}
+
+html [data-v-pagination] > a > span:first-child {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--sz-text);
+}
+
+html [data-v-pagination] > a > span:first-child svg {
+  display: none;
+}
+
+html [data-v-pagination] > a > span:last-child {
+  font-family: var(--sz-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sz-muted);
+}
+
+html [data-v-pagination] > a > span:last-child > span {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  html [data-v-pagination] {
+    grid-template-columns: 1fr;
+  }
+
+  html [data-v-pagination] > a:only-child {
+    grid-column: 1;
+  }
+
+  html [data-v-pagination] > a + a {
+    border-left: 0;
+    border-top: 1px solid var(--sz-border);
+  }
+}
+
 /* Footer: the landing's band (`_slots.tsx`), ending each page on a hairline. */
 
 html main[data-v-main] {
@@ -428,7 +1007,6 @@ html main[data-v-main] {
 
 html [data-v-footer] {
   padding: 0;
-  border-right: 1px solid var(--sz-rail);
 }
 
 html [data-layout='blank'] [data-v-footer] {
@@ -441,9 +1019,9 @@ html [data-layout='blank'] [data-v-footer] {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 3rem;
-  border-top: 1px solid var(--sz-border);
-  background: var(--sz-chrome);
+  margin: 3rem var(--vocs-spacing-content-px) 0;
+  padding: 1.125rem 0;
+  border-top: 1px solid var(--sz-hairline);
   font-family: var(--sz-mono);
   font-size: 0.75rem;
   color: var(--sz-text);
@@ -492,14 +1070,4 @@ html [data-layout='blank'] [data-v-footer] {
 
 .sz-footer-links a:hover {
   color: var(--sz-text);
-}
-
-@media (max-width: 767px) {
-  html [data-v-footer] {
-    border-right: 0;
-  }
-
-  .sz-footer {
-    padding-inline: 1rem;
-  }
 }
