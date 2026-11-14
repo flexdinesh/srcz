@@ -143,5 +143,6 @@ rewriting history; update `Status` on the old record.
 | [0139](0139-inline-blame.md) | Inline blame on the active line | Accepted; extends 0008, 0083, 0112, 0114, 0115 |
 | [0140](0140-overlay-scrollbars.md) | Overlay scrollbars | Accepted; supersedes 0055's gutters, hover-only thumb, and native bars, and 0102's review gutter hairline |
 | [0141](0141-landing-scenes-and-feedback-row.md) | Landing scenes and the feedback row | Accepted; revises 0106's panes and row list |
-| [0142](0142-sidebar-led-docs.md) | Sidebar-led docs | Accepted; supersedes 0105's docs frame and 0107's header, toggle placement, and outline |
+| [0142](0142-sidebar-led-docs.md) | Sidebar-led docs | Accepted; supersedes 0105's docs frame and 0107's header, toggle placement, and outline; features list superseded by 0144 |
 | [0143](0143-mist-zero-light.md) | Mist, a white Zero Light | Accepted; supersedes 0102's Zero Light values |
+| [0144](0144-docs-home-feature-index.md) | Docs home feature index | Accepted; supersedes 0142's docs home features list |

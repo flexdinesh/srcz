@@ -993,6 +993,7 @@ Every corner is square. `_root.css` zeroes Vocs' radii with one `border-radius: 
 - **Docs table:** a pane flush with the prose: 1px `border`, a `--sz-side` header band of section labels, padded cells.
 - **Docs pager:** Previous and Next as two bordered panes with mono labels and the page title; one pane takes the Next column alone; no Shift shortcuts. The edit link and Last updated sit above it in mono.
 - **Docs home cards** (`src/docs/DocCards.tsx`): a mono section label over a grid of panes on shared hairlines (two or three columns, one under 768px), each a title with an arrow and a one-line summary; hover takes `--sz-hover`.
+- **Docs feature index** (`src/docs/FeatureIndex.tsx`, decision 0144): the same mono section label over two columns of rows (one under 768px), each on a `hairline` top rule: a 14px 600 `text` name with a small muted arrow when it links, then a 13.5px `muted` line; hover turns name and arrow `accent-hover`. No pane borders, so it reads as an index beside the cards.
 - **Docs search:** a 640px pane at 12vh under `--sz-scrim`: a 52px query row, results with a mono trail, matches in accent weight 600, the selected result in `accent-subtle`, and a `--sz-side` hint footer.
 - **Docs phone drawer:** slides from the left, `min(20rem, 100vw - 3rem)` wide, under the same scrim, with 44px rows.
 - **Docs 404** (`src/pages/404.tsx`): inside the layout: a mono accent "404", the heading, a lede, the primary and outline buttons (Docs home, Getting started), and the Ctrl/Cmd+K hint; no edit link or pager.

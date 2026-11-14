@@ -4,12 +4,13 @@ outline: false
 ---
 
 import { DocCard, DocCards } from '../../docs/DocCards'
+import { Feature, FeatureGroup } from '../../docs/FeatureIndex'
 
 # Zero
 
-Browse any file in a local directory: rendered Markdown, image previews,
-formatted JSON/YAML/HTML/CSS/JavaScript, and highlighted source for everything
-else.
+Browse every file in a folder and review what agents change: diffs, commits,
+branches, and the walkthroughs agents publish. Read-only, on your machine or a
+remote one.
 
 Install the CLI and the desktop app (macOS and Linux), then open a folder:
 
@@ -57,18 +58,68 @@ files stay unchanged.
 
 ## Features
 
-- Render Markdown content and local images
-- Preview PNG, JPEG, GIF, WebP, AVIF, ICO, BMP, and SVG images
-- Switch each open document between preview and highlighted, read-only source
-- Format JSON, YAML, HTML, CSS, and JavaScript on demand for reading
-- Highlight common languages and config files; show other text as plain text
-- Serve several directories at once and switch between their git repositories
-  and worktrees
-- Search file content like VS Code, skipping files git ignores
-- Review uncommitted changes, commits, branches against any base, and commit
-  ranges in one stacked diff tab, with line counts and Viewed marks; search
-  commits and show a file's history
-- Go to definition and find references through installed language servers
-- Choose from 28 themes, including Omarchy's built-ins, with live preview, and
-  an interface font size; run commands from a command palette
-- Render Mermaid diagrams as themed SVG
+<FeatureGroup label="Browse">
+  <Feature title="Every file opens" to="/docs/browsing#views">
+    Markdown, Mermaid, and images render; everything else is highlighted source.
+  </Feature>
+  <Feature title="Format on demand" to="/docs/browsing#views">
+    JSON, YAML, HTML, CSS, and JavaScript, read-only.
+  </Feature>
+  <Feature title="Search" to="/docs/browsing#search">
+    Filter file names; search content like VS Code, skipping ignored files.
+  </Feature>
+  <Feature title="Code navigation" to="/docs/code-navigation">
+    Go to definition and find references through your language servers.
+  </Feature>
+</FeatureGroup>
+
+<FeatureGroup label="Review">
+  <Feature title="One stacked diff" to="/docs/browsing#source-control">
+    Uncommitted work, commits, branches against any base, and commit ranges.
+  </Feature>
+  <Feature title="Viewed marks" to="/docs/browsing#source-control">
+    Fold reviewed files; `n` `p` step changes, `]` `[` files.
+  </Feature>
+  <Feature title="Image diffs" to="/docs/browsing#source-control">
+    2-up, Swipe, and Onion skin.
+  </Feature>
+  <Feature title="Blame and history" to="/docs/browsing#inline-blame">
+    Inline blame on the active line, a file's commits, commit search.
+  </Feature>
+</FeatureGroup>
+
+<FeatureGroup label="Agents">
+  <Feature title="Walkthroughs" to="/docs/walkthroughs">
+    An agent publishes a tour of its changes; each step opens its lines.
+  </Feature>
+  <Feature title="Feedback threads" to="/docs/feedback">
+    Comment on a line; the agent fixes it and replies in the thread.
+  </Feature>
+  <Feature title="Live updates" to="/docs/browsing#live-updates">
+    Files, diffs, and search refresh as an agent writes.
+  </Feature>
+</FeatureGroup>
+
+<FeatureGroup label="Anywhere">
+  <Feature title="Desktop app" to="/docs/desktop">
+    Its own window in the OS web view, sharing one daemon with `zero .`
+  </Feature>
+  <Feature title="Remote hosts" to="/docs/remote">
+    `--remote` on the host, `zero connect` on your laptop.
+  </Feature>
+  <Feature title="Tailscale" to="/docs/remote#tailscale">
+    Serve to your tailnet with `--tailscale`.
+  </Feature>
+  <Feature title="Containers" to="/docs/remote#containers">
+    `zero attach docker://web`; no shell or published port.
+  </Feature>
+</FeatureGroup>
+
+<FeatureGroup label="Lean">
+  <Feature title="One Go binary">
+    The web app is embedded; nothing else to run.
+  </Feature>
+  <Feature title="Read-only">
+    Files are never written; git is read directly, without the git binary.
+  </Feature>
+</FeatureGroup>
