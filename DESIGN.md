@@ -2,18 +2,18 @@
 name: zero
 description: Compact, sharp-cornered workspace of slate panes for browsing local files, with VS Code conventions.
 colors:
-  bg: "#fafafa"
-  canvas: "#e4e5e8"
-  workspace-chrome: "#e4e5e8"
-  surface: "#fafafa"
-  surface-secondary: "#eceef0"
-  surface-recessed: "#eceef0"
+  bg: "#ffffff"
+  canvas: "#f4f5f7"
+  workspace-chrome: "#f4f5f7"
+  surface: "#ffffff"
+  surface-secondary: "#f9fafb"
+  surface-recessed: "#f4f5f7"
   surface-raised: "#ffffff"
   text-primary: "#24272c"
   text-secondary: "#4b515b"
   text-muted: "#5e6571"
-  border: "#c9ccd1"
-  border-strong: "#aeb3bb"
+  border: "#e3e5e9"
+  border-strong: "#cbd0d6"
   accent: "#325dc8"
   accent-hover: "#2348ac"
   accent-subtle: "#dbe5fa"
@@ -35,11 +35,11 @@ colors:
   site-muted: "#5b616c"
   site-docs-muted: "#5b616c"
   site-docs-bg: "#ffffff"
-  site-docs-side: "#f6f7f9"
-  site-docs-chrome: "#f2f3f5"
+  site-docs-side: "#f9fafb"
+  site-docs-chrome: "#f4f5f7"
   site-rail: "#b7c6ea"
-  site-hatch: "#dfe2e8"
-  site-dot: "#cdd2da"
+  site-hatch: "#e6e8ed"
+  site-dot: "#d6dae1"
   site-tint-blue: "#b7c6ea"
   site-tint-green: "#a9d3b7"
   site-tint-coral: "#efc3b6"
@@ -311,10 +311,10 @@ Feature CSS references tokens only; stylelint rejects color literals, raw font s
 
 ## Colors
 
-Base Light uses cool slate surfaces and functional blue. Named themes keep the same semantic roles.
+Base Light (Mist, decision 0143) uses a white document and sidebar in whisper-slate chrome, with functional blue. Named themes keep the same semantic roles.
 
 - **Primary:** `accent`, `accent-hover`, `accent-subtle`, `on-accent` serve links, focus, view-mode state, selected files, and primary actions.
-- **Neutral:** `bg` is the theme base; `canvas` is a per-theme tone behind the panes that `workspace-chrome` derives from; `surface` is document and review; `surface-secondary` is explorer/code and the review's file bands; `surface-recessed` (= `surface-secondary`) fills what is set into the document (active source line, code blocks, table headers, diff separators, image checkerboard); `workspace-chrome` mixes `surface` and `canvas` evenly for the activity rail, tab strip, and status bar, so the active tab stays distinct from the strip (Zero themes set it directly: `#e4e5e8` in Light, `#2e323b` in Dark; decision 0102); Zero's greys are cool slate in both polarities; `surface-raised` is menus and floating controls. `text-primary/secondary/muted` establish content, supporting labels, and metadata. `border` separates ordinary regions; `border-strong` emphasizes elevated boundaries; `overlay` is the drawer backdrop.
+- **Neutral:** `bg` is the theme base; `canvas` is a per-theme tone behind the panes that `workspace-chrome` derives from; `surface` is document and review; `surface-secondary` is explorer/code and the review's file bands; `surface-recessed` (= `surface-secondary`; `#f4f5f7` in Zero Light, where the `#f9fafb` sidebar tone barely reads on white) fills what is set into the document (active source line, code blocks, table headers, diff separators, image checkerboard); `workspace-chrome` mixes `surface` and `canvas` evenly for the activity rail, tab strip, and status bar, so the active tab stays distinct from the strip (Zero themes set it directly: `#f4f5f7` in Light, `#2e323b` in Dark; decisions 0102, 0143); Zero's greys are cool slate in both polarities; `surface-raised` is menus and floating controls. `text-primary/secondary/muted` establish content, supporting labels, and metadata. `border` separates ordinary regions; `border-strong` emphasizes elevated boundaries; `overlay` is the drawer backdrop.
 - **Status:** success, warning, destructive and subtle fills accompany text. `warning-subtle` also highlights search matches. `syntax-*` supplies code-token roles.
 
 Choices: Auto, Zero Light, Zero Dark, Dracula, Solarized Light, and Omarchy's 23 built-in themes (decision 0036): Catppuccin, Catppuccin Latte, Ethereal, Everforest, Flexoki Light, Gruvbox, Hackerman, Kanagawa, Last Horizon, Lumon, Lupine, Matte Black, Miasma, Nord, Osaka Jade, Retro 82, Ristretto, Rose Pine, Solitude, Starship, Tokyo Night, Vantablack, White. Zero Light, Solarized Light, Catppuccin Latte, Flexoki Light, Lupine, Rose Pine, and White resolve light; the rest and Zero Dark resolve dark. Auto follows `prefers-color-scheme`. Omarchy palettes map to roles by the rule in `themes.css`, readable first: text, links, status, and syntax hold 4.5:1 and comments 3:1 on `surface` and `surface-secondary`; monochrome palettes get quiet status hues so diffs keep red and green. Theme is chosen in Settings or the Color Theme quick pick and persists under `zero-theme`. Keep `color-scheme` synchronized with resolved polarity; Mermaid diagrams read theme tokens through `--ondine-*` properties.
@@ -912,16 +912,16 @@ Shared neutrals restate the app's Zero values:
 
 | Role | `--l-*` / `--sz-*` | Light | Dark |
 | --- | --- | --- | --- |
-| Page (landing) | `--l-bg` | `#fafafa` | `#272b32` |
+| Page (landing) | `--l-bg` | `#ffffff` | `#272b32` |
 | Page (docs) | `--sz-bg` | `#ffffff` | `#272b32` |
-| Docs code block band, table header, search footer | `--sz-side` | `#f6f7f9` | `#2b2f37` |
+| Docs code block band, table header, search footer | `--sz-side` | `#f9fafb` | `#2b2f37` |
 | Docs hairline (sidebar, content bar, outline track) | `--sz-hairline` | `#dfe2e6` | `#3a404b` |
 | Docs hover wash / overlay scrim | `--sz-hover`, `--sz-scrim` | ink at 6% / 28% | white at 7% / black at 50% |
-| Docs footer band | `--sz-chrome` | `#f2f3f5` | `#2e323b` |
+| Docs footer band | `--sz-chrome` | `#f4f5f7` | `#2e323b` |
 | Raised surface (panes, chips, code) | `surface` | `#ffffff` | `#2e323b` |
-| Recessed (sidebar, side panels, install frame) | `surface-2` | `#eceef0` | `#343944` |
-| Chrome bands (tabs, footer) | `--l-chrome` | `#e4e5e8` | `#2e323b` |
-| Border | `border` | `#c9ccd1` | `#3e444f` |
+| Recessed (sidebar, side panels, install frame) | `surface-2` | `#f4f5f7` | `#343944` |
+| Chrome bands (tabs, footer) | `--l-chrome` | `#f4f5f7` | `#2e323b` |
+| Border | `border` | `#e3e5e9` | `#3e444f` |
 | Text / secondary | `--l-text`, `text-2` | `#24272c` / `#4b515b` | `#dce0e5` / `#b0b6c2` |
 | Muted (landing) / line numbers | `--l-muted`, `--l-line-number` | `#5b616c` | `#a2a8b4` / `#9aa0ab` |
 | Muted (docs) | `--sz-muted` | `#5b616c` | `#a2a8b4` |
@@ -932,8 +932,8 @@ Frame and feature tones, site-only:
 | Role | Token | Light | Dark |
 | --- | --- | --- | --- |
 | Rail (landing column edges) | `rail` | `#b7c6ea` | `#3f5373` |
-| Hatch (landing gutter lines) | `hatch` | `#dfe2e8` | `#323741` |
-| Dot grid (pane canvas) | `--l-dot` | `#cdd2da` | `#3d434e` |
+| Hatch (landing gutter lines) | `hatch` | `#e6e8ed` | `#323741` |
+| Dot grid (pane canvas) | `--l-dot` | `#d6dae1` | `#3d434e` |
 | Tint blue (overview, browse, walkthroughs; code frames, note callouts) | `tint-blue` | `#b7c6ea` | `#3f5373` |
 | Tint green (diffs, lean; tip and success) | `tint-green` | `#a9d3b7` | `#3d5a47` |
 | Tint coral (remote; warning and danger) | `tint-coral` | `#efc3b6` | `#6a4339` |

@@ -27,17 +27,17 @@
   --vocs-color-gray10: #a2a8b4;
   --vocs-color-gray11: #c9ccd1;
   --vocs-color-gray12: #dce0e5;
-  --vocs-color-gray13: #eceef0;
+  --vocs-color-gray13: #f4f5f7;
   --vocs-color-gray14: #ffffff;
   --vocs-spacing-topNav: 3.25rem;
   --vocs-spacing-content-px: 1rem;
 
   --sz-bg: light-dark(#ffffff, #272b32);
-  --sz-side: light-dark(#f6f7f9, #2b2f37);
-  --sz-chrome: light-dark(#f2f3f5, #2e323b);
+  --sz-side: light-dark(#f9fafb, #2b2f37);
+  --sz-chrome: light-dark(#f4f5f7, #2e323b);
   --sz-surface: light-dark(#ffffff, #2e323b);
-  --sz-surface-2: light-dark(#eceef0, #343944);
-  --sz-border: light-dark(#c9ccd1, #3e444f);
+  --sz-surface-2: light-dark(#f4f5f7, #343944);
+  --sz-border: light-dark(#e3e5e9, #3e444f);
   --sz-hairline: light-dark(#dfe2e6, #3a404b);
   --sz-hover: light-dark(rgb(36 39 44 / 6%), rgb(220 224 229 / 7%));
   --sz-text: light-dark(#24272c, #dce0e5);

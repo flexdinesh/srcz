@@ -105,7 +105,7 @@ rewriting history; update `Status` on the old record.
 | [0099](0099-desktop-notifications.md) | Desktop notifications | Accepted |
 | [0100](0100-rename-to-srcz.md) | Rename to srcz (Source Zero) | Accepted |
 | [0101](0101-install-script-installs-cli-and-desktop.md) | Install script installs the CLI and the desktop app | Accepted; edge script replaced by `install-dev.sh` in 0134 |
-| [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130; review gutter hairline by 0140 |
+| [0102](0102-sharp-slate-panes.md) | Sharp slate panes | Accepted; system mono stack superseded by 0130; review gutter hairline by 0140; Zero Light values by 0143 |
 | [0103](0103-site-on-workers-static-assets.md) | Site on Workers Static Assets | Accepted |
 | [0104](0104-source-zero-logo.md) | Source Zero logo | Accepted; mark geometry and macOS icon revised by 0108; wordmark face by 0130, restored by 0138 |
 | [0105](0105-walkthrough-landing.md) | Walkthrough landing and framed docs | Accepted; landing structure superseded by 0106; docs frame superseded by 0142 |
@@ -144,3 +144,4 @@ rewriting history; update `Status` on the old record.
 | [0140](0140-overlay-scrollbars.md) | Overlay scrollbars | Accepted; supersedes 0055's gutters, hover-only thumb, and native bars, and 0102's review gutter hairline |
 | [0141](0141-landing-scenes-and-feedback-row.md) | Landing scenes and the feedback row | Accepted; revises 0106's panes and row list |
 | [0142](0142-sidebar-led-docs.md) | Sidebar-led docs | Accepted; supersedes 0105's docs frame and 0107's header, toggle placement, and outline |
+| [0143](0143-mist-zero-light.md) | Mist, a white Zero Light | Accepted; supersedes 0102's Zero Light values |
