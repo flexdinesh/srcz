@@ -71,14 +71,17 @@ type PageData struct {
 	Selected  string     `json:"selected"`
 	// At is the full commit hash the selected document was read from, or
 	// empty for the working tree. Snapshots have Source and Format only.
-	At        string   `json:"at"`
-	Content   string   `json:"content"`
-	Source    string   `json:"source"`
-	FileSize  int64    `json:"fileSize"`
-	FileCount int      `json:"fileCount"`
-	HasFile   bool     `json:"hasFile"`
-	Empty     bool     `json:"empty"`
-	Error     string   `json:"error"`
+	At        string `json:"at"`
+	Content   string `json:"content"`
+	Source    string `json:"source"`
+	FileSize  int64  `json:"fileSize"`
+	FileCount int    `json:"fileCount"`
+	HasFile   bool   `json:"hasFile"`
+	Empty     bool   `json:"empty"`
+	Error     string `json:"error"`
+	// ErrorCode classifies Error when it has a code, e.g. CodePrivacyBlocked
+	// for a project folder zero cannot read (decision 0146).
+	ErrorCode string   `json:"errorCode,omitempty"`
 	Warnings  []string `json:"warnings"`
 	// DocumentType is the selected document's type; null without one.
 	DocumentType        *FileType `json:"documentType"`

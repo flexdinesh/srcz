@@ -89,6 +89,17 @@ export async function postJSON<T>(
   }, options, valid, describe)
 }
 
+// deleteJSON deletes url and returns the payload valid accepts, failing as
+// fetchJSON does.
+export async function deleteJSON<T>(
+  url: string,
+  options: FetchJSONOptions,
+  valid: (value: unknown) => value is T,
+  describe: (failure: RequestFailure) => string,
+): Promise<T> {
+  return requestJSON(url, { method: "DELETE", headers: { Accept: "application/json", ...options.headers }, signal: options.signal }, options, valid, describe)
+}
+
 async function requestJSON<T>(
   url: string,
   init: RequestInit,

@@ -65,7 +65,7 @@ rewriting history; update `Status` on the old record.
 | [0058](0058-local-dagger-validation.md) | Explicit local Dagger validation before PR work | Boundaries, certification, and PR wrappers superseded by 0059; engine ownership superseded by 0110 |
 | [0059](0059-validation-execution-boundaries.md) | Test isolation and safe host checks before PR work | Accepted; groups revised by 0095; suites and inputs by 0096; execution by 0110 |
 | [0060](0060-scope-flags-removed.md) | Scope flags removed; `srcz browser` alias | Accepted; bare `srcz` clause superseded by 0068 |
-| [0061](0061-daemon-roots-and-leases.md) | Daemon, runtime roots, and project leases | Accepted (leases via 0066; optional TCP listener via 0098) |
+| [0061](0061-daemon-roots-and-leases.md) | Daemon, runtime roots, and project leases | Accepted (leases via 0066; optional TCP listener via 0098); root removal and missing roots by 0146 |
 | [0062](0062-desktop-app.md) | Desktop app | Electron shell superseded by 0095 |
 | [0063](0063-cli-commands-and-url-scheme.md) | CLI commands and the `srcz://` URL scheme | Accepted (0065, 0068, 0071); revised by 0076 |
 | [0064](0064-ssh-remotes.md) | SSH remotes | Superseded by 0095 |
@@ -85,7 +85,7 @@ rewriting history; update `Status` on the old record.
 | [0078](0078-apps-and-packages-layout.md) | `apps/` and `packages/` layout | Accepted; revised by 0080 |
 | [0079](0079-releases-edge-prerelease-and-install-scripts.md) | Releases, the edge prerelease, and install scripts only | Accepted; revised by 0092 and 0095 (names, assets), 0093 (edge assets), 0101 (one script per channel); edge superseded by 0134 |
 | [0080](0080-application-layer-contracts-and-transports.md) | Application layer, generated contracts, and transports | Accepted; source control stages by 0083; in-process package by 0084; navigation, metrics, image reads by 0085; walkthroughs by 0087 |
-| [0081](0081-desktop-bridge-v2-native-features.md) | Desktop bridge v2: reveal, native context menus, recent folders, folder drop | Accepted; folder drop and recent folders superseded by 0095 |
+| [0081](0081-desktop-bridge-v2-native-features.md) | Desktop bridge v2: reveal, native context menus, recent folders, folder drop | Accepted; folder drop and recent folders superseded by 0095; `openFolder` by 0146 |
 | [0082](0082-native-mygo-experiment.md) | Experimental native app on mygo | Superseded for the native UI by 0094 |
 | [0083](0083-server-structured-diffs.md) | Server-side structured diffs and the source control domain | Accepted |
 | [0084](0084-in-process-client-package.md) | In-process client transport in its own package | Accepted |
@@ -147,3 +147,4 @@ rewriting history; update `Status` on the old record.
 | [0143](0143-mist-zero-light.md) | Mist, a white Zero Light | Accepted; supersedes 0102's Zero Light values |
 | [0144](0144-docs-home-feature-index.md) | Docs home feature index | Accepted; supersedes 0142's docs home features list |
 | [0145](0145-quick-open-file-popup.md) | Quick Open file popup | Accepted; amends 0006, 0014 |
+| [0146](0146-in-app-open-folder-and-stop-serving.md) | In-app Open folder, unreadable folders, and Stop serving | Accepted; supersedes 0061's no root removal and kept missing roots, 0081's `openFolder` |

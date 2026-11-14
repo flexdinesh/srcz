@@ -1,6 +1,7 @@
 # 0061: Daemon, runtime roots, and project leases
 
 - Status: Accepted (leases via [0066](0066-lease-levels-and-desktop-events.md); optional TCP listener via [0098](0098-remote-connections.md))
+- Superseded by: [0146](0146-in-app-open-folder-and-stop-serving.md) for root removal and missing saved roots
 - Date: 2026-11-01
 
 ## Context

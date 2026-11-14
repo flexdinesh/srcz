@@ -7,6 +7,7 @@ import { listsProjects, projectLines, startEntries, welcomeSections, type Projec
 const response: ProjectsResponse = {
   sessionKey: "/work",
   presence: false,
+  manageRoots: false,
   roots: [{ path: "/work", name: "work", isRepo: false }],
   projects: [
     { id: "/work", name: "work", path: "/work", kind: "folder", group: "", root: "/work", branch: "", repository: "", available: true },

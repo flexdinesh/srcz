@@ -100,6 +100,9 @@ export interface PageData {
   hasFile: boolean
   empty: boolean
   error: string
+  // errorCode classifies Error when it has a code, e.g. CodePrivacyBlocked
+  // for a project folder zero cannot read (decision 0146).
+  errorCode?: string
   warnings: string[]
   // documentType is the selected document's type; null without one.
   documentType: FileType | null
@@ -135,6 +138,7 @@ export function isPageData(value: unknown): value is PageData {
     && isBoolean(value.hasFile)
     && isBoolean(value.empty)
     && isString(value.error)
+    && (value.errorCode === undefined || isString(value.errorCode))
     && isArrayOf(value.warnings, isString)
     && (value.documentType === null || isFileType(value.documentType))
     && isBoolean(value.navigationSupported)

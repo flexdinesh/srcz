@@ -101,6 +101,7 @@ import { useImageViewer } from "./features/documents/use-image-viewer.ts"
 import { usePreviewPreference } from "./features/documents/use-preview-preference.ts"
 import { useProjectMemory } from "./workspace/use-project-memory.ts"
 import { useDesktopCloseTab } from "./workspace/use-desktop-close-tab.ts"
+import { useDesktopOpenFolder } from "./workspace/use-desktop-open-folder.ts"
 import { useSearchSession } from "./features/search/use-search-session.ts"
 import type { LiveChange } from "./api/events-contract.ts"
 import { liveTargets } from "./features/live-updates/live-updates.ts"
@@ -327,6 +328,7 @@ export function App({ project }: AppProps) {
   const refs = useRefs(project)
   const chooseProject = useCallback(() => openProjects.current(), [])
   const chooseWorktree = useCallback(() => openProjects.current({ worktrees: true }), [])
+  const chooseFolder = useCallback(() => openProjects.current({ browse: true }), [])
 
   const page = result?.kind === "page" ? result.page : lastPage ?? emptyPage
   const hasData = result?.kind === "page" || lastPage !== null
@@ -758,10 +760,15 @@ export function App({ project }: AppProps) {
     void navigate({ to: "/", search: { project: next }, hash: "" })
   }, [navigate, prepareDocumentNavigation])
 
+  // leaveProject lands on the next served project once this one's root
+  // stopped being served (decision 0146).
+  const leaveProject = useCallback(() => switchProject(""), [switchProject])
+
   // Welcome's entries and the empty pane's actions run what they name.
   function runWelcomeAction(action: WelcomeAction) {
     switch (action) {
       case "open-project": chooseProject(); break
+      case "open-folder": chooseFolder(); break
       case "find-file": openQuickOpen.current(); break
       case "show-commands": openCommands.current(); break
       case "find-in-files": openSearch.current(); break
@@ -803,6 +810,7 @@ export function App({ project }: AppProps) {
   }
 
   useDesktopCloseTab(activeTab, workspace.tabs, closeTab)
+  useDesktopOpenFolder(chooseFolder)
 
   function closeTabs(tabs: readonly WorkspaceTab[]) {
     const closed = workspace.closeTabs(tabs, activeTab)
@@ -1019,6 +1027,7 @@ export function App({ project }: AppProps) {
             main={main}
             navigate={navigateToHref}
             onChooseProject={chooseProject}
+            onLeaveProject={leaveProject}
             page={page}
             retry={() => { void router.invalidate() }}
             sourceNavigation={sourceNavigation}

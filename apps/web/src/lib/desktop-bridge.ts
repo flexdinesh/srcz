@@ -33,8 +33,8 @@ export interface NotificationStatus {
 }
 
 // DesktopBridge is the desktop app's preload bridge (version 1 or later). Each
-// method is feature-detected and null when absent: openFolder asks the app to
-// choose a folder and open it as a project; showAppMenu (outside macOS,
+// method is feature-detected and null when absent (folders open in the page
+// through the server since decision 0146, not through the bridge): showAppMenu (outside macOS,
 // decision 0075) pops the app menu at a window point; revealPath shows a
 // project file in the OS file manager; showContextMenu pops a native menu and
 // resolves the chosen id, or null when dismissed (decision 0081); closeWindow
@@ -43,11 +43,10 @@ export interface NotificationStatus {
 // notices can reach the user, or null when it refuses (decision 0099);
 // setAppearance has the app's menus and window controls follow the theme's
 // polarity, or the OS for "system" (decision 0119). A window
-// on a remote server has no openFolder or revealPath: its files are not on this
-// computer (decision 0098).
+// on a remote server has no revealPath: its files are not on this computer
+// (decision 0098).
 export interface DesktopBridge {
   version: number
-  openFolder: (() => void) | null
   closeWindow: (() => void) | null
   showAppMenu: ((x: number, y: number) => void) | null
   revealPath: ((project: string, path: string) => void) | null
@@ -63,14 +62,9 @@ export type DesktopAppearance = "system" | "light" | "dark"
 // means no bridge. Methods that are missing or not functions are null.
 export function readDesktopBridge(value: unknown): DesktopBridge | null {
   if (!isRecord(value) || typeof value.version !== "number" || !Number.isInteger(value.version) || value.version < 1) return null
-  const { openFolder, closeWindow, showAppMenu, revealPath, showContextMenu, configureNotifications, setAppearance } = value
+  const { closeWindow, showAppMenu, revealPath, showContextMenu, configureNotifications, setAppearance } = value
   return {
     version: value.version,
-    openFolder: typeof openFolder === "function"
-      ? () => {
-        openFolder.call(value)
-      }
-      : null,
     closeWindow: typeof closeWindow === "function"
       ? () => {
         closeWindow.call(value)

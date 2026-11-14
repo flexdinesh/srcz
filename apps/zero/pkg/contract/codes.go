@@ -62,3 +62,17 @@ const (
 	// CodeFeedbackFull: the feedback, thread, or repository is at its limit.
 	CodeFeedbackFull = "feedbackFull"
 )
+
+// Root error codes (decision 0146).
+const (
+	// CodePrivacyBlocked: macOS privacy protection kept zero from reading
+	// the folder.
+	CodePrivacyBlocked = "privacyBlocked"
+	// CodeFolderUnreadable: zero cannot read the folder (permissions or an
+	// I/O failure).
+	CodeFolderUnreadable = "folderUnreadable"
+	// CodeRootsUnmanaged: this server serves a fixed set of folders.
+	CodeRootsUnmanaged = "rootsUnmanaged"
+	// CodeNotServed: the path is not a served root.
+	CodeNotServed = "notServed"
+)

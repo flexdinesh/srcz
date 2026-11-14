@@ -26,8 +26,8 @@ export interface WelcomeEntry {
 
 export const documentationUrl = "https://github.com/flexdinesh/zero#readme"
 
-// startEntries are the actions that begin a session; Open folder… needs the
-// desktop app (canOpenFolder).
+// startEntries are the actions that begin a session; Open folder… needs a
+// server that manages roots (canOpenFolder, decision 0146).
 export function startEntries(mac: boolean, canOpenFolder: boolean): WelcomeEntry[] {
   const openFolder: WelcomeEntry[] = canOpenFolder ? [{ action: "open-folder", label: "Open folder…" }] : []
   return [

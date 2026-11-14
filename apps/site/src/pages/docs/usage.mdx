@@ -49,13 +49,27 @@ restores that project's tabs and expanded folders, including after reloads.
 `--depth` limits the file tree within a project.
 
 A repository opens whole: its own folders cannot be opened as projects, and
-Open folder only browses folders outside repositories. A repository with
+Open folder never descends into a repository. A repository with
 worktrees is one picker entry that opens the last-used worktree; press → (or
 click its arrow) to choose a worktree by branch. Worktrees of a served
 repository open wherever they live, even outside the served directories.
 Repositories are named after their `origin` remote, else their folder. The
 explorer header shows the repository and branch; when the repository has
 worktrees, click the branch to switch. Linked worktrees get a colored fork icon.
+
+## Open and stop serving folders
+
+With `zero [path]`, the desktop app, or `--remote`, **Open folder…** in the
+project picker (type `/`), on Welcome, or in the desktop app's **File** menu
+browses the serving machine's folders from your home folder and serves the one
+you open. Folders starting with `.` show once you type a `.`. Folders zero
+cannot read are marked, and opening one explains why instead of serving it.
+Hover a served folder in the picker and choose **Stop serving** to remove it;
+the next served project opens. A served folder that has disappeared is dropped
+the next time the daemon starts.
+
+`zero browser` serves the directories it was given: its Open folder only
+browses inside them.
 
 ## Welcome
 

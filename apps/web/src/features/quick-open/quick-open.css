@@ -1,4 +1,4 @@
-/* Quick Open (decision 0145): file rows on the content palette, as the
+/* Quick Open (decision 0146): file rows on the content palette, as the
    Search view's file rows: the base name in mono, its folder muted. */
 .quick-open .search-shell {
   min-height: 0;

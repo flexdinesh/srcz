@@ -2,14 +2,16 @@ package web
 
 import (
 	"encoding/json"
-	"github.com/flexdinesh/zero/pkg/contract"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/flexdinesh/zero/pkg/contract"
 )
 
 func newProjectsApp(t *testing.T) (*App, string) {
@@ -370,5 +372,91 @@ func TestProjectsSurviveARootRemovedWhileServing(t *testing.T) {
 	}
 	if len(payload.Warnings) != 1 || !strings.HasPrefix(payload.Warnings[0], gone+": ") {
 		t.Fatalf("warnings = %q, want one naming %s", payload.Warnings, gone)
+	}
+}
+
+// recordingRoots is a RootControl that serves whatever it is asked to.
+type recordingRoots struct{ opened, removed []string }
+
+func (r *recordingRoots) Open(path string) (contract.OpenedRoot, error) {
+	r.opened = append(r.opened, path)
+	return contract.OpenedRoot{Root: path, Added: true, Replaced: []string{}, Project: path}, nil
+}
+
+func (r *recordingRoots) Remove(root string) ([]string, error) {
+	r.removed = append(r.removed, root)
+	return []string{}, nil
+}
+
+func rootsRequest(t *testing.T, handler http.Handler, method, target string, header http.Header, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(method, "http://localhost"+target, strings.NewReader(body))
+	for name, values := range header {
+		req.Header[name] = values
+	}
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	return response
+}
+
+func TestRootsWritesNeedRootControlAndZerosOwnPage(t *testing.T) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	jsonBody := http.Header{"Content-Type": {"application/json"}}
+	fixed, err := New(Config{Roots: testRoots(t, root), Depth: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response := rootsRequest(t, fixed, http.MethodPost, "/api/roots", jsonBody, `{"path":"/elsewhere"}`); response.Code != http.StatusServiceUnavailable ||
+		!strings.Contains(response.Body.String(), contract.CodeRootsUnmanaged) {
+		t.Fatalf("POST /api/roots without RootControl = %d %s; want 503 %s", response.Code, response.Body.String(), contract.CodeRootsUnmanaged)
+	}
+
+	control := &recordingRoots{}
+	managed, err := New(Config{Roots: testRoots(t, root), Depth: 5, RootControl: control})
+	if err != nil {
+		t.Fatal(err)
+	}
+	foreign := http.Header{"Content-Type": {"application/json"}, "Origin": {"https://evil.example"}}
+	for name, test := range map[string]struct {
+		method, target string
+		header         http.Header
+		body           string
+		code           int
+	}{
+		"foreign open":   {http.MethodPost, "/api/roots", foreign, `{"path":"/elsewhere"}`, http.StatusForbidden},
+		"foreign remove": {http.MethodDelete, "/api/roots?path=" + url.QueryEscape(root), foreign, "", http.StatusForbidden},
+		"text body":      {http.MethodPost, "/api/roots", http.Header{"Content-Type": {"text/plain"}}, `{"path":"/elsewhere"}`, http.StatusUnsupportedMediaType},
+		"unknown field":  {http.MethodPost, "/api/roots", jsonBody, `{"root":"/elsewhere"}`, http.StatusBadRequest},
+		"no path":        {http.MethodPost, "/api/roots", jsonBody, `{}`, http.StatusBadRequest},
+		"remove no path": {http.MethodDelete, "/api/roots", nil, "", http.StatusBadRequest},
+	} {
+		if response := rootsRequest(t, managed, test.method, test.target, test.header, test.body); response.Code != test.code {
+			t.Errorf("%s = %d %s; want %d", name, response.Code, response.Body.String(), test.code)
+		}
+	}
+	if len(control.opened)+len(control.removed) != 0 {
+		t.Fatalf("refused writes reached RootControl: %+v", control)
+	}
+
+	same := http.Header{"Content-Type": {"application/json"}, "Origin": {"http://localhost"}}
+	response := rootsRequest(t, managed, http.MethodPost, "/api/roots", same, `{"path":"/elsewhere"}`)
+	var opened contract.OpenedRoot
+	if err := json.Unmarshal(response.Body.Bytes(), &opened); err != nil || response.Code != http.StatusCreated || opened.Project != "/elsewhere" {
+		t.Fatalf("POST /api/roots = %d %s; want 201", response.Code, response.Body.String())
+	}
+	response = rootsRequest(t, managed, http.MethodDelete, "/api/roots?path="+url.QueryEscape(root), nil, "")
+	var removed contract.RemovedRoot
+	if err := json.Unmarshal(response.Body.Bytes(), &removed); err != nil || response.Code != http.StatusOK || removed.Root != root {
+		t.Fatalf("DELETE /api/roots = %d %s; want 200", response.Code, response.Body.String())
+	}
+	if !reflect.DeepEqual(control.opened, []string{"/elsewhere"}) || !reflect.DeepEqual(control.removed, []string{root}) {
+		t.Fatalf("RootControl calls = %+v", control)
+	}
+	var listed contract.ProjectsResponse
+	if response := request(t, managed, "/api/projects"); json.Unmarshal(response.Body.Bytes(), &listed) != nil || !listed.ManageRoots {
+		t.Fatalf("GET /api/projects = %s; want manageRoots", response.Body.String())
 	}
 }

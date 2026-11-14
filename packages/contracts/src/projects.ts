@@ -9,11 +9,15 @@ export function isProjectKind(value: unknown): value is ProjectKind {
   return value === "folder" || value === "repo" || value === "worktree"
 }
 
-// Root is a served root directory.
+// Root is a served root directory. Problem explains why zero cannot read
+// it, with ProblemCode (CodePrivacyBlocked or CodeFolderUnreadable); both
+// are empty for a readable root (decision 0146).
 export interface Root {
   path: string
   name: string
   isRepo: boolean
+  problem?: string
+  problemCode?: string
 }
 
 export function isRoot(value: unknown): value is Root {
@@ -21,6 +25,8 @@ export function isRoot(value: unknown): value is Root {
     && isString(value.path)
     && isString(value.name)
     && isBoolean(value.isRepo)
+    && (value.problem === undefined || isString(value.problem))
+    && (value.problemCode === undefined || isString(value.problemCode))
 }
 
 // Project is a project within the served roots. ID is the absolute path, or
@@ -63,6 +69,10 @@ export interface ProjectsResponse {
   // presence asks a page to hold /api/presence while open: this server's
   // lifetime follows its UIs (decision 0098).
   presence: boolean
+  // manageRoots reports that this server opens folders anywhere on its
+  // host and stops serving roots (POST and DELETE /api/roots); the daemon
+  // does, a CLI-served session does not (decision 0146).
+  manageRoots: boolean
   roots: Root[]
   projects: Project[]
   warnings: string[]
@@ -72,16 +82,22 @@ export function isProjectsResponse(value: unknown): value is ProjectsResponse {
   return isRecord(value)
     && isString(value.sessionKey)
     && isBoolean(value.presence)
+    && isBoolean(value.manageRoots)
     && isArrayOf(value.roots, isRoot)
     && isArrayOf(value.projects, isProject)
     && isArrayOf(value.warnings, isString)
 }
 
-// Directory is a child directory of a folder within the served roots.
+// Directory is a child directory of a browsed folder: within the served
+// roots, or anywhere on the host when the server manages roots. Problem
+// explains why zero cannot read it, with ProblemCode; both are empty for a
+// readable folder (decision 0146).
 export interface Directory {
   name: string
   path: string
   isProject: boolean
+  problem?: string
+  problemCode?: string
 }
 
 export function isDirectory(value: unknown): value is Directory {
@@ -89,9 +105,12 @@ export function isDirectory(value: unknown): value is Directory {
     && isString(value.name)
     && isString(value.path)
     && isBoolean(value.isProject)
+    && (value.problem === undefined || isString(value.problem))
+    && (value.problemCode === undefined || isString(value.problemCode))
 }
 
-// DirectoriesResponse is GET /api/directories.
+// DirectoriesResponse is GET /api/directories. Path is the folder listed:
+// the host's home folder for an empty path when the server manages roots.
 export interface DirectoriesResponse {
   path: string
   directories: Directory[]
@@ -101,4 +120,35 @@ export function isDirectoriesResponse(value: unknown): value is DirectoriesRespo
   return isRecord(value)
     && isString(value.path)
     && isArrayOf(value.directories, isDirectory)
+}
+
+// OpenedRoot is POST /api/roots's answer (and POST /_daemon/open's): the
+// root serving the path, whether it was added, the roots it replaced (inside
+// it), and the project that shows the path (decision 0146).
+export interface OpenedRoot {
+  root: string
+  added: boolean
+  replaced: string[]
+  project: string
+}
+
+export function isOpenedRoot(value: unknown): value is OpenedRoot {
+  return isRecord(value)
+    && isString(value.root)
+    && isBoolean(value.added)
+    && isArrayOf(value.replaced, isString)
+    && isString(value.project)
+}
+
+// RemovedRoot is DELETE /api/roots's answer: the root no longer served and
+// the roots still served (decision 0146).
+export interface RemovedRoot {
+  root: string
+  roots: string[]
+}
+
+export function isRemovedRoot(value: unknown): value is RemovedRoot {
+  return isRecord(value)
+    && isString(value.root)
+    && isArrayOf(value.roots, isString)
 }

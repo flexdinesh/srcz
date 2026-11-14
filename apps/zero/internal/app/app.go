@@ -51,6 +51,9 @@ type Config struct {
 	// FeedbackDirectory stores review feedback; empty uses
 	// feedback.DefaultDirectory.
 	FeedbackDirectory string
+	// RootControl opens folders anywhere on the host and stops serving
+	// roots (decision 0146); nil serves Roots as they are.
+	RootControl RootControl
 }
 
 // App holds the domain services. Each is safe for concurrent use.

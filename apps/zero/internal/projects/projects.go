@@ -243,6 +243,39 @@ func Directories(roots []string, id string) ([]Directory, error) {
 	if root == "" || hasGit(dir) || insideRepository(root, dir) {
 		return nil, ErrInsideRepository
 	}
+	return children(dir)
+}
+
+// HostDirectories lists the child directories of dir, an absolute clean
+// path anywhere on the host, for opening folders outside the roots
+// (decision 0146). A repository, or a folder inside one, is
+// ErrInsideRepository: repositories open whole.
+func HostDirectories(dir string) ([]Directory, error) {
+	if !filepath.IsAbs(dir) || filepath.Clean(dir) != dir {
+		return nil, fmt.Errorf("%w: invalid folder %q", ErrUnavailable, dir)
+	}
+	if _, ok := Repository(dir); ok {
+		return nil, ErrInsideRepository
+	}
+	return children(dir)
+}
+
+// Repository returns the repository dir is, or lies inside: the nearest
+// folder at or above dir with a .git entry.
+func Repository(dir string) (string, bool) {
+	for candidate := dir; ; candidate = filepath.Dir(candidate) {
+		if hasGit(candidate) {
+			return candidate, true
+		}
+		if candidate == filepath.Dir(candidate) {
+			return "", false
+		}
+	}
+}
+
+// children lists dir's child directories but the always-skipped ones,
+// repositories marked, sorted case-insensitively.
+func children(dir string) ([]Directory, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err

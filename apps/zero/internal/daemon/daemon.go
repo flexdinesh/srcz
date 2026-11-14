@@ -10,7 +10,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/flexdinesh/zero/internal/projects"
 	"github.com/flexdinesh/zero/internal/runtime"
 	"github.com/flexdinesh/zero/internal/tailscale"
 	"github.com/flexdinesh/zero/internal/version"
@@ -49,8 +48,8 @@ var (
 )
 
 // Run serves until ctx ends, /_daemon/stop, or idle exit. It loads the saved
-// roots (a malformed file fails before listening), skipping and logging roots
-// that are missing or overlap, then takes the socket (ErrRunning if another
+// roots (a malformed file fails before listening), dropping missing roots and
+// skipping overlapping ones, each logged (LoadedRoots), then takes the socket (ErrRunning if another
 // daemon holds it) and serves the web routes and the control API.
 func Run(ctx context.Context, config Config) error {
 	if config.Socket == "" || config.RootsFile == "" {
@@ -63,24 +62,16 @@ func Run(ctx context.Context, config Config) error {
 	if log == nil {
 		log = io.Discard
 	}
-	saved, err := LoadRoots(config.RootsFile)
+	roots, err := LoadedRoots(config.RootsFile, log)
 	if err != nil {
 		return err
-	}
-	roots := &projects.RootSet{}
-	var skipped []string
-	for _, root := range saved {
-		if _, _, err := roots.Add(root); err != nil {
-			_, _ = fmt.Fprintf(log, "skipping root %s: %v\n", root, err)
-			skipped = append(skipped, root)
-		}
 	}
 	listener, err := Listen(config.Socket)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = listener.Close() }()
-	rt, err := runtime.New(runtime.Config{Roots: roots, Depth: config.Depth, ScanDepth: config.ScanDepth, SessionKey: "daemon", Presence: true})
+	rt, err := runtime.New(runtime.Config{Roots: roots.Set(), RootControl: roots, Depth: config.Depth, ScanDepth: config.ScanDepth, SessionKey: "daemon", Presence: true})
 	if err != nil {
 		return err
 	}
@@ -114,14 +105,12 @@ func Run(ctx context.Context, config Config) error {
 		remoteControl = exposed
 	}
 	control := NewController(ControllerConfig{
-		Remote:    remoteControl,
-		Roots:     roots,
-		Skipped:   skipped,
-		RootsFile: config.RootsFile,
-		Stop:      func() { cancel(errStopRequested) },
-		Done:      ctx.Done(),
-		Notices:   rt.Application().Walkthroughs,
-		Feedback:  rt.Application().Feedback,
+		Remote:   remoteControl,
+		Roots:    roots,
+		Stop:     func() { cancel(errStopRequested) },
+		Done:     ctx.Done(),
+		Notices:  rt.Application().Walkthroughs,
+		Feedback: rt.Application().Feedback,
 		Status: Status{
 			Protocol:  ProtocolVersion,
 			Version:   version.Number(),
@@ -133,7 +122,7 @@ func Run(ctx context.Context, config Config) error {
 			StartedAt: time.Now().UTC().Truncate(time.Second),
 		},
 	})
-	_, _ = fmt.Fprintf(log, "zero daemon %s (protocol %d) listening on %s with %d roots\n", version.Number(), ProtocolVersion, config.Socket, len(roots.List()))
+	_, _ = fmt.Fprintf(log, "zero daemon %s (protocol %d) listening on %s with %d roots\n", version.Number(), ProtocolVersion, config.Socket, len(roots.Set().List()))
 	err = rt.Serve(ctx, listener, idle.wrap(control.Handler(rt.Handler())))
 	_, _ = fmt.Fprintf(log, "zero daemon stopped: %v\n", context.Cause(ctx))
 	return err

@@ -85,12 +85,11 @@ func testControl(t *testing.T, notices WalkthroughNotices) (*Controller, chan st
 	t.Helper()
 	done := make(chan struct{})
 	return &Controller{
-		roots:     &projects.RootSet{},
-		rootsFile: filepath.Join(t.TempDir(), "zero", "roots.json"),
-		status:    Status{Protocol: ProtocolVersion, Version: "1.2.3"},
-		stop:      func() {},
-		done:      done,
-		notices:   notices,
+		roots:   NewRoots(&projects.RootSet{}, nil, filepath.Join(t.TempDir(), "zero", "roots.json")),
+		status:  Status{Protocol: ProtocolVersion, Version: "1.2.3"},
+		stop:    func() {},
+		done:    done,
+		notices: notices,
 	}, done
 }
 
@@ -341,7 +340,7 @@ func TestControlOpenReportsUnsavedRoots(t *testing.T) {
 	if err := os.WriteFile(blocker, nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	c.rootsFile = filepath.Join(blocker, "roots.json")
+	c.roots = NewRoots(&projects.RootSet{}, nil, filepath.Join(blocker, "roots.json"))
 	client := serveControl(t, c.Handler(http.NotFoundHandler()))
 	dir := canonicalDir(t, t.TempDir(), "work")
 
@@ -350,7 +349,7 @@ func TestControlOpenReportsUnsavedRoots(t *testing.T) {
 	if !errors.As(err, &failure) || failure.Status != http.StatusInternalServerError || failure.Code != "rootsNotSaved" {
 		t.Fatalf("Open() = %v, want 500 rootsNotSaved", err)
 	}
-	if got := c.roots.List(); !reflect.DeepEqual(got, []string{dir}) {
+	if got := c.roots.Set().List(); !reflect.DeepEqual(got, []string{dir}) {
 		t.Fatalf("roots = %v, want the unsaved root served", got)
 	}
 }
@@ -378,14 +377,14 @@ func TestRunOpensPathsCoveringServedRoots(t *testing.T) {
 		t.Fatalf("Open(inner) = %+v, %v; want %+v", result, err, want)
 	}
 
-	// Outside every root: added, replacing the roots inside it and dropping
-	// skipped roots inside it from the saved file.
+	// Outside every root: added, replacing the roots inside it. Saved roots
+	// missing at start were dropped (decision 0146).
 	result, err = d.client.Open(ctx, parent)
 	if want := (OpenResult{Root: parent, Added: true, Replaced: []string{inner}, Project: parent}); err != nil || !reflect.DeepEqual(result, want) {
 		t.Fatalf("Open(parent) = %+v, %v; want %+v", result, err, want)
 	}
 	saved, err := LoadRoots(config.RootsFile)
-	if want := []string{parent, sibling, goneElsewhere}; err != nil || !reflect.DeepEqual(saved, want) {
+	if want := []string{parent, sibling}; err != nil || !reflect.DeepEqual(saved, want) {
 		t.Fatalf("saved roots = %v, %v; want %v", saved, err, want)
 	}
 	if roots, err := d.client.Roots(ctx); err != nil || !reflect.DeepEqual(roots, []string{parent, sibling}) {

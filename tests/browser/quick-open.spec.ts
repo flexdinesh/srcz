@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test"
 
-// Quick Open (decision 0145): Cmd/Ctrl+P finds a file by name in a popup.
+// Quick Open (decision 0146): Cmd/Ctrl+P finds a file by name in a popup.
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Go to file" })
 const field = (page: Page) => dialog(page).getByRole("combobox", { name: "Go to file" })
 const options = (page: Page) => dialog(page).getByRole("option")

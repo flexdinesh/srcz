@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process"
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 
@@ -65,6 +65,103 @@ test("the browser link signs in once, and the server counts the page as a UI", a
   } finally {
     await page.close()
     zero("daemon", "stop")
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+// Open folder over a remote connection browses the server's disk and serves
+// the folder; Stop serving removes it (decision 0146).
+test("Open folder serves a host folder and Stop serving removes it", async ({ browser }) => {
+  const home = mkdtempSync(path.join(tmpdir(), "sfo-"))
+  const run = path.join(home, "run")
+  const project = path.join(home, "project")
+  const other = path.join(home, "other")
+  mkdirSync(run, { mode: 0o700 })
+  mkdirSync(project)
+  mkdirSync(other)
+  mkdirSync(path.join(home, "repo", ".git"), { recursive: true })
+  mkdirSync(path.join(home, ".hidden"))
+  writeFileSync(path.join(project, "guide.md"), "# Remote guide\n")
+  writeFileSync(path.join(other, "notes.md"), "# Other notes\n")
+  // Root reads every folder, so the unreadable cases need another user.
+  const unreadable = process.getuid?.() !== 0
+  const locked = path.join(home, "locked")
+  if (unreadable) {
+    mkdirSync(locked)
+    chmodSync(locked, 0)
+  }
+  const env = {
+    ...process.env,
+    HOME: home,
+    XDG_CONFIG_HOME: path.join(home, "config"),
+    XDG_CACHE_HOME: path.join(home, "cache"),
+    XDG_DATA_HOME: path.join(home, "data"),
+    XDG_RUNTIME_DIR: run,
+    NO_COLOR: "1",
+  }
+  const zero = (...args: string[]) => execFileSync(binary, args, { env, encoding: "utf8" })
+  const context = await browser.newContext({ ignoreHTTPSErrors: true })
+  try {
+    const printed = zero(project, "--remote", "--web", "--host", "127.0.0.1", "--port", "0")
+    const link = /web:\s+(https:\S+)/.exec(printed)?.[1]
+    expect(link, printed).toBeTruthy()
+    const signIn = new URL(link ?? "")
+    const page = await context.newPage()
+    await page.goto(signIn.href)
+    await page.goto(`${signIn.origin}/?${new URLSearchParams({ project }).toString()}`)
+    await expect(page.getByRole("treeitem", { name: "guide.md" })).toBeVisible()
+
+    // `/` browses from home: plain folders, repositories, no dot folders.
+    await page.keyboard.press("Control+o")
+    const picker = page.getByRole("combobox", { name: "Switch project" })
+    await expect(picker).toBeFocused()
+    await picker.press("/")
+    const folderPath = page.getByRole("combobox", { name: "Folder path" })
+    await expect(folderPath).toHaveValue(`${home}/`)
+    const folders = page.getByRole("listbox", { name: "Folders" })
+    await expect(folders.getByRole("option", { name: /other/ })).toBeVisible()
+    await expect(folders.getByRole("option", { name: /repo/ })).toBeVisible()
+    await expect(folders.getByRole("option", { name: /\.hidden/ })).toHaveCount(0)
+    if (unreadable) {
+      await expect(folders.getByRole("option", { name: /locked/ })).toContainText("Can't read")
+      await folderPath.fill(`${locked}/`)
+      await folders.getByRole("option", { name: /^Open/ }).click()
+      await expect(page.getByRole("status")).toContainText(`zero can't read ${locked}`)
+    }
+
+    // Opening a folder serves it and switches to it.
+    await folderPath.fill(`${other}/`)
+    await folders.getByRole("option", { name: /^Open/ }).click()
+    await expect(page).toHaveURL(new RegExp(`project=${encodeURIComponent(other)}`))
+    await expect(page.getByRole("treeitem", { name: "notes.md" })).toBeVisible()
+
+    // Stopping the current project's folder lands on the next served one.
+    await page.keyboard.press("Control+o")
+    await page.getByRole("button", { name: `Stop serving ${other}` }).click()
+    await expect(page).toHaveURL(new RegExp(`project=${encodeURIComponent(project)}`))
+    const roots = await context.request.get(`${signIn.origin}/api/projects`)
+    const listed: unknown = await roots.json()
+    expect(JSON.stringify(listed)).not.toContain(other)
+
+    // A served folder that turns unreadable explains itself and can stop.
+    if (unreadable) {
+      await page.keyboard.press("Control+o")
+      await page.getByRole("combobox", { name: "Switch project" }).press("/")
+      await folderPath.fill(`${other}/`)
+      await folders.getByRole("option", { name: /^Open/ }).click()
+      await expect(page.getByRole("treeitem", { name: "notes.md" })).toBeVisible()
+      chmodSync(other, 0)
+      await page.reload()
+      await expect(page.getByRole("alert")).toContainText(`zero can't read ${other}`)
+      await page.getByRole("button", { name: "Stop serving other" }).click()
+      await expect(page).toHaveURL(new RegExp(`project=${encodeURIComponent(project)}`))
+      chmodSync(other, 0o755)
+    }
+  } finally {
+    await context.close()
+    zero("daemon", "stop")
+    if (unreadable) chmodSync(locked, 0o755)
+    chmodSync(other, 0o755)
     rmSync(home, { recursive: true, force: true })
   }
 })

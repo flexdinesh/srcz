@@ -94,12 +94,11 @@ func serveFixtureWith(t *testing.T, root string, servers *lsp.Manager) fixture {
 	}
 	done := make(chan struct{})
 	control := daemon.NewController(daemon.ControllerConfig{
-		Roots:     roots,
-		RootsFile: filepath.Join(t.TempDir(), "roots.json"),
-		Status:    daemon.Status{Protocol: daemon.ProtocolVersion, Version: "test", PID: 1, Socket: "test.sock", Depth: 5, IdleExit: "0s", StartedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)},
-		Done:      done,
-		Notices:   webApp.Application().Walkthroughs,
-		Feedback:  webApp.Application().Feedback,
+		Roots:    daemon.NewRoots(roots, nil, filepath.Join(t.TempDir(), "roots.json")),
+		Status:   daemon.Status{Protocol: daemon.ProtocolVersion, Version: "test", PID: 1, Socket: "test.sock", Depth: 5, IdleExit: "0s", StartedAt: time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)},
+		Done:     done,
+		Notices:  webApp.Application().Walkthroughs,
+		Feedback: webApp.Application().Feedback,
 	})
 
 	tcp := httptest.NewServer(webApp)
@@ -249,6 +248,17 @@ func TestDataAPIParityAcrossTransports(t *testing.T) {
 	outside := f.same(t, "Directories outside", func(c client.Client) outcome { return result(c.Directories(ctx, filepath.Dir(f.root))) })
 	if kindOf(outside.Err) != contract.KindInvalid {
 		t.Errorf("Directories outside the roots error = %v, want invalid", outside.Err)
+	}
+	// This server serves a fixed set of folders (no RootControl).
+	for name, call := range map[string]func(client.Client) outcome{
+		"OpenRoot":   func(c client.Client) outcome { return result(c.OpenRoot(ctx, filepath.Dir(f.root))) },
+		"RemoveRoot": func(c client.Client) outcome { return result(c.RemoveRoot(ctx, f.root)) },
+	} {
+		got := f.same(t, name, call)
+		var failure *client.Error
+		if !errors.As(got.Err, &failure) || failure.Kind != contract.KindUnavailable || failure.Code != contract.CodeRootsUnmanaged {
+			t.Errorf("%s error = %v, want unavailable %s", name, got.Err, contract.CodeRootsUnmanaged)
+		}
 	}
 
 	pages := []struct {

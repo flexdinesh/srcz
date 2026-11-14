@@ -560,3 +560,38 @@ func TestProjectForFindsTheProjectShowingADirectory(t *testing.T) {
 		t.Fatalf("ProjectFor(folder in repository root) = %q, %v; want root", got, err)
 	}
 }
+
+func TestHostDirectoriesListsAnyFolderAndRefusesRepositories(t *testing.T) {
+	parent := canonicalTemp(t)
+	writeFile(t, filepath.Join(parent, "plain", "notes", "a.md"), "")
+	writeFile(t, filepath.Join(parent, "plain", ".hidden", "file"), "")
+	writeFile(t, filepath.Join(parent, "plain", "node_modules", "pkg", "file"), "")
+	writeFile(t, filepath.Join(parent, "plain", "repo", ".git", "HEAD"), "")
+	writeFile(t, filepath.Join(parent, "plain", "repo", "docs", "a.md"), "")
+
+	got, err := HostDirectories(filepath.Join(parent, "plain"))
+	want := []Directory{
+		{Name: ".hidden", Path: filepath.Join(parent, "plain", ".hidden")},
+		{Name: "notes", Path: filepath.Join(parent, "plain", "notes")},
+		{Name: "repo", Path: filepath.Join(parent, "plain", "repo"), IsProject: true},
+	}
+	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Fatalf("HostDirectories(plain) = %+v, %v; want %+v", got, err, want)
+	}
+	for _, dir := range []string{filepath.Join(parent, "plain", "repo"), filepath.Join(parent, "plain", "repo", "docs")} {
+		if _, err := HostDirectories(dir); !errors.Is(err, ErrInsideRepository) {
+			t.Errorf("HostDirectories(%s) error = %v; want ErrInsideRepository", dir, err)
+		}
+	}
+	for _, dir := range []string{"relative", filepath.Join(parent, "plain") + "/"} {
+		if _, err := HostDirectories(dir); !errors.Is(err, ErrUnavailable) {
+			t.Errorf("HostDirectories(%q) error = %v; want ErrUnavailable", dir, err)
+		}
+	}
+	if repository, ok := Repository(filepath.Join(parent, "plain", "repo", "docs")); !ok || repository != filepath.Join(parent, "plain", "repo") {
+		t.Fatalf("Repository(docs) = %q, %t", repository, ok)
+	}
+	if _, ok := Repository(filepath.Join(parent, "plain", "notes")); ok {
+		t.Fatal("Repository(notes) found one")
+	}
+}

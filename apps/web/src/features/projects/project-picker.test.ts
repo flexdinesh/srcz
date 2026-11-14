@@ -3,17 +3,21 @@ import { readFile } from "node:fs/promises"
 import test from "node:test"
 
 import {
+  browseOffered,
   browseRows,
   browseStart,
   browseTarget,
   canDrill,
   currentGroup,
+  hostParentInput,
   matchScore,
   offersOpenFolder,
   parentInput,
   projectSections,
   selectableRows,
   splitBrowseInput,
+  splitHostInput,
+  visibleWarnings,
   type PickerSection,
 } from "./project-picker.ts"
 import { isProjectsResponse, type ProjectsResponse } from "@zero/contracts"
@@ -152,10 +156,68 @@ test("the root list offers no folder to open", () => {
   assert.deepEqual(sections.map((section) => [section.title, section.rows.map((row) => row.kind)]), [["Served folders", ["directory", "directory"]]])
 })
 
-test("with no served folder, only the desktop app offers Open folder…", async () => {
+test("with no served folder, a server that manages roots offers Open folder…", async () => {
   const response = await projects()
-  assert.equal(offersOpenFolder(response, true), false)
   const empty: ProjectsResponse = { ...response, roots: [], projects: [], warnings: [] }
-  assert.equal(offersOpenFolder(empty, true), true)
-  assert.equal(offersOpenFolder(empty, false), false)
+  assert.equal(offersOpenFolder({ ...response, manageRoots: true }), false)
+  assert.equal(offersOpenFolder({ ...empty, manageRoots: true }), true)
+  assert.equal(offersOpenFolder(empty), false)
+})
+
+test("Open folder… is offered only where it can go", async () => {
+  const response = await projects()
+  const repo = { path: "/w/repo", name: "repo", isRepo: true }
+  const onlyRepos: ProjectsResponse = { ...response, roots: [repo], projects: [] }
+  assert.equal(browseOffered(response), true)
+  assert.equal(browseOffered(onlyRepos), false)
+  assert.equal(browseOffered({ ...onlyRepos, manageRoots: true }), true)
+  const kinds = (value: ProjectsResponse) => projectSections(value, [], "", "").flatMap((section) => section.rows.map((row) => row.kind))
+  assert.equal(kinds(onlyRepos).includes("browse"), false)
+  assert.equal(kinds({ ...onlyRepos, manageRoots: true }).includes("browse"), true)
+})
+
+test("an unreadable root is listed, explained, and stoppable", async () => {
+  const response = await projects()
+  const blocked = { path: "/Users/dee/Downloads/archive", name: "archive", isRepo: false, problem: "macOS blocked zero from reading /Users/dee/Downloads/archive.", problemCode: "privacyBlocked" }
+  const value: ProjectsResponse = {
+    ...response,
+    manageRoots: true,
+    roots: [...response.roots, blocked],
+    warnings: ["/Users/dee/Downloads/archive: open /Users/dee/Downloads/archive: operation not permitted", "/elsewhere: denied"],
+  }
+  const sections = projectSections(value, [], "", "")
+  const archive = sections.find((section) => section.title === "archive")?.rows[0]
+  assert.ok(archive?.kind === "project")
+  assert.deepEqual([archive.disabled, archive.note, archive.problem, archive.servedRoot], [true, "Blocked by macOS", blocked.problem, blocked.path])
+  assert.equal(selectableRows(sections).includes(archive), false)
+  assert.deepEqual(visibleWarnings(value), ["/elsewhere: denied"])
+  const markdown = sections.find((section) => section.title === "markdown")?.rows[0]
+  assert.ok(markdown?.kind === "project")
+  assert.equal(markdown.servedRoot, workspace)
+  const notes = sections.find((section) => section.title === "markdown")?.rows[1]
+  assert.ok(notes?.kind === "project")
+  assert.equal(notes.servedRoot, "")
+})
+
+test("host browsing reads any absolute path and hides dot folders until typed", () => {
+  assert.deepEqual(splitHostInput("/home/dee/wor"), { folder: "/home/dee", partial: "wor" })
+  assert.deepEqual(splitHostInput("/"), { folder: "/", partial: "" })
+  assert.deepEqual(splitHostInput("home"), { folder: "", partial: "home" })
+  assert.equal(hostParentInput("/home/dee/"), "/home/")
+  assert.equal(hostParentInput("/home/"), "/")
+  assert.equal(hostParentInput("/"), "/")
+  const directories = [
+    { name: ".config", path: "/home/dee/.config", isProject: false },
+    { name: "Downloads", path: "/home/dee/Downloads", isProject: false, problem: "macOS blocked zero.", problemCode: "privacyBlocked" },
+    { name: "code", path: "/home/dee/code", isProject: false },
+  ]
+  const names = (partial: string) => browseRows("/home/dee", partial, directories, true)
+    .flatMap((section) => section.rows.flatMap((row) => row.kind === "directory" ? [row.name] : []))
+  assert.deepEqual(names(""), ["Downloads", "code"])
+  assert.deepEqual(names("."), [".config"])
+  const downloads = browseRows("/home/dee", "down", directories, true).flatMap((section) => section.rows).find((row) => row.kind === "directory")
+  assert.ok(downloads?.kind === "directory")
+  assert.deepEqual([downloads.note, downloads.problem], ["Blocked by macOS", "macOS blocked zero."])
+  // Under the served roots, dot folders stay listed.
+  assert.equal(browseRows("/home/dee", "", directories).flatMap((section) => section.rows).length, 4)
 })

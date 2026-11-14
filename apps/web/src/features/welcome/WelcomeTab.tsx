@@ -14,11 +14,11 @@ import { TextField } from "../../components/ui/text-field.tsx"
 import { isAbort } from "../../api/http.ts"
 import type { ProjectsResponse } from "@zero/contracts"
 import { fetchProjects } from "../../api/projects-data.ts"
-import { desktopBridge } from "../../lib/desktop-bridge.ts"
 import { useDelayedFlag } from "../../lib/use-delayed-flag.ts"
 import { readMemory, rememberedProjects } from "../../workspace/workspace-memory.ts"
 import { OptionIcon, OptionText } from "../projects/ProjectPicker.tsx"
 import type { ProjectRow } from "../projects/project-picker.ts"
+import { useManageRoots } from "../projects/use-manage-roots.ts"
 import {
   documentationUrl, guideEntries, listsProjects, projectLines, startEntries, welcomeSections,
   type ProjectFacts, type WelcomeAction, type WelcomeEntry, type WelcomeProjectRow,
@@ -61,15 +61,11 @@ interface WelcomeTabProps {
 
 // WelcomeTab (decision 0052) starts a session: open a project, a file, or a
 // command; see the open project's branch, changes, and walkthroughs; switch
-// among the served projects; and learn what zero does by doing it. The
-// desktop app also offers Open folder…, which its bridge runs.
+// among the served projects; and learn what zero does by doing it. A server
+// that manages roots also offers Open folder… (decision 0146).
 export function WelcomeTab({ facts, onAction, onOpenProject, onStartupSetting, project, roots }: WelcomeTabProps) {
   const lines = projectLines(facts)
-  const bridge = desktopBridge()
-  const run = (action: WelcomeAction) => {
-    if (action === "open-folder") bridge?.openFolder?.()
-    else onAction(action)
-  }
+  const manageRoots = useManageRoots()
   return (
     <div className="welcome">
       <header className="welcome-header">
@@ -82,7 +78,7 @@ export function WelcomeTab({ facts, onAction, onOpenProject, onStartupSetting, p
         <div className="welcome-column">
           <section className="welcome-section" aria-labelledby="welcome-start">
             <h2 id="welcome-start">Start</h2>
-            <EntryList entries={startEntries(mac, bridge?.openFolder != null)} onAction={run} />
+            <EntryList entries={startEntries(mac, manageRoots)} onAction={onAction} />
           </section>
           {lines.length > 0 && (
             <section className="welcome-section" aria-labelledby="welcome-project">

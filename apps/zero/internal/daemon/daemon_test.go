@@ -145,11 +145,14 @@ func TestRunServesStatusRootsAndWebRoutes(t *testing.T) {
 	if err := json.Unmarshal(body, &roots); err != nil || code != http.StatusOK {
 		t.Fatalf("GET /_daemon/roots = %d %s", code, body)
 	}
-	if !reflect.DeepEqual(roots, rootsResponse{Roots: []string{work, personal}, Skipped: []string{missing}}) {
+	if !reflect.DeepEqual(roots, rootsResponse{Roots: []string{work, personal}, Skipped: []string{}}) {
 		t.Fatalf("roots = %+v", roots)
 	}
-	if !strings.Contains(d.log.String(), "skipping root "+missing) {
-		t.Fatalf("log = %q, want skipped root", d.log.String())
+	if !strings.Contains(d.log.String(), "no longer serving missing root "+missing) {
+		t.Fatalf("log = %q, want dropped root", d.log.String())
+	}
+	if saved, err := LoadRoots(config.RootsFile); err != nil || !reflect.DeepEqual(saved, []string{work, personal}) {
+		t.Fatalf("saved roots = %v, %v; want the missing root dropped", saved, err)
 	}
 
 	code, body = d.request(t, http.MethodGet, "/api/projects", nil, "")
@@ -223,8 +226,8 @@ func TestRunAddsAndPersistsRoots(t *testing.T) {
 	}
 
 	saved, err := LoadRoots(config.RootsFile)
-	if err != nil || !reflect.DeepEqual(saved, []string{work, personal, missing}) {
-		t.Fatalf("saved roots = %v, %v; want served roots then the skipped one", saved, err)
+	if err != nil || !reflect.DeepEqual(saved, []string{work, personal}) {
+		t.Fatalf("saved roots = %v, %v; want served roots, the missing one dropped", saved, err)
 	}
 
 	if err := d.client.Stop(context.Background()); err != nil {

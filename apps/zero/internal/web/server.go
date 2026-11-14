@@ -51,6 +51,10 @@ type Config struct {
 	// Presence serves /api/presence and asks pages to hold it while open,
 	// for a server whose lifetime follows its UIs (decision 0098).
 	Presence bool
+	// RootControl serves POST and DELETE /api/roots and lets
+	// /api/directories browse the whole host (decision 0146); nil serves
+	// Roots as they are.
+	RootControl app.RootControl
 }
 
 // App adapts the application layer (internal/app) to the HTTP API.
@@ -117,6 +121,7 @@ func New(config Config) (*App, error) {
 		Watches:              config.LiveUpdates,
 		WalkthroughDirectory: config.WalkthroughDirectory,
 		FeedbackDirectory:    config.FeedbackDirectory,
+		RootControl:          config.RootControl,
 	})
 	if err != nil {
 		return nil, err

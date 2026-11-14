@@ -285,3 +285,23 @@ func TestRootSetCoverRejectsInvalidPaths(t *testing.T) {
 		t.Fatalf("List() = %v; want unchanged [a]", got)
 	}
 }
+
+func TestRootSetRemoveStopsServingExactRoot(t *testing.T) {
+	_, a, b := rootsFixture(t)
+	set, err := NewRootSet([]string{a, b})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if set.Remove(filepath.Join(a, "inner")) || set.Remove(a+"/") {
+		t.Fatal("Remove() of a path that is not exactly a root = true")
+	}
+	if !set.Remove(a) {
+		t.Fatal("Remove(a) = false")
+	}
+	if got := set.List(); !reflect.DeepEqual(got, []string{b}) {
+		t.Fatalf("List() = %v; want [b]", got)
+	}
+	if set.Remove(a) {
+		t.Fatal("Remove(a) twice = true")
+	}
+}

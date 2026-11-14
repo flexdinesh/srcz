@@ -68,6 +68,30 @@ func (c *HTTP) Directories(ctx context.Context, path string) (contract.Directori
 	return response, c.getJSON(ctx, "/api/directories", url.Values{"path": {path}}, &response)
 }
 
+func (c *HTTP) OpenRoot(ctx context.Context, path string) (contract.OpenedRoot, error) {
+	var opened contract.OpenedRoot
+	body, err := json.Marshal(contract.RootRequest{Path: path})
+	if err != nil {
+		return opened, err
+	}
+	response, err := c.do(ctx, http.MethodPost, "/api/roots", nil, body)
+	if err != nil {
+		return opened, err
+	}
+	defer func() { _ = response.Body.Close() }()
+	return opened, answer(response, &opened)
+}
+
+func (c *HTTP) RemoveRoot(ctx context.Context, root string) (contract.RemovedRoot, error) {
+	var removed contract.RemovedRoot
+	response, err := c.do(ctx, http.MethodDelete, "/api/roots", url.Values{"path": {root}}, nil)
+	if err != nil {
+		return removed, err
+	}
+	defer func() { _ = response.Body.Close() }()
+	return removed, answer(response, &removed)
+}
+
 func (c *HTTP) Page(ctx context.Context, request contract.PageRequest) (contract.PageData, error) {
 	query := url.Values{"project": {request.Project}}
 	if request.Required || request.Path != "" {

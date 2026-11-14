@@ -27,6 +27,8 @@ func TestAPIFixturesSatisfyGeneratedContracts(t *testing.T) {
 	shapes := map[string]string{
 		"projects.json":          "ProjectsResponse",
 		"directories.json":       "DirectoriesResponse",
+		"roots-opened.json":      "OpenedRoot",
+		"roots-removed.json":     "RemovedRoot",
 		"page-*.json":            "PageData",
 		"format-settings.json":   "FormatResult",
 		"format-error.json":      "ErrorResponse",

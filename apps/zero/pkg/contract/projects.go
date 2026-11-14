@@ -9,11 +9,15 @@ const (
 	ProjectWorktree ProjectKind = "worktree"
 )
 
-// Root is a served root directory.
+// Root is a served root directory. Problem explains why zero cannot read
+// it, with ProblemCode (CodePrivacyBlocked or CodeFolderUnreadable); both
+// are empty for a readable root (decision 0146).
 type Root struct {
-	Path   string `json:"path"`
-	Name   string `json:"name"`
-	IsRepo bool   `json:"isRepo"`
+	Path        string `json:"path"`
+	Name        string `json:"name"`
+	IsRepo      bool   `json:"isRepo"`
+	Problem     string `json:"problem,omitempty"`
+	ProblemCode string `json:"problemCode,omitempty"`
 }
 
 // Project is a project within the served roots. ID is the absolute path, or
@@ -43,21 +47,48 @@ type ProjectsResponse struct {
 	SessionKey string `json:"sessionKey"`
 	// Presence asks a page to hold /api/presence while open: this server's
 	// lifetime follows its UIs (decision 0098).
-	Presence bool      `json:"presence"`
-	Roots    []Root    `json:"roots"`
-	Projects []Project `json:"projects"`
-	Warnings []string  `json:"warnings"`
+	Presence bool `json:"presence"`
+	// ManageRoots reports that this server opens folders anywhere on its
+	// host and stops serving roots (POST and DELETE /api/roots); the daemon
+	// does, a CLI-served session does not (decision 0146).
+	ManageRoots bool      `json:"manageRoots"`
+	Roots       []Root    `json:"roots"`
+	Projects    []Project `json:"projects"`
+	Warnings    []string  `json:"warnings"`
 }
 
-// Directory is a child directory of a folder within the served roots.
+// Directory is a child directory of a browsed folder: within the served
+// roots, or anywhere on the host when the server manages roots. Problem
+// explains why zero cannot read it, with ProblemCode; both are empty for a
+// readable folder (decision 0146).
 type Directory struct {
-	Name      string `json:"name"`
-	Path      string `json:"path"`
-	IsProject bool   `json:"isProject"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	IsProject   bool   `json:"isProject"`
+	Problem     string `json:"problem,omitempty"`
+	ProblemCode string `json:"problemCode,omitempty"`
 }
 
-// DirectoriesResponse is GET /api/directories.
+// DirectoriesResponse is GET /api/directories. Path is the folder listed:
+// the host's home folder for an empty path when the server manages roots.
 type DirectoriesResponse struct {
 	Path        string      `json:"path"`
 	Directories []Directory `json:"directories"`
+}
+
+// OpenedRoot is POST /api/roots's answer (and POST /_daemon/open's): the
+// root serving the path, whether it was added, the roots it replaced (inside
+// it), and the project that shows the path (decision 0146).
+type OpenedRoot struct {
+	Root     string   `json:"root"`
+	Added    bool     `json:"added"`
+	Replaced []string `json:"replaced"`
+	Project  string   `json:"project"`
+}
+
+// RemovedRoot is DELETE /api/roots's answer: the root no longer served and
+// the roots still served (decision 0146).
+type RemovedRoot struct {
+	Root  string   `json:"root"`
+	Roots []string `json:"roots"`
 }

@@ -21,6 +21,10 @@ type Client interface {
 	Projects(ctx context.Context) (contract.ProjectsResponse, error)
 	// Directories lists a served folder's child directories.
 	Directories(ctx context.Context, path string) (contract.DirectoriesResponse, error)
+	// OpenRoot serves a folder on the server's host (decision 0146).
+	OpenRoot(ctx context.Context, path string) (contract.OpenedRoot, error)
+	// RemoveRoot stops serving a root (decision 0146).
+	RemoveRoot(ctx context.Context, root string) (contract.RemovedRoot, error)
 	// Page reads a project's tree and, optionally, a document. A failed page
 	// returns both the page, which carries its project and error, and an
 	// *Error.
