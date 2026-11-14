@@ -4,7 +4,7 @@
 
 export type FeatureTint = 'blue' | 'green' | 'coral'
 
-export type FeatureId = 'overview' | 'browse' | 'diffs' | 'walkthroughs' | 'remote' | 'lean'
+export type FeatureId = 'overview' | 'browse' | 'diffs' | 'walkthroughs' | 'feedback' | 'remote' | 'lean'
 
 export type Feature = { id: FeatureId; label: string; tint: FeatureTint }
 
@@ -13,6 +13,7 @@ export const features: Feature[] = [
   { id: 'browse', label: 'browse', tint: 'blue' },
   { id: 'diffs', label: 'diffs', tint: 'green' },
   { id: 'walkthroughs', label: 'walkthroughs', tint: 'blue' },
+  { id: 'feedback', label: 'feedback', tint: 'green' },
   { id: 'remote', label: 'remote', tint: 'coral' },
   { id: 'lean', label: 'lean', tint: 'green' },
 ]

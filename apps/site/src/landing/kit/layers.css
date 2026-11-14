@@ -1,0 +1,4 @@
+/* Landing host (decision 0141): the kit's layer comes after Vocs' layers, so
+   Vocs' base reset (padding, margins) never outranks the kit's own rules.
+   Whichever stylesheet loads first, stageshow ends up last. */
+@layer vocs_theme, theme, base, vocs_base, vocs_components, components, vocs_utilities, utilities, stageshow;

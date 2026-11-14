@@ -1,0 +1,195 @@
+/* Browse: corner bleed, the window off the right and bottom edges. */
+
+.bs .bs-window {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  width: 800px;
+  height: 480px;
+}
+
+/* Explorer */
+.bs .bs-explorer {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 8px;
+}
+
+.bs .bs-explorer-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  line-height: 32px;
+  border-bottom: 1px solid var(--l-border);
+  margin-bottom: 6px;
+}
+
+.bs .bs-project {
+  font-weight: 650;
+  color: var(--l-text);
+}
+
+.bs .bs-branch {
+  color: var(--l-muted);
+}
+
+.bs .bs-entry {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  margin: 0 6px;
+  padding-right: 8px;
+  font-size: 11.5px;
+  color: var(--l-text-2);
+  white-space: nowrap;
+}
+
+.bs .bs-entry[data-selected] {
+  color: var(--l-text);
+  background: var(--l-accent-subtle);
+  box-shadow: inset 0 0 0 1px var(--l-accent);
+}
+
+.bs .bs-chevron,
+.bs .bs-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+}
+
+.bs .bs-chevron svg {
+  width: 12px;
+  height: 12px;
+  color: var(--l-muted);
+}
+
+.bs .bs-icon svg {
+  width: 14px;
+  height: 14px;
+  color: var(--l-muted);
+}
+
+.bs .bs-entry[data-selected] .bs-icon svg {
+  color: var(--l-accent);
+}
+
+/* The mode toggle sits after the tabs, as the app's tab row carries it. */
+.bs .zs-tabs-trailing {
+  margin-left: 0;
+  padding-left: 12px;
+}
+
+.bs .bs-mode {
+  --ss-row: 20px;
+  background: var(--l-surface-2);
+}
+
+.bs .bs-mode .ss-seg__thumb {
+  background: var(--l-surface);
+  box-shadow: 0 0 0 1px var(--l-border);
+}
+
+.bs .bs-mode .ss-seg__option {
+  padding: 0 9px;
+  font-size: 10.5px;
+  color: var(--l-muted);
+}
+
+.bs .bs-mode .ss-seg__option[data-on] {
+  color: var(--l-accent);
+}
+
+/* The rendered Markdown */
+.bs .bs-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 404px;
+  padding: 22px 24px;
+}
+
+.bs .bs-h1 {
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--l-text);
+}
+
+.bs .bs-h2 {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--l-text);
+}
+
+.bs .bs-p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--l-text-2);
+}
+
+.bs .bs-diagram {
+  display: block;
+  width: 296px;
+  height: 40px;
+  overflow: visible;
+}
+
+.bs .bs-diagram rect {
+  fill: var(--l-surface-2);
+  stroke: var(--l-border);
+}
+
+.bs .bs-diagram path {
+  fill: none;
+  stroke: var(--l-muted);
+}
+
+.bs .bs-diagram text {
+  font-family: var(--l-mono);
+  font-size: 10.5px;
+  text-anchor: middle;
+  fill: var(--l-text);
+}
+
+.bs .bs-fence {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--l-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--l-text);
+  background: var(--l-surface-2);
+  border: 1px solid var(--l-border);
+}
+
+/* Compact: the document column only, the tabs and the rendered README. */
+.bs .ss-stage[data-layout='compact'] .bs-window {
+  top: 16px;
+  left: 16px;
+  width: 400px;
+  height: 380px;
+}
+
+.bs .ss-stage[data-layout='compact'] .zs-activity,
+.bs .ss-stage[data-layout='compact'] .zs-side {
+  display: none;
+}
+
+.bs .ss-stage[data-layout='compact'] .bs-preview {
+  width: 342px;
+  padding: 18px 16px;
+}
+
+.bs .ss-stage[data-layout='compact'] .zs-tab:nth-child(n + 2) {
+  display: none;
+}

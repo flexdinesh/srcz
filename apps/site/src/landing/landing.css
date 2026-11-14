@@ -255,13 +255,15 @@ article:has(> .landing) {
 }
 
 /*
- * Feature rows: copy on the left beside the feature's pane on a dot-grid
+ * Feature rows: copy on the left beside the feature's scene on a dot-grid
  * canvas. Rows after the hero take a 2px top edge in their feature's tint.
  */
 
 .landing-feature {
   display: grid;
-  grid-template-columns: 29.375rem minmax(0, 1fr);
+  /* The copy gives way first, so a scene keeps its wide design (560px and up)
+     beside it. */
+  grid-template-columns: minmax(18rem, 29.375rem) minmax(35rem, 1fr);
 }
 
 .landing-feature + .landing-feature {
@@ -294,18 +296,31 @@ article:has(> .landing) {
 }
 
 .landing-feature-visual {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   min-width: 0;
-  padding: 1.75rem;
+  overflow: hidden;
   background-image: radial-gradient(var(--l-dot) 1px, transparent 1.2px);
   background-size: 0.75rem 0.75rem;
 }
 
-.landing-feature-visual > .pane {
+/* A scene fills its cell and sits on the cell's bottom edge, so a window bled
+   off the stage's bottom runs into the row's border, never into air. */
+.landing-feature-visual > .ss-fit {
   flex: 1;
-  min-width: 0;
-  max-height: 34rem;
+  margin-right: 0;
+}
+
+.landing-visual-note {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.875rem;
+  font-family: var(--l-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--l-muted);
 }
 
 .landing-lede {
@@ -526,473 +541,7 @@ article:has(> .landing) {
   color: var(--l-text);
 }
 
-/*
- * Panes: compact replicas of the app (synthetic demo content). Sizes follow the
- * app at its default 13px base: 30px bands, 22px rows, 12px mono code.
- */
-
-/* A pane sizes to its content, so the window sits on the dot grid. */
-.pane {
-  display: flex;
-  flex-direction: column;
-  max-height: 100%;
-  min-height: 0;
-}
-
-.pane-caption {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.375rem;
-  font-family: var(--l-mono);
-  font-size: 0.65625rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--l-muted);
-}
-
-.pane-app {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  border: 1px solid var(--l-border);
-  background: var(--l-surface);
-}
-
-.pane-tabs {
-  display: flex;
-  flex: none;
-  height: 1.875rem;
-  background: var(--l-chrome);
-  border-bottom: 1px solid var(--l-border);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.pane-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0 0.75rem;
-  border-right: 1px solid var(--l-border);
-  color: var(--l-muted);
-}
-
-.pane-tab-active {
-  margin-bottom: -1px;
-  background: var(--l-surface);
-  color: var(--l-text);
-}
-
-.pane-dim {
-  color: var(--l-muted);
-}
-
-.pane-toggle {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  padding: 0 0.5rem;
-  gap: 0.25rem;
-  color: var(--l-muted);
-}
-
-.pane-toggle > span {
-  padding: 0 0.375rem;
-}
-
-.pane-toggle .pane-toggle-on {
-  background: var(--l-accent-subtle);
-  color: var(--l-accent-hover);
-}
-
-.pane-band {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 0.625rem;
-  height: 1.875rem;
-  padding: 0 0.75rem;
-  background: var(--l-surface-2);
-  border-bottom: 1px solid var(--l-border);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.pane-stack .pane-band + .pane-band,
-.pane-code + .pane-band {
-  border-top: 1px solid var(--l-border);
-}
-
-.pane-chip {
-  display: inline-flex;
-  align-items: center;
-  height: 1.375rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--l-border);
-  background: var(--l-surface);
-  font-family: var(--l-mono);
-  font-size: 0.71875rem;
-  color: var(--l-text-2);
-}
-
-.pane-chip-accent {
-  border-color: var(--l-accent);
-  color: var(--l-accent);
-}
-
-.pane-add {
-  color: var(--l-add-mark);
-}
-
-.pane-del {
-  color: var(--l-del-mark);
-}
-
-.pane-viewed {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-left: auto;
-  color: var(--l-muted);
-}
-
-.pane-body {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  padding-top: 0.375rem;
-}
-
-.pane-code {
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  line-height: 1.375rem;
-}
-
-.pane-diff,
-.pane-src {
-  display: grid;
-  white-space: pre;
-}
-
-.pane-diff {
-  grid-template-columns: 2.25rem 2.25rem minmax(0, 1fr);
-}
-
-.pane-src {
-  grid-template-columns: 2.5rem minmax(0, 1fr);
-}
-
-.pane-ln {
-  padding-right: 0.5rem;
-  text-align: right;
-  color: var(--l-line-number);
-  user-select: none;
-}
-
-.pane-src .pane-ln {
-  padding-right: 0.75rem;
-}
-
-.pane-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pane-diff-add {
-  background: var(--l-add);
-  color: var(--l-add-text);
-}
-
-.pane-diff-del {
-  background: var(--l-del);
-  color: var(--l-del-text);
-}
-
-.pane-src-highlight {
-  background: var(--l-accent-subtle);
-}
-
-.pane-src-highlight .pane-ln {
-  color: var(--l-accent-hover);
-}
-
-.pane-kw { color: var(--l-keyword); }
-.pane-fn { color: var(--l-function); }
-.pane-str { color: var(--l-string); }
-.pane-num { color: var(--l-number); }
-.pane-key { color: var(--l-function); }
-
-/* A walkthrough step's note, inline after its lines as in the app. */
-
-.pane-note {
-  margin: 0.375rem 0.75rem 0.375rem 3.25rem;
-  padding: 0.5rem 0.625rem;
-  border: 1px solid var(--l-accent);
-  background: var(--l-note);
-  font-size: 0.78125rem;
-  line-height: 1.5;
-  color: var(--l-text-2);
-}
-
-.pane-note code {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--l-accent);
-}
-
-.pane-note-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.1875rem;
-  font-family: var(--l-mono);
-  font-size: 0.65625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--l-muted);
-}
-
-.pane-pin {
-  display: inline-grid;
-  place-items: center;
-  width: 1rem;
-  height: 1rem;
-  background: var(--l-accent);
-  color: var(--l-on-accent);
-  font-size: 0.625rem;
-  letter-spacing: 0;
-}
-
-.pane-note-actions {
-  display: flex;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-}
-
-.pane-split {
-  display: grid;
-  flex: 1;
-  grid-template-columns: 12.5rem minmax(0, 1fr);
-  min-height: 0;
-}
-
-.pane-main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-.pane-side {
-  overflow: hidden;
-  padding-bottom: 0.25rem;
-  background: var(--l-surface-2);
-  border-right: 1px solid var(--l-border);
-  font-size: 0.78125rem;
-}
-
-.pane-side-head,
-.pane-side-group {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0 0.625rem;
-  font-family: var(--l-mono);
-  font-size: 0.65625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--l-muted);
-}
-
-.pane-side-head {
-  height: 1.875rem;
-  margin-bottom: 0.25rem;
-  border-bottom: 1px solid var(--l-border);
-}
-
-.pane-side-group {
-  height: 1.5rem;
-  margin-top: 0.25rem;
-  border-top: 1px solid var(--l-border);
-}
-
-.pane-row {
-  display: flex;
-  align-items: center;
-  height: 1.375rem;
-  padding-right: 0.5rem;
-  color: var(--l-text-2);
-  white-space: nowrap;
-}
-
-.pane-row-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pane-row-trailing {
-  margin-left: auto;
-  color: var(--l-muted);
-}
-
-.pane-row-selected {
-  background: var(--l-accent-subtle);
-  box-shadow: inset 0 0 0 1px var(--l-accent);
-  color: var(--l-accent-hover);
-}
-
-.pane-prose {
-  padding: 0.875rem 1.125rem;
-  font-size: 0.8125rem;
-  color: var(--l-text-2);
-}
-
-.pane-prose h3 {
-  margin-bottom: 0.375rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--l-text);
-}
-
-.pane-prose p {
-  margin-bottom: 0.625rem;
-}
-
-.pane-prose pre {
-  padding: 0.5rem 0.625rem;
-  border: 1px solid var(--l-border);
-  background: var(--l-surface-2);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  line-height: 1.6;
-  color: var(--l-text);
-}
-
-.pane-diagram {
-  display: block;
-  width: 100%;
-  max-width: 20rem;
-  height: auto;
-  margin-bottom: 0.625rem;
-}
-
-.pane-diagram rect,
-.pane-diagram path {
-  fill: none;
-  stroke: var(--l-muted);
-}
-
-.pane-diagram rect {
-  fill: var(--l-surface-2);
-}
-
-.pane-diagram text {
-  fill: var(--l-text-2);
-  font-family: var(--l-mono);
-  font-size: 11px;
-  text-anchor: middle;
-}
-
-.pane-status {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 0.875rem;
-  height: 1.375rem;
-  padding: 0 0.625rem;
-  background: var(--l-chrome);
-  border-top: 1px solid var(--l-border);
-  font-family: var(--l-mono);
-  font-size: 0.6875rem;
-  color: var(--l-muted);
-  white-space: nowrap;
-}
-
-.pane-status-end {
-  margin-left: auto;
-}
-
-/* Remote: two terminals and the window the second one opens. */
-
-.landing .pane-term {
-  margin-bottom: 0.75rem;
-}
-
-.pane-term {
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--l-tint-coral);
-  background: var(--l-surface);
-  font-family: var(--l-mono);
-  font-size: 0.75rem;
-  line-height: 1.65;
-  color: var(--l-text-2);
-  overflow-x: auto;
-}
-
-.pane-prompt {
-  margin-right: 0.5rem;
-  color: var(--l-accent);
-  user-select: none;
-}
-
-.pane-strong {
-  color: var(--l-text);
-}
-
-.pane-window .pane-split {
-  grid-template-columns: 10rem minmax(0, 1fr);
-}
-
-/* Lean: a ledger of facts over a terminal, inside the app window. */
-
-.pane-facts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  background: var(--l-surface);
-}
-
-.pane-fact {
-  padding: 0.625rem 0.75rem;
-  border-right: 1px solid var(--l-border);
-  border-bottom: 1px solid var(--l-border);
-}
-
-.pane-fact:nth-child(3n) {
-  border-right: 0;
-}
-
-.pane-fact:nth-child(-n + 3) {
-  box-shadow: inset 0 2px 0 var(--l-tint-green);
-}
-
-.landing .pane-term-flat {
-  margin: 0;
-  border: 0;
-  white-space: pre-wrap;
-}
-
-.pane-fact dt {
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.pane-fact dd {
-  font-family: var(--l-mono);
-  font-size: 0.71875rem;
-  color: var(--l-muted);
-}
-
-/* Narrow screens: each row stacks its copy over its pane. */
+/* Narrow screens: each row stacks its copy over its scene. */
 
 @media (max-width: 56.1875rem) {
   .landing-frame {
@@ -1014,47 +563,8 @@ article:has(> .landing) {
 
   .landing-feature-visual {
     display: block;
-    padding: 0.75rem 1rem 1.5rem;
+    padding-top: 1.5rem;
     border-top: 1px solid var(--l-border);
-  }
-
-  .landing-feature-visual .pane-app {
-    max-height: 26rem;
-  }
-
-  .landing-feature-visual .pane-tabs {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .landing-feature-visual .pane-viewed-label,
-  .landing-feature-visual .pane-status-end,
-  .landing-feature-visual .pane-side {
-    display: none;
-  }
-
-  .landing-feature-visual .pane-split {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .landing-feature-visual .pane-facts {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .landing-feature-visual .pane-fact:nth-child(-n + 3) {
-    box-shadow: none;
-  }
-
-  .landing-feature-visual .pane-fact:nth-child(3n) {
-    border-right: 1px solid var(--l-border);
-  }
-
-  .landing-feature-visual .pane-fact:nth-child(2n) {
-    border-right: 0;
-  }
-
-  .landing-feature-visual .pane-fact:nth-child(-n + 2) {
-    box-shadow: inset 0 2px 0 var(--l-tint-green);
   }
 
   .landing-button {

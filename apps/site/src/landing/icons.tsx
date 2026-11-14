@@ -22,14 +22,6 @@ function Icon({ className, children }: IconProps & { children: ReactNode }) {
   )
 }
 
-export function ChevronDown(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M3.5 6 8 10.5 12.5 6" />
-    </Icon>
-  )
-}
-
 export function ArrowRight(props: IconProps) {
   return (
     <Icon {...props}>
@@ -38,19 +30,3 @@ export function ArrowRight(props: IconProps) {
   )
 }
 
-export function Box(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M3 3h10v10H3z" />
-    </Icon>
-  )
-}
-
-export function BoxCheck(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <path d="M3 3h10v10H3z" />
-      <path d="m5.5 8 2 2 3-4" />
-    </Icon>
-  )
-}
